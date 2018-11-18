@@ -25,6 +25,7 @@
 #include <avr/pgmspace.h>	// include AVR program memory support
 #include <string.h>			// include standard C string functions
 #include <stdlib.h>			// include stdlib for string conversion functions
+#include <stdio.h>
 
 /* #include "global.h"		// include our global settings */
 #include "cmdline.h"
@@ -54,7 +55,7 @@
 // Global variables
 
 // strings
-const u08 PROGMEM CmdlinePrompt[] = "cmd>";
+const u08 PROGMEM CmdlinePrompt[] = "cmd> ";
 const u08 PROGMEM CmdlineNotice[] = "cmdline: ";
 const u08 PROGMEM CmdlineCmdNotFound[] = "command not found";
 
@@ -93,7 +94,7 @@ void cmdlineInit(void)
 	CmdlineNumCommands = 0;
 }
 
-void cmdlineAddCommand(u08* newCmdString, CmdlineFuncPtrType newCmdFuncPtr)
+void cmdlineAddCommand(const char* newCmdString, CmdlineFuncPtrType newCmdFuncPtr)
 {
 	// add command string to end of command list
 	strcpy(CmdlineCommandList[CmdlineNumCommands], newCmdString);
@@ -235,7 +236,7 @@ void cmdlineInputFunc(unsigned char c)
 		CmdlineBufferLength = 0;
 		CmdlineBufferEditPos = 0;
 	}
-	else if(c == ASCII_BS)
+	else if(c == ASCII_BS || c == ASCII_DEL )
 	{
 		if(CmdlineBufferEditPos)
 		{
@@ -274,10 +275,6 @@ void cmdlineInputFunc(unsigned char c)
 			// else, ring the bell
 			cmdlineOutputFunc(ASCII_BEL);
 		}
-	}
-	else if(c == ASCII_DEL)
-	{
-		// not yet handled
 	}
 	else if(c == ASCII_ESC)
 	{
@@ -345,9 +342,9 @@ void cmdlineProcessInputString(void)
 	}
 
 	// search command list for match with entered command
-	for(cmdIndex=0; cmdIndex<CmdlineNumCommands; cmdIndex++)
+	for(cmdIndex=0; cmdIndex < CmdlineNumCommands; cmdIndex++)
 	{
-		if ( strlen( CmdlineCommandList[cmdIndex] == i ) )
+		if ( strlen(CmdlineCommandList[cmdIndex]) == i )
 		{
 			if( !strncmp(CmdlineCommandList[cmdIndex], CmdlineBuffer, i) )
 			{

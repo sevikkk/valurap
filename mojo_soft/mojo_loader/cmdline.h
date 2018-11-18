@@ -104,7 +104,7 @@ void cmdlineInit(void);
 // newCmdString should be a null-terminated command string with no whitespace
 // newCmdFuncPtr should be a pointer to the function to execute when
 //   the user enters the corresponding command tring
-void cmdlineAddCommand(u08* newCmdString, CmdlineFuncPtrType newCmdFuncPtr);
+void cmdlineAddCommand(const char* newCmdString, CmdlineFuncPtrType newCmdFuncPtr);
 
 //! sets the function used for sending characters to the user terminal
 void cmdlineSetOutputFunc(void (*output_func)(unsigned char c));

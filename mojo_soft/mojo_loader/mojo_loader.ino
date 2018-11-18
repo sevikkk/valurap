@@ -17,6 +17,19 @@
 #include <SPI.h>
 #include "flash.h"
 #include "cmdline.h"
+#include <stdio.h>
+
+static FILE uartout = {0} ;
+
+static int uart_putchar (char c, FILE *stream)
+{
+    if (c == '\n')
+      Serial.write('\r');
+    Serial.write(c) ;
+    return 0 ;
+}
+
+
 
 typedef enum {
   IDLE,
@@ -70,6 +83,17 @@ extern "C" void SerialPutC(uint8_t ch) {
   Serial.write(ch);
 }
 
+void helpFunction(void)
+{
+  printf(
+        "\n"
+        "Available commands are:\n"
+        "help      - displays available commands\n"
+        "\n"
+  );
+}
+
+
 /* Here you can do some setup before entering the userLoop loop */
 void initPostLoad() {
   //Serial.flush();
@@ -94,8 +118,15 @@ void initPostLoad() {
   // the FPGA looks for CCLK to be high to know the AVR is ready for data
   SET(CCLK, HIGH);
   IN(CCLK); // set as pull up so JTAG can work
+
+  fdev_setup_stream (&uartout, uart_putchar, NULL, _FDEV_SETUP_WRITE);
+
+  // The uart is the standard output device STDOUT.
+  stdout = &uartout;
+
   //cmdlineSetOutputFunc(SerialPutC);
   cmdlineInit();
+  cmdlineAddCommand("help",   helpFunction);
   cmdlinePrintPrompt();
 }
 
