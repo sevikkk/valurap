@@ -16,7 +16,6 @@
 #ifndef FLASH_H_
 #define FLASH_H_
 
-#include "ring_buffer.h"
 #include "hardware.h"
 
 #define MICROCHIP_ID 0xBF

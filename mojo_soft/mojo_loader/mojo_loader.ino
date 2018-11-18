@@ -16,6 +16,7 @@
 #include "hardware.h"
 #include <SPI.h>
 #include "flash.h"
+#include "cmdline.h"
 
 typedef enum {
   IDLE,
@@ -65,6 +66,10 @@ void disablePostLoad() {
   SET(INIT, HIGH); // pullup on INIT
 }
 
+extern "C" void SerialPutC(uint8_t ch) {
+  Serial.write(ch);
+}
+
 /* Here you can do some setup before entering the userLoop loop */
 void initPostLoad() {
   //Serial.flush();
@@ -89,6 +94,9 @@ void initPostLoad() {
   // the FPGA looks for CCLK to be high to know the AVR is ready for data
   SET(CCLK, HIGH);
   IN(CCLK); // set as pull up so JTAG can work
+  //cmdlineSetOutputFunc(SerialPutC);
+  cmdlineInit();
+  cmdlinePrintPrompt();
 }
 
 void setup() {
@@ -287,6 +295,7 @@ void lineStateEvent(unsigned char linestate)
   }
 }
 
+
 /* This function handles all the serial to USB work. It works
    much the same way as the ADC task, but it just forwards data
    from one port to the other instead of the ADC to the FPGA. */
@@ -294,8 +303,8 @@ void uartTask() {
   if (Serial) { // does the data have somewhere to go?
     int16_t w;
     while ((w = Serial.read()) >= 0) {
-      Serial.write('_');
-      Serial.write(w);
+      cmdlineInputFunc((uint8_t)w);
+      cmdlineMainLoop();
     }
   }
 }
