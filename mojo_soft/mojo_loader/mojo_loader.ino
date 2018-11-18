@@ -85,12 +85,12 @@ extern "C" void SerialPutC(uint8_t ch) {
 
 void helpFunction(void)
 {
-  printf(
+  printf_P(PSTR(
         "\n"
         "Available commands are:\n"
         "help      - displays available commands\n"
         "\n"
-  );
+  ));
 }
 
 
