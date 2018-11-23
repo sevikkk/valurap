@@ -103,11 +103,16 @@ void initPostLoad() {
   SET(TX_BUSY, LOW);
 
   // set progam as an input so that it's possible to use a JTAG programmer with the Mojo
+  SET(PROGRAM, HIGH);
   IN(PROGRAM);
 
   // the FPGA looks for CCLK to be high to know the AVR is ready for data
   SET(CCLK, HIGH);
   IN(CCLK); // set as pull up so JTAG can work
+  SET(DONE, HIGH);
+  IN(DONE);
+  SET(INIT, HIGH);
+  IN(INIT);
 
   fdev_setup_stream (&serialout, serial_putchar, NULL, _FDEV_SETUP_WRITE);
 
