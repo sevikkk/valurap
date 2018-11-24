@@ -21,6 +21,9 @@ PARFLAGS	= -ol high
 # Top 
 
 SRC = \
+	src/cclk_detector.v \
+	src/dds_uart_clock.v \
+	src/uart_transceiver.v \
 	src/$(TOP).v
 
 all:		bits
