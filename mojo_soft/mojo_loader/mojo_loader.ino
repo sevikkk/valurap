@@ -88,11 +88,7 @@ static int serial_putchar (char c, FILE *stream)
 void initPostLoad() {
   //Serial.flush();
 
-  UBRR1 = 1; // 0.5 M Baud
-
-  UCSR1C = (1 << UCSZ11) | (1 << UCSZ10);
-  UCSR1A = (1 << U2X1);
-  UCSR1B = (1 << TXEN1);
+  Serial1.begin(500000);
   
   // Setup all the SPI pins
   SET(CS_FLASH, HIGH);
@@ -337,7 +333,7 @@ void uartTask() {
     while ((w = Serial.read()) >= 0) {
       cmdlineInputFunc((uint8_t)w);
       cmdlineMainLoop();
-      UDR1 = (uint8_t)w;
+      Serial1.write(w);
     }
   }
 }
