@@ -196,28 +196,38 @@ void cmdlineInputFunc(unsigned char c)
 		// is this a simple append
 		if(CmdlineBufferEditPos == CmdlineBufferLength)
 		{
-			// echo character to the output
-			cmdlineOutputFunc(c);
-			// add it to the command line buffer
-			CmdlineBuffer[CmdlineBufferEditPos++] = c;
-			// update buffer length
-			CmdlineBufferLength++;
+      if (CmdlineBufferEditPos == CMDLINE_BUFFERSIZE - 1) {
+        // buffer is full
+        cmdlineOutputFunc(ASCII_BEL);
+      } else {
+  			// echo character to the output
+  			cmdlineOutputFunc(c);
+  			// add it to the command line buffer
+  			CmdlineBuffer[CmdlineBufferEditPos++] = c;
+  			// update buffer length
+  			CmdlineBufferLength++;
+      }
 		}
 		else
 		{
 			// edit/cursor position != end of buffer
 			// we're inserting characters at a mid-line edit position
 			// make room at the insert point
-			CmdlineBufferLength++;
-			for(i=CmdlineBufferLength; i>CmdlineBufferEditPos; i--)
-				CmdlineBuffer[i] = CmdlineBuffer[i-1];
-			// insert character
-			CmdlineBuffer[CmdlineBufferEditPos++] = c;
-			// repaint
-			cmdlineRepaint();
-			// reposition cursor
-			for(i=CmdlineBufferEditPos; i<CmdlineBufferLength; i++)
-				cmdlineOutputFunc(ASCII_BS);
+      if (CmdlineBufferLength == CMDLINE_BUFFERSIZE - 1) {
+        // buffer is full
+        cmdlineOutputFunc(ASCII_BEL);
+      } else {
+  			CmdlineBufferLength++;
+  			for(i=CmdlineBufferLength; i>CmdlineBufferEditPos; i--)
+  				CmdlineBuffer[i] = CmdlineBuffer[i-1];
+  			// insert character
+  			CmdlineBuffer[CmdlineBufferEditPos++] = c;
+  			// repaint
+  			cmdlineRepaint();
+  			// reposition cursor
+  			for(i=CmdlineBufferEditPos; i<CmdlineBufferLength; i++)
+  				cmdlineOutputFunc(ASCII_BS);
+      }
 		}
 	}
 	// handle special characters
