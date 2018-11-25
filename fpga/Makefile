@@ -24,6 +24,7 @@ SRC = \
 	src/cclk_detector.v \
 	src/dds_uart_clock.v \
 	src/uart_transceiver.v \
+	src/s3g_rx.v \
 	src/$(TOP).v
 
 all:		bits
@@ -75,7 +76,7 @@ isim-run: build/top.out
 #
 # Synthesis
 #
-build/project.src:
+build/project.src: $(SRC)
 		@[ -d build ] || mkdir build
 		@rm -f $@
 		for i in $(SRC); do echo verilog work ../$$i >> $@; done

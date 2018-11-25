@@ -66,15 +66,31 @@ uart_transceiver uart1(
                      .tx_done()
                  );
 
+wire packet_done;
+wire [7:0] packet_buf0;
+
+s3g_rx s3g_rx(
+    .clk(clk),
+    .rst(n_rdy),
+    .rx_data(rx_data),
+    .rx_done(new_rx_data),
+    .packet_done(packet_done),
+    .buf0(packet_buf0)
+);
+
 always @(posedge clk)
-   if (!new_rx_data)
+   if (packet_done)
        begin
-	   cnt <= cnt + 1;
+           cnt[27:20] <= packet_buf0;
+           cnt[19:0] <= 20'b0;
+       end
+   else if (new_rx_data)
+       begin
+           // cnt[27:20] <= rx_data;
+           // cnt[19:0] <= 20'b0;
+           cnt <= cnt;
        end
    else
-       begin
-	   cnt[27:20] <= rx_data;
-	   cnt[19:0] <= 20'b0;
-       end;
+       cnt <= cnt;
 
 endmodule
