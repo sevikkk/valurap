@@ -25,6 +25,8 @@ SRC = \
 	src/dds_uart_clock.v \
 	src/uart_transceiver.v \
 	src/s3g_rx.v \
+	src/s3g_tx.v \
+	src/s3g_executor.v \
 	src/$(TOP).v
 
 all:		bits

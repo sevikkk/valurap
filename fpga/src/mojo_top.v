@@ -37,7 +37,6 @@ wire ready;
 wire n_rdy = !ready;
 
 reg [27:0] cnt;
-assign led[7:0] = cnt[27:20];
 
 cclk_detector #(.CLK_RATE(CLK_RATE)) cclk_detector (
     .clk(clk),
@@ -45,6 +44,11 @@ cclk_detector #(.CLK_RATE(CLK_RATE)) cclk_detector (
     .cclk(cclk),
     .ready(ready)
 );
+
+wire [7:0] tx_data;
+wire tx_wr;
+wire tx1_done;
+wire tx2_done;
 
 wire [7:0] rx_data;
 wire new_rx_data;
@@ -64,9 +68,9 @@ uart_transceiver uart1(
                      .enable_16(enable_16),
                      .rx_data(rx_data),
                      .rx_done(new_rx_data),
-                     .tx_data(8'b0),
-                     .tx_wr(1'b0),
-                     .tx_done()
+                     .tx_data(tx_data),
+                     .tx_wr(tx_wr),
+                     .tx_done(tx1_done)
                  );
 
 wire [7:0] rx2_data;
@@ -87,14 +91,59 @@ uart_transceiver uart2(
                      .enable_16(enable_16_2),
                      .rx_data(rx2_data),
                      .rx_done(new_rx2_data),
-                     .tx_data(8'b0),
-                     .tx_wr(1'b0),
-                     .tx_done()
+                     .tx_data(tx_data),
+                     .tx_wr(tx_wr),
+                     .tx_done(tx2_done)
                  );
 
 
-wire packet_done;
-wire [7:0] packet_buf0;
+wire rx_packet_done;
+wire rx_packet_error;
+wire rx_buffer_valid;
+
+wire [7:0] rx_buffer_addr;
+wire [7:0] rx_buffer_data;
+
+wire [7:0] rx_payload_len;
+wire [7:0] rx_buf0;
+wire [7:0] rx_buf1;
+wire [7:0] rx_buf2;
+wire [7:0] rx_buf3;
+wire [7:0] rx_buf4;
+wire [7:0] rx_buf5;
+wire [7:0] rx_buf6;
+wire [7:0] rx_buf7;
+wire [7:0] rx_buf8;
+wire [7:0] rx_buf9;
+wire [7:0] rx_buf10;
+wire [7:0] rx_buf11;
+wire [7:0] rx_buf12;
+wire [7:0] rx_buf13;
+wire [7:0] rx_buf14;
+wire [7:0] rx_buf15;
+
+wire tx_packet_wr;
+wire tx_busy;
+
+wire [7:0] tx_payload_len;
+wire [7:0] tx_buf0;
+wire [7:0] tx_buf1;
+wire [7:0] tx_buf2;
+wire [7:0] tx_buf3;
+wire [7:0] tx_buf4;
+wire [7:0] tx_buf5;
+wire [7:0] tx_buf6;
+wire [7:0] tx_buf7;
+wire [7:0] tx_buf8;
+wire [7:0] tx_buf9;
+wire [7:0] tx_buf10;
+wire [7:0] tx_buf11;
+wire [7:0] tx_buf12;
+wire [7:0] tx_buf13;
+wire [7:0] tx_buf14;
+wire [7:0] tx_buf15;
+
+wire [31:0] out_reg0;
 
 s3g_rx s3g_rx(
     .clk(clk),
@@ -103,14 +152,112 @@ s3g_rx s3g_rx(
     .rx1_done(new_rx_data),
     .rx2_data(rx2_data),
     .rx2_done(new_rx2_data),
-    .packet_done(packet_done),
-    .buf0(packet_buf0)
+    .packet_done(rx_packet_done),
+    .packet_error(rx_packet_error),
+    .payload_len(rx_payload_len),
+    .buffer_valid(rx_buffer_valid),
+    .buf0(rx_buf0),
+    .buf1(rx_buf1),
+    .buf2(rx_buf2),
+    .buf3(rx_buf3),
+    .buf4(rx_buf4),
+    .buf5(rx_buf5),
+    .buf6(rx_buf6),
+    .buf7(rx_buf7),
+    .buf8(rx_buf8),
+    .buf9(rx_buf9),
+    .buf10(rx_buf10),
+    .buf11(rx_buf11),
+    .buf12(rx_buf12),
+    .buf13(rx_buf13),
+    .buf14(rx_buf14),
+    .buf15(rx_buf15),
+    .buffer_addr(rx_buffer_addr),
+    .buffer_data(rx_buffer_data)
 );
 
+s3g_executor s3g_executor(
+    .clk(clk),
+    .rst(n_rdy),
+    .rx_packet_done(rx_packet_done),
+    .rx_packet_error(rx_packet_error),
+    .rx_buffer_valid(rx_buffer_valid),
+    .rx_payload_len(rx_payload_len),
+    .rx_buf0(rx_buf0),
+    .rx_buf1(rx_buf1),
+    .rx_buf2(rx_buf2),
+    .rx_buf3(rx_buf3),
+    .rx_buf4(rx_buf4),
+    .rx_buf5(rx_buf5),
+    .rx_buf6(rx_buf6),
+    .rx_buf7(rx_buf7),
+    .rx_buf8(rx_buf8),
+    .rx_buf9(rx_buf9),
+    .rx_buf10(rx_buf10),
+    .rx_buf11(rx_buf11),
+    .rx_buf12(rx_buf12),
+    .rx_buf13(rx_buf13),
+    .rx_buf14(rx_buf14),
+    .rx_buf15(rx_buf15),
+    .next_rx_buffer_addr(rx_buffer_addr),
+    .rx_buffer_data(rx_buffer_data),
+    .tx_busy(tx_busy),
+    .tx_packet_wr(tx_packet_wr),
+    .tx_payload_len(tx_payload_len),
+    .tx_buf0(tx_buf0),
+    .tx_buf1(tx_buf1),
+    .tx_buf2(tx_buf2),
+    .tx_buf3(tx_buf3),
+    .tx_buf4(tx_buf4),
+    .tx_buf5(tx_buf5),
+    .tx_buf6(tx_buf6),
+    .tx_buf7(tx_buf7),
+    .tx_buf8(tx_buf8),
+    .tx_buf9(tx_buf9),
+    .tx_buf10(tx_buf10),
+    .tx_buf11(tx_buf11),
+    .tx_buf12(tx_buf12),
+    .tx_buf13(tx_buf13),
+    .tx_buf14(tx_buf14),
+    .tx_buf15(tx_buf15),
+
+    .out_reg0(out_reg0)
+);
+
+s3g_tx s3g_tx1(
+           .clk(clk),
+           .rst(n_rdy),
+           .tx_data(tx_data),
+           .tx_wr(tx_wr),
+           .tx1_done(tx1_done),
+           .tx2_done(tx2_done),
+           .busy(tx_busy),
+           .payload_len(tx_payload_len),
+           .packet_wr(tx_packet_wr),
+           .buf0(tx_buf0),
+           .buf1(tx_buf1),
+           .buf2(tx_buf2),
+           .buf3(tx_buf3),
+           .buf4(tx_buf4),
+           .buf5(tx_buf5),
+           .buf6(tx_buf6),
+           .buf7(tx_buf7),
+           .buf8(tx_buf8),
+           .buf9(tx_buf9),
+           .buf10(tx_buf10),
+           .buf11(tx_buf11),
+           .buf12(tx_buf12),
+           .buf13(tx_buf13),
+           .buf14(tx_buf14),
+           .buf15(tx_buf15)
+       );
+
+assign led = out_reg0;
+
 always @(posedge clk)
-   if (packet_done)
+   if (rx_packet_done)
        begin
-           cnt[27:20] <= packet_buf0;
+           cnt[27:20] <= rx_buf0;
            cnt[19:0] <= 20'b0;
        end
    else if (new_rx_data)

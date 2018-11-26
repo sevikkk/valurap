@@ -135,7 +135,7 @@ wire rx_done;
 assign rx_data = cmd_src ? rx2_data : rx1_data;
 assign rx_done = cmd_src ? rx2_done : rx1_done;
 
-always @(state, byte_cnt, crc, save_addr,
+always @(state, byte_cnt, crc, save_addr, cmd_src, rst,
             rx_done, rx_data, rx1_done, rx1_data, rx2_done, rx2_data,
             payload_len, buffer_valid,
             buf0, buf1, buf2, buf3, buf4, buf5, buf6, buf7,
