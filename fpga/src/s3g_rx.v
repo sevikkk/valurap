@@ -1,8 +1,10 @@
 module s3g_rx(
            clk,
            rst,
-           rx_data,
-           rx_done,
+           rx1_data,
+           rx1_done,
+           rx2_data,
+           rx2_done,
 
            packet_done,
            packet_error,
@@ -55,8 +57,10 @@ endfunction
 
 input clk;
 input rst;
-input [7:0] rx_data;
-input rx_done;
+input [7:0] rx1_data;
+input rx1_done;
+input [7:0] rx2_data;
+input rx2_done;
 
 output reg packet_done;
 output reg packet_error;
@@ -122,9 +126,20 @@ reg [7:0] next_buf13;
 reg [7:0] next_buf14;
 reg [7:0] next_buf15;
 
-always @(state, byte_cnt, crc, save_addr, rx_done, rx_data, payload_len, buffer_valid,
-             buf0, buf1, buf2, buf3, buf4, buf5, buf6, buf7,
-             buf8, buf9, buf10, buf11, buf12, buf13, buf14, buf15)
+reg cmd_src;
+reg next_cmd_src;
+
+wire [7:0] rx_data;
+wire rx_done;
+
+assign rx_data = cmd_src ? rx2_data : rx1_data;
+assign rx_done = cmd_src ? rx2_done : rx1_done;
+
+always @(state, byte_cnt, crc, save_addr,
+            rx_done, rx_data, rx1_done, rx1_data, rx2_done, rx2_data,
+            payload_len, buffer_valid,
+            buf0, buf1, buf2, buf3, buf4, buf5, buf6, buf7,
+            buf8, buf9, buf10, buf11, buf12, buf13, buf14, buf15)
     begin
         next_state <= state;
         next_byte_cnt <= byte_cnt;
@@ -155,11 +170,25 @@ always @(state, byte_cnt, crc, save_addr, rx_done, rx_data, payload_len, buffer_
         next_buf14 <= buf14;
         next_buf15 <= buf15;
 
-        if (state == S_INIT)
+        next_cmd_src <= cmd_src;
+
+        if (rst)
             begin
-                if (rx_done && rx_data == 8'hD5)
+                next_state <= S_INIT;
+                next_buffer_valid <= 0;
+                next_payload_len <= 0;
+            end
+        else if (state == S_INIT)
+            begin
+                if (rx1_done && rx1_data == 8'hD5)
                     begin
                         next_state <= S_LEN;
+                        next_cmd_src <= 0;
+                    end
+                else if (rx2_done && rx2_data == 8'hD5)
+                    begin
+                        next_state <= S_LEN;
+                        next_cmd_src <= 1;
                     end
             end
         else if (state == S_LEN)
@@ -249,6 +278,7 @@ always @(posedge clk)
         byte_cnt <= next_byte_cnt;
         packet_error <= next_packet_error;
         packet_done <= next_packet_done;
+        cmd_src <= next_cmd_src;
 
         payload_len <= next_payload_len;
         buffer_valid <= next_buffer_valid;

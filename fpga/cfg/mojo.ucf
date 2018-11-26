@@ -30,3 +30,7 @@ NET "avr_tx" LOC = P55 | IOSTANDARD = LVTTL;
 NET "avr_rx" LOC = P59 | IOSTANDARD = LVTTL;
 NET "avr_rx_busy" LOC = P39 | IOSTANDARD = LVTTL;
 
+NET "ext_tx" LOC = P119 | IOSTANDARD = LVTTL;
+NET "ext_rx" LOC = P120 | IOSTANDARD = LVTTL;
+NET "ext_rx_busy" LOC = P118 | IOSTANDARD = LVTTL;
+
