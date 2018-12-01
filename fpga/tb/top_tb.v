@@ -21,6 +21,7 @@ wire enable_16;
 reg [7:0] tx_data;
 reg tx_wr;
 wire tx_done;
+wire [7:0] avr_rx_data;
 
 reg [2047:0] packet = 512'hD50123456789;
 reg send_packet = 0;
@@ -42,7 +43,8 @@ uart_transceiver uart1(
                      .enable_16(enable_16),
                      .tx_data(tx_data),
                      .tx_wr(tx_wr),
-                     .tx_done(tx_done)
+                     .tx_done(tx_done),
+                     .rx_data(avr_rx_data)
                  );
 
 mojo_top #(
@@ -55,6 +57,11 @@ mojo_top #(
            .avr_tx(avr_tx),
            .avr_rx(avr_rx)
        );
+
+`define assert_rx(value) \
+    begin if (avr_rx_data !== value) begin \
+        $display("ASSERTION FAILED in %m at %0d: actual tx_data %h != expected %h", cycle, avr_rx_data, value); \
+    end end
 
 initial
     begin
@@ -128,17 +135,36 @@ initial
                             tx_data = 8'h00;
                             tx_wr = 1;
                         end
+                    6000: `assert_rx(8'hD5)
+                    6500: `assert_rx(8'h03)
+                    7000: `assert_rx(8'h81)
+                    7500: `assert_rx(8'hBA)
+                    8000: `assert_rx(8'hCE)
+                    8500: `assert_rx(8'hF9)
 
                     15000:
                         begin
+                            // Version request
                             packet = 24'hD50100;
                             send_packet = 1;
                         end
+                    18000: `assert_rx(8'hD5)
+                    18500: `assert_rx(8'h03)
+                    19000: `assert_rx(8'h81)
+                    19500: `assert_rx(8'hBA)
+                    20000: `assert_rx(8'hCE)
+                    20500: `assert_rx(8'hF9)
+
                     25000:
                         begin
+                            // Invalid command
                             packet = {8'hD5, 8'd5, 40'h1213141516};
                             send_packet = 1;
                         end
+                    30500: `assert_rx(8'hD5)
+                    31000: `assert_rx(8'h01)
+                    31500: `assert_rx(8'h85)
+                    32000: `assert_rx(8'hB3)
                 endcase
 
                 #2;
@@ -155,7 +181,7 @@ always @(negedge clk)
     begin
         if (send_packet)
         begin
-            $display("send", packet, $time);
+            $display("send %0h at %0d", packet, cycle);
             send_packet <= 0;
             first = 1;
             for (ppos = 2047; ppos>0; ppos = ppos - 8)
@@ -167,7 +193,7 @@ always @(negedge clk)
                                 first = 0;
                                 tx_data = packet[ppos-:8];
                                 tx_wr = 1;
-                                $display("time: %g send %h", $time, tx_data);
+                                $display("time: %0d send %h", cycle, tx_data);
                                 #6000;
                             end
                     end
@@ -175,13 +201,13 @@ always @(negedge clk)
                     begin
                         tx_data = packet[ppos-:8];
                         tx_wr = 1;
-                        $display("time: %g send %h", $time, tx_data);
+                        $display("time: %0d send %h", cycle, tx_data);
                         #6000;
                     end
             end
             tx_data = dut.s3g_rx.crc;
             tx_wr = 1;
-            $display("time: %g send crc %h", $time, tx_data);
+            $display("time: %0d send crc %h", $time, tx_data);
             #6000;
 
         end
