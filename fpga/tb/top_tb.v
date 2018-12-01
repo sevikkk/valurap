@@ -22,9 +22,12 @@ reg [7:0] tx_data;
 reg tx_wr;
 wire tx_done;
 wire [7:0] avr_rx_data;
+wire avr_rx_done;
 
 reg [2047:0] packet = 512'hD50123456789;
 reg send_packet = 0;
+
+reg [8*256:0] rx_buffer = 0;
 
 
 localparam BR=1000000;
@@ -44,8 +47,15 @@ uart_transceiver uart1(
                      .tx_data(tx_data),
                      .tx_wr(tx_wr),
                      .tx_done(tx_done),
-                     .rx_data(avr_rx_data)
+                     .rx_data(avr_rx_data),
+                     .rx_done(avr_rx_done)
                  );
+
+always @(posedge clk)
+    if (avr_rx_done) begin
+        rx_buffer <= {rx_buffer , avr_rx_data};
+        $display("time: %0d received %h", cycle, avr_rx_data);
+    end
 
 mojo_top #(
         .AVR_BAUD_RATE(BR),
@@ -59,9 +69,11 @@ mojo_top #(
        );
 
 `define assert_rx(value) \
-    begin if (avr_rx_data !== value) begin \
-        $display("ASSERTION FAILED in %m at %0d: actual tx_data %h != expected %h", cycle, avr_rx_data, value); \
-    end end
+    begin if (rx_buffer != value) begin \
+            $display("ASSERTION FAILED in %m at %0d: actual rx_buffer %h != expected %h", cycle, rx_buffer, value); \
+        end \
+        rx_buffer = 0; \
+    end
 
 initial
     begin
@@ -135,12 +147,7 @@ initial
                             tx_data = 8'h00;
                             tx_wr = 1;
                         end
-                    6000: `assert_rx(8'hD5)
-                    6500: `assert_rx(8'h03)
-                    7000: `assert_rx(8'h81)
-                    7500: `assert_rx(8'hBA)
-                    8000: `assert_rx(8'hCE)
-                    8500: `assert_rx(8'hF9)
+                    8500: `assert_rx(48'hD50381BACEF9)
 
                     15000:
                         begin
@@ -148,12 +155,7 @@ initial
                             packet = 24'hD50100;
                             send_packet = 1;
                         end
-                    18000: `assert_rx(8'hD5)
-                    18500: `assert_rx(8'h03)
-                    19000: `assert_rx(8'h81)
-                    19500: `assert_rx(8'hBA)
-                    20000: `assert_rx(8'hCE)
-                    20500: `assert_rx(8'hF9)
+                    20500: `assert_rx(48'hD50381BACEF9)
 
                     25000:
                         begin
@@ -161,10 +163,7 @@ initial
                             packet = {8'hD5, 8'd5, 40'h1213141516};
                             send_packet = 1;
                         end
-                    30500: `assert_rx(8'hD5)
-                    31000: `assert_rx(8'h01)
-                    31500: `assert_rx(8'h85)
-                    32000: `assert_rx(8'hB3)
+                    32000: `assert_rx(32'hD50185B3)
                 endcase
 
                 #2;
