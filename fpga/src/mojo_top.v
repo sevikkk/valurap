@@ -1,7 +1,8 @@
 module mojo_top #(
     parameter CLK_RATE = 50000000,
     parameter AVR_BAUD_RATE = 500000,
-    parameter EXT_BAUD_RATE = 115200
+    parameter EXT_BAUD_RATE = 115200,
+    parameter INTS_TIMER = 1000000
 )(
     // 50MHz clock input
     input clk,
@@ -206,7 +207,7 @@ s3g_rx s3g_rx(
     .buffer_data(rx_buffer_data)
 );
 
-s3g_executor s3g_executor(
+s3g_executor #(.INTS_TIMER(INTS_TIMER)) s3g_executor(
     .clk(clk),
     .rst(n_rdy),
     .rx_packet_done(rx_packet_done),
@@ -261,6 +262,36 @@ s3g_executor s3g_executor(
 
     .out_stbs(stbs),
 
+    .int0(1'b0),
+    .int1(1'b0),
+    .int2(1'b0),
+    .int3(1'b0),
+    .int4(1'b0),
+    .int5(1'b0),
+    .int6(1'b0),
+    .int7(1'b0),
+    .int8(1'b0),
+    .int9(1'b0),
+    .int10(1'b0),
+    .int11(1'b0),
+    .int12(1'b0),
+    .int13(1'b0),
+    .int14(1'b0),
+    .int15(1'b0),
+    .int16(1'b0),
+    .int17(1'b0),
+    .int18(1'b0),
+    .int19(1'b0),
+    .int20(1'b0),
+    .int21(1'b0),
+    .int22(1'b0),
+    .int23(1'b0),
+    .int24(1'b0),
+    .int25(1'b0),
+    .int26(1'b0),
+    .int27(1'b0),
+    .int28(1'b0),
+    .int29(1'b0),
     .int30(be_complete),
     .int31(se_int_lb),
 

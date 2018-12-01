@@ -477,6 +477,7 @@ always @(tx_busy, rx_packet_done, rx_packet_done, rx_packet_error, rx_payload_le
                                     64: // MASK_INTS
                                         begin
                                             next_ints_mask <= {rx_buf4, rx_buf3, rx_buf2, rx_buf1};
+                                            next_ints_timer <= 0;
                                             next_tx_cmd <= CMD_OK;
                                         end
                                     65: // WRITE_BUF

@@ -59,7 +59,8 @@ always @(posedge clk)
 
 mojo_top #(
         .AVR_BAUD_RATE(BR),
-        .EXT_BAUD_RATE(BR)
+        .EXT_BAUD_RATE(BR),
+        .INTS_TIMER(10000)
     ) dut (
            .clk(clk),
            .rst_n(rst_n),
@@ -205,6 +206,40 @@ initial
                         begin
                             `assert_rx(64'hD5058113579BDF41)
                         end
+
+                    65000:
+                        begin
+                            // Generate STB (looped back to int31, so it triggers interrupt report)
+                            packet = {8'hD5, 8'd5, 8'd62, 32'h00000080};
+                            send_packet = 1;
+                        end
+                    72000:
+                        begin
+                            `assert_rx(64'hD50181D2)
+                        end
+                    76000:
+                        begin
+                            // interrupt report
+                            `assert_rx(64'hD505500000008019)
+                        end
+                    86000:
+                        begin
+                            // interrupt re-report every 10k cycles
+                            `assert_rx(64'hD505500000008019)
+                            `assert_signal("Pending ints", dut.s3g_executor.ints_pending, 32'h80000000)
+                        end
+                    87000:
+                        begin
+                            // Clear ints
+                            packet = {8'hD5, 8'd5, 8'd63, 32'h00000080};
+                            send_packet = 1;
+                        end
+                    94000:
+                        begin
+                            // interrupt re-report every 10k cycles
+                            `assert_rx(64'hD50181D2)
+                            `assert_signal("Pending ints", dut.s3g_executor.ints_pending, 32'h00000000)
+                        end
                 endcase
 
                 #2;
@@ -212,7 +247,7 @@ initial
                 #5;
                 cycle = cycle + 1;
                 // $display(cycle);
-                if (cycle == 70000) $finish();
+                if (cycle == 100000) $finish();
             end
     end
 
