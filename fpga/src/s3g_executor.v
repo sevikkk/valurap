@@ -445,7 +445,7 @@ always @(tx_busy, rx_packet_done, rx_packet_done, rx_packet_error, rx_payload_le
                                     next_tx_cmd <= CMD_OK;
                                 end
                             else
-                                case (rx_buf0)
+                                case (rx_buf2)
                                     0:
                                         next_tx_cmd <= CMD_VERSION;
                                     27:
@@ -453,40 +453,40 @@ always @(tx_busy, rx_packet_done, rx_packet_done, rx_packet_error, rx_payload_le
                                     60: // WRITE_OUT_REG
                                         begin
                                             int_out_reg_stb <= 1;
-                                            int_out_reg_addr <= rx_buf1;
-                                            int_out_reg_data <= {rx_buf5, rx_buf4, rx_buf3, rx_buf2};
+                                            int_out_reg_addr <= rx_buf3;
+                                            int_out_reg_data <= {rx_buf7, rx_buf6, rx_buf5, rx_buf4};
                                             next_tx_cmd <= CMD_OK;
                                         end
                                     61: // READ_IN_REG
                                         begin
-                                            next_in_mux <= rx_buf1;
+                                            next_in_mux <= rx_buf3;
                                             next_state <= S_READ;
                                             next_tx_cmd <= CMD_NONE;
                                         end
                                     62: // OUT_STBS
                                         begin
-                                            next_out_stbs <= {rx_buf4, rx_buf3, rx_buf2, rx_buf1};
+                                            next_out_stbs <= {rx_buf6, rx_buf5, rx_buf4, rx_buf3};
                                             next_tx_cmd <= CMD_OK;
                                         end
                                     63: // CLEAR_INTS
                                         begin
-                                            ints_to_clear <= {rx_buf4, rx_buf3, rx_buf2, rx_buf1};
+                                            ints_to_clear <= {rx_buf6, rx_buf5, rx_buf4, rx_buf3};
                                             next_ints_timer <= 0;
                                             next_tx_cmd <= CMD_OK;
                                         end
                                     64: // MASK_INTS
                                         begin
-                                            next_ints_mask <= {rx_buf4, rx_buf3, rx_buf2, rx_buf1};
+                                            next_ints_mask <= {rx_buf6, rx_buf5, rx_buf4, rx_buf3};
                                             next_ints_timer <= 0;
                                             next_tx_cmd <= CMD_OK;
                                         end
                                     65: // WRITE_BUF
                                         begin
-                                            next_rx_buffer_addr <= 4;
-                                            next_word_cnt <= rx_buf1;
-                                            next_ext_buffer_addr <= {rx_buf3, rx_buf2};
-                                            next_saved_ext_buffer_addr <= {rx_buf3, rx_buf2};
-                                            if (rx_buf1 == 0)
+                                            next_rx_buffer_addr <= 6;
+                                            next_word_cnt <= rx_buf3;
+                                            next_ext_buffer_addr <= {rx_buf5, rx_buf4};
+                                            next_saved_ext_buffer_addr <= {rx_buf5, rx_buf4};
+                                            if (rx_buf3 == 0)
                                                 begin
                                                     next_state <= S_DELAY;
                                                     next_tx_cmd <= CMD_WR_BUF_OK;
@@ -630,84 +630,102 @@ always @(posedge clk)
             CMD_OK:
                 begin
                     tx_packet_wr <= 1;
-                    tx_payload_len <= 1;
-                    tx_buf0 <= 8'h81;
+                    tx_payload_len <= 3;
+                    tx_buf0 <= rx_buf0;
+                    tx_buf1 <= rx_buf1;
+                    tx_buf2 <= 8'h81;
                 end
             CMD_ERROR:
                 begin
                     tx_packet_wr <= 1;
-                    tx_payload_len <= 1;
-                    tx_buf0 <= 8'h80;
+                    tx_payload_len <= 3;
+                    tx_buf0 <= rx_buf0;
+                    tx_buf1 <= rx_buf1;
+                    tx_buf2 <= 8'h80;
                 end
             CMD_UNKNOWN:
                 begin
                     tx_packet_wr <= 1;
-                    tx_payload_len <= 1;
-                    tx_buf0 <= 8'h85;
+                    tx_payload_len <= 3;
+                    tx_buf0 <= rx_buf0;
+                    tx_buf1 <= rx_buf1;
+                    tx_buf2 <= 8'h85;
                 end
             CMD_VERSION:
                 begin
                     tx_packet_wr <= 1;
-                    tx_payload_len <= 3;
-                    tx_buf0 <= 8'h81;
-                    tx_buf1 <= 8'hBA;
-                    tx_buf2 <= 8'hCE;
+                    tx_payload_len <= 5;
+                    tx_buf0 <= rx_buf0;
+                    tx_buf1 <= rx_buf1;
+                    tx_buf2 <= 8'h81;
+                    tx_buf3 <= 8'hBA;
+                    tx_buf4 <= 8'hCE;
                 end
             CMD_EXT_VERSION:
                 begin
                     tx_packet_wr <= 1;
-                    tx_payload_len <= 9;
-                    tx_buf0 <= 8'h81;
-                    tx_buf1 <= EXT_VER_1;
-                    tx_buf2 <= EXT_VER_2;
-                    tx_buf3 <= EXT_VER_3;
-                    tx_buf4 <= EXT_VER_4;
-                    tx_buf5 <= EXT_VER_5;
-                    tx_buf6 <= EXT_VER_6;
-                    tx_buf7 <= EXT_VER_7;
-                    tx_buf8 <= EXT_VER_8;
+                    tx_payload_len <= 11;
+                    tx_buf0 <= rx_buf0;
+                    tx_buf1 <= rx_buf1;
+                    tx_buf2 <= 8'h81;
+                    tx_buf3 <= EXT_VER_1;
+                    tx_buf4 <= EXT_VER_2;
+                    tx_buf5 <= EXT_VER_3;
+                    tx_buf6 <= EXT_VER_4;
+                    tx_buf7 <= EXT_VER_5;
+                    tx_buf8 <= EXT_VER_6;
+                    tx_buf9 <= EXT_VER_7;
+                    tx_buf10 <= EXT_VER_8;
                 end
             CMD_READ_REG:
                 begin
                     tx_packet_wr <= 1;
-                    tx_payload_len <= 5;
-                    tx_buf0 <= 8'h81;
-                    tx_buf1 <= in_data[7:0];
-                    tx_buf2 <= in_data[15:8];
-                    tx_buf3 <= in_data[23:16];
-                    tx_buf4 <= in_data[31:24];
+                    tx_payload_len <= 7;
+                    tx_buf0 <= rx_buf0;
+                    tx_buf1 <= rx_buf1;
+                    tx_buf2 <= 8'h81;
+                    tx_buf3 <= in_data[7:0];
+                    tx_buf4 <= in_data[15:8];
+                    tx_buf5 <= in_data[23:16];
+                    tx_buf6 <= in_data[31:24];
                 end
             CMD_INTERRUPT:
                 begin
                     tx_packet_wr <= 1;
-                    tx_payload_len <= 5;
-                    tx_buf0 <= 80;
-                    tx_buf1 <= ints_pending[7:0];
-                    tx_buf2 <= ints_pending[15:8];
-                    tx_buf3 <= ints_pending[23:16];
-                    tx_buf4 <= ints_pending[31:24];
+                    tx_payload_len <= 7;
+                    tx_buf0 <= 8'hFF;
+                    tx_buf1 <= 8'hFF;
+                    tx_buf2 <= 80;
+                    tx_buf3 <= ints_pending[7:0];
+                    tx_buf4 <= ints_pending[15:8];
+                    tx_buf5 <= ints_pending[23:16];
+                    tx_buf6 <= ints_pending[31:24];
                 end
             CMD_WR_BUF_OK:
                 begin
                     tx_packet_wr <= 1;
-                    tx_payload_len <= 6;
-                    tx_buf0 <= 8'h81;
-                    tx_buf1 <= saved_ext_buffer_addr[7:0];
-                    tx_buf2 <= saved_ext_buffer_addr[15:8];
-                    tx_buf3 <= ext_buffer_error[7:0];
-                    tx_buf4 <= ext_buffer_pc[7:0];
-                    tx_buf5 <= ext_buffer_pc[15:8];
+                    tx_payload_len <= 8;
+                    tx_buf0 <= rx_buf0;
+                    tx_buf1 <= rx_buf1;
+                    tx_buf2 <= 8'h81;
+                    tx_buf3 <= saved_ext_buffer_addr[7:0];
+                    tx_buf4 <= saved_ext_buffer_addr[15:8];
+                    tx_buf5 <= ext_buffer_error[7:0];
+                    tx_buf6 <= ext_buffer_pc[7:0];
+                    tx_buf7 <= ext_buffer_pc[15:8];
                 end
             CMD_WR_BUF_ERR:
                 begin
                     tx_packet_wr <= 1;
-                    tx_payload_len <= 6;
-                    tx_buf0 <= 8'h82;
-                    tx_buf1 <= saved_ext_buffer_addr[7:0];
-                    tx_buf2 <= saved_ext_buffer_addr[15:8];
-                    tx_buf3 <= ext_buffer_error[7:0];
-                    tx_buf4 <= ext_buffer_pc[7:0];
-                    tx_buf5 <= ext_buffer_pc[15:8];
+                    tx_payload_len <= 8;
+                    tx_buf0 <= rx_buf0;
+                    tx_buf1 <= rx_buf1;
+                    tx_buf2 <= 8'h82;
+                    tx_buf3 <= saved_ext_buffer_addr[7:0];
+                    tx_buf4 <= saved_ext_buffer_addr[15:8];
+                    tx_buf5 <= ext_buffer_error[7:0];
+                    tx_buf6 <= ext_buffer_pc[7:0];
+                    tx_buf7 <= ext_buffer_pc[15:8];
                 end
         endcase
     end

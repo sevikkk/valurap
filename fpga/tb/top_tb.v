@@ -60,7 +60,7 @@ always @(posedge clk)
 mojo_top #(
         .AVR_BAUD_RATE(BR),
         .EXT_BAUD_RATE(BR),
-        .INTS_TIMER(10000)
+        .INTS_TIMER(15000)
     ) dut (
            .clk(clk),
            .rst_n(rst_n),
@@ -141,152 +141,165 @@ initial
                         end
                     2600:
                         begin
-                            tx_data = 8'h01;
+                            tx_data = 8'h03;
                             tx_wr = 1;
                         end
                     3700:
                         begin
-                            tx_data = 8'h00;
+                            tx_data = 8'h80;
                             tx_wr = 1;
                         end
                     4800:
                         begin
+                            tx_data = 8'h81;
+                            tx_wr = 1;
+                        end
+                    5900:
+                        begin
                             tx_data = 8'h00;
                             tx_wr = 1;
                         end
-                    8500: `assert_rx(48'hD50381BACEF9)
+                    7000:
+                        begin
+                            tx_data = 8'h89;
+                            tx_wr = 1;
+                        end
+                    12000: `assert_rx(128'hd505808181bace64)
 
                     15000:
                         begin
                             // Version request
-                            packet = 24'hD50100;
+                            packet = 128'hD503808100;
                             send_packet = 1;
                         end
-                    20500: `assert_rx(48'hD50381BACEF9)
+                    23000: `assert_rx(128'hd505808181bace64)
 
                     25000:
                         begin
                             // Invalid command
-                            packet = {8'hD5, 8'd5, 40'h1213141516};
+                            packet = {8'hD5, 8'd7, 16'h1234, 40'h1213141516};
                             send_packet = 1;
                         end
-                    32000: `assert_rx(32'hD50185B3)
+                    34000: `assert_rx(128'hd503123485a0)
 
                     35000:
                         begin
                             // Write register 0 (Leds)
-                            packet = {8'hD5, 8'd6, 8'd60, 8'd0, 32'h12345678};
+                            packet = {8'hD5, 8'd8, 16'h2345, 8'd60, 8'd0, 32'h12345678};
                             send_packet = 1;
                         end
-                    42500:
+                    44500:
                         begin
-                            `assert_rx(32'hD50181D2)
+                            `assert_rx(128'hd503234581c6)
                             `assert_signal("LEDS", dut.led, 8'h12)
                         end
 
                     45000:
                         begin
                             // Write register 63 (Loop-back)
-                            packet = {8'hD5, 8'd6, 8'd60, 8'd63, 32'h13579BDF};
+                            packet = {8'hD5, 8'd8, 16'h2716, 8'd60, 8'd63, 32'h13579BDF};
                             send_packet = 1;
                         end
-                    52500:
+                    54500:
                         begin
-                            `assert_rx(32'hD50181D2)
+                            `assert_rx(128'hd5032716817a)
                             `assert_signal("Loop-back", dut.se_reg_lb, 32'hDF9B5713)
                         end
 
                     55000:
                         begin
                             // Read input 63 (Loop-back)
-                            packet = {8'hD5, 8'd2, 8'd61, 8'd63};
+                            packet = {8'hD5, 8'd4, 16'h3355, 8'd61, 8'd63};
                             send_packet = 1;
                         end
-                    62000:
+                    64500:
                         begin
-                            `assert_rx(64'hD5058113579BDF41)
+                            `assert_rx(128'hd50733558113579bdfd7)
                         end
 
                     65000:
                         begin
                             // Generate STB (looped back to int31, so it triggers interrupt report)
-                            packet = {8'hD5, 8'd5, 8'd62, 32'h00000080};
+                            packet = {8'hD5, 8'd7, 16'h3223, 8'd62, 32'h00000080};
                             send_packet = 1;
                         end
-                    72000:
+                    74000:
                         begin
-                            `assert_rx(64'hD50181D2)
+                            `assert_rx(128'hd503322381d7)
                         end
-                    76000:
+
+                    79000:
                         begin
                             // interrupt report
-                            `assert_rx(64'hD505500000008019)
+                            `assert_rx(128'hd507ffff500000008049)
                         end
-                    86000:
+
+                    94000:
                         begin
                             // interrupt re-report every 10k cycles
-                            `assert_rx(64'hD505500000008019)
+                            `assert_rx(128'hd507ffff500000008049)
                             `assert_signal("Pending ints", dut.s3g_executor.ints_pending, 32'h80000000)
                             `assert_signal("Mask ints", dut.s3g_executor.ints_mask, 32'hffffffff)
                         end
-                    87000:
+                    94500:
                         begin
                             // Mask ints
-                            packet = {8'hD5, 8'd5, 8'd64, 32'hffffff7f};
+                            packet = {8'hD5, 8'd7, 16'h5645, 8'd64, 32'hffffff7f};
                             send_packet = 1;
                         end
-                    94000:
+                    105000:
                         begin
                             // assert mask is right
-                            `assert_rx(64'hD50181D2)
+                            `assert_rx(128'hd5035645811c)
                             `assert_signal("Pending ints", dut.s3g_executor.ints_pending, 32'h80000000)
                             `assert_signal("Mask ints", dut.s3g_executor.ints_mask, 32'h7fffffff)
                         end
-                    108000:
+                    125000:
                         begin
                             // assert no new interrupts
                             `assert_rx(64'h0)
                         end
-                    110000:
+                    126000:
                         begin
                             // unMask ints
-                            packet = {8'hD5, 8'd5, 8'd64, 32'hffffffff};
+                            packet = {8'hD5, 8'd7, 16'h3233, 8'd64, 32'hffffffff};
                             send_packet = 1;
                         end
-                    117000:
+                    135000:
                         begin
                             // assert mask is right
-                            `assert_rx(64'hD50181D2)
+                            `assert_rx(128'hd5033233813b)
                             `assert_signal("Pending ints", dut.s3g_executor.ints_pending, 32'h80000000)
                             `assert_signal("Mask ints", dut.s3g_executor.ints_mask, 32'hffffffff)
                         end
-                    121000:
+                    140000:
                         begin
                             // interrupt report
-                            `assert_rx(64'hD505500000008019)
-                        end
-                    131000:
-                        begin
-                            // interrupt report
-                            `assert_rx(64'hD505500000008019)
-                        end
-                    132000:
-                        begin
-                            // Clear ints
-                            packet = {8'hD5, 8'd5, 8'd63, 32'h00000080};
-                            send_packet = 1;
-                        end
-                    139000:
-                        begin
-                            // assert no pending interrupts
-                            `assert_rx(64'hD50181D2)
-                            `assert_signal("Pending ints", dut.s3g_executor.ints_pending, 32'h00000000)
+                            `assert_rx(128'hd507ffff500000008049)
                         end
                     155000:
+                        begin
+                            // interrupt report
+                            `assert_rx(128'hd507ffff500000008049)
+                        end
+                    156000:
+                        begin
+                            // Clear ints
+                            packet = {8'hD5, 8'd7, 16'h7654, 8'd63, 32'h00000080};
+                            send_packet = 1;
+                        end
+                    165000:
+                        begin
+                            // assert no pending interrupts
+                            `assert_rx(64'hd503765481a0)
+                            `assert_signal("Pending ints", dut.s3g_executor.ints_pending, 32'h00000000)
+                        end
+                    190000:
                         begin
                             // assert no new interrupts
                             `assert_rx(64'h0)
                         end
+                    200000: $finish();
                 endcase
 
                 #2;
@@ -294,7 +307,6 @@ initial
                 #5;
                 cycle = cycle + 1;
                 // $display(cycle);
-                if (cycle == 160000) $finish();
             end
     end
 
@@ -329,7 +341,7 @@ always @(negedge clk)
             end
             tx_data = dut.s3g_rx.crc;
             tx_wr = 1;
-            $display("time: %0d send crc %h", $time, tx_data);
+            $display("time: %0d send crc %h", cycle, tx_data);
             #6000;
 
         end
