@@ -227,18 +227,65 @@ initial
                             // interrupt re-report every 10k cycles
                             `assert_rx(64'hD505500000008019)
                             `assert_signal("Pending ints", dut.s3g_executor.ints_pending, 32'h80000000)
+                            `assert_signal("Mask ints", dut.s3g_executor.ints_mask, 32'hffffffff)
                         end
                     87000:
+                        begin
+                            // Mask ints
+                            packet = {8'hD5, 8'd5, 8'd64, 32'hffffff7f};
+                            send_packet = 1;
+                        end
+                    94000:
+                        begin
+                            // assert mask is right
+                            `assert_rx(64'hD50181D2)
+                            `assert_signal("Pending ints", dut.s3g_executor.ints_pending, 32'h80000000)
+                            `assert_signal("Mask ints", dut.s3g_executor.ints_mask, 32'h7fffffff)
+                        end
+                    108000:
+                        begin
+                            // assert no new interrupts
+                            `assert_rx(64'h0)
+                        end
+                    110000:
+                        begin
+                            // unMask ints
+                            packet = {8'hD5, 8'd5, 8'd64, 32'hffffffff};
+                            send_packet = 1;
+                        end
+                    117000:
+                        begin
+                            // assert mask is right
+                            `assert_rx(64'hD50181D2)
+                            `assert_signal("Pending ints", dut.s3g_executor.ints_pending, 32'h80000000)
+                            `assert_signal("Mask ints", dut.s3g_executor.ints_mask, 32'hffffffff)
+                        end
+                    121000:
+                        begin
+                            // interrupt report
+                            `assert_rx(64'hD505500000008019)
+                        end
+                    131000:
+                        begin
+                            // interrupt report
+                            `assert_rx(64'hD505500000008019)
+                        end
+                    132000:
                         begin
                             // Clear ints
                             packet = {8'hD5, 8'd5, 8'd63, 32'h00000080};
                             send_packet = 1;
                         end
-                    94000:
+                    139000:
                         begin
-                            // interrupt re-report every 10k cycles
+                            // assert no pending interrupts
                             `assert_rx(64'hD50181D2)
                             `assert_signal("Pending ints", dut.s3g_executor.ints_pending, 32'h00000000)
+                        end
+                    155000:
+                        begin
+                            // assert no new interrupts
+                            `assert_rx(64'h0)
                         end
                 endcase
 
@@ -247,7 +294,7 @@ initial
                 #5;
                 cycle = cycle + 1;
                 // $display(cycle);
-                if (cycle == 100000) $finish();
+                if (cycle == 160000) $finish();
             end
     end
 
