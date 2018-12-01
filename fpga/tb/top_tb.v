@@ -182,6 +182,29 @@ initial
                             `assert_rx(32'hD50181D2)
                             `assert_signal("LEDS", dut.led, 8'h12)
                         end
+
+                    45000:
+                        begin
+                            // Write register 63 (Loop-back)
+                            packet = {8'hD5, 8'd6, 8'd60, 8'd63, 32'h13579BDF};
+                            send_packet = 1;
+                        end
+                    52500:
+                        begin
+                            `assert_rx(32'hD50181D2)
+                            `assert_signal("Loop-back", dut.se_reg_lb, 32'hDF9B5713)
+                        end
+
+                    55000:
+                        begin
+                            // Read input 63 (Loop-back)
+                            packet = {8'hD5, 8'd2, 8'd61, 8'd63};
+                            send_packet = 1;
+                        end
+                    62000:
+                        begin
+                            `assert_rx(64'hD5058113579BDF41)
+                        end
                 endcase
 
                 #2;
@@ -189,7 +212,7 @@ initial
                 #5;
                 cycle = cycle + 1;
                 // $display(cycle);
-                if (cycle == 50000) $finish();
+                if (cycle == 70000) $finish();
             end
     end
 
