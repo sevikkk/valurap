@@ -75,6 +75,12 @@ mojo_top #(
         rx_buffer = 0; \
     end
 
+`define assert_signal(name, signal, value) \
+    begin if (signal != value) begin \
+            $display("ASSERTION FAILED in %m at %0d: actual %s %h != expected %h", cycle, name, signal, value); \
+        end \
+    end
+
 initial
     begin
         $dumpfile("test.vcd");
@@ -164,6 +170,18 @@ initial
                             send_packet = 1;
                         end
                     32000: `assert_rx(32'hD50185B3)
+
+                    35000:
+                        begin
+                            // Write register 0 (Leds)
+                            packet = {8'hD5, 8'd6, 8'd60, 8'd0, 32'h12345678};
+                            send_packet = 1;
+                        end
+                    42500:
+                        begin
+                            `assert_rx(32'hD50181D2)
+                            `assert_signal("LEDS", dut.led, 8'h12)
+                        end
                 endcase
 
                 #2;
@@ -171,7 +189,7 @@ initial
                 #5;
                 cycle = cycle + 1;
                 // $display(cycle);
-                if (cycle == 40000) $finish();
+                if (cycle == 50000) $finish();
             end
     end
 
