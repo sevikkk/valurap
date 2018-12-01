@@ -299,7 +299,70 @@ initial
                             // assert no new interrupts
                             `assert_rx(64'h0)
                         end
-                    200000: $finish();
+                    200000:
+                        begin
+                            // Load simple prog:
+                            //    0x88776655 -> reg0
+                            //    DONE
+                            packet = {
+                                        8'hD5, 8'd16, 16'h7654,
+                                        8'd65, 8'd2, 16'h0,
+                                        { 32'h55667788, 2'b01, 6'd0},
+                                        { 32'h00000000, 2'b10, 6'd63}
+                            };
+                            send_packet = 1;
+                        end
+                    217000:
+                        begin
+                            `assert_rx(128'hd508765481000000000033)
+                        end
+                    220000:
+                        begin
+                            // Set start addr for buf_exec
+                            packet = {
+                                        8'hD5, 8'd8, 16'h7654,
+                                        8'd60, 8'd62, 32'h0
+                            };
+                            send_packet = 1;
+                        end
+                    229500:
+                        begin
+                            `assert_rx(128'hd503765481a0)
+                        end
+                    230000:
+                        begin
+                            // Send be_start strobe
+                            packet = {
+                                        8'hD5, 8'd7, 16'h7654,
+                                        8'd62, 32'h00000020
+                            };
+                            send_packet = 1;
+                        end
+                    239000:
+                        begin
+                            `assert_rx(128'hd503765481a0)
+                        end
+                    244000:
+                        begin
+                            // Complete interrupt, check leds are changed
+                            `assert_rx(128'hd507ffff500000004083)
+                            `assert_signal("LEDS", dut.led, 8'h55)
+                        end
+                    245000:
+                        begin
+                            // Clear be_complete interrupt
+                            packet = {8'hD5, 8'd7, 16'h7654, 8'd63, 32'h00000040};
+                            send_packet = 1;
+                        end
+                    254000:
+                        begin
+                            `assert_rx(128'hd503765481a0)
+                        end
+                    290000:
+                        begin
+                            `assert_rx(64'h0)
+                        end
+                    300000: $finish();
                 endcase
 
                 #2;
