@@ -169,6 +169,8 @@ wire be_start;
 wire [31:0] be_start_addr;
 wire be_abort;
 wire be_complete;
+wire be_busy;
+wire be_waiting;
 
 wire se_int_lb;
 wire [31:0] se_reg_lb;
@@ -249,8 +251,7 @@ s3g_executor s3g_executor(
     .tx_buf14(tx_buf14),
     .tx_buf15(tx_buf15),
 
-    .in_reg61(16'd0 & ext_buffer_pc),
-    .in_reg62(24'd0 & ext_buffer_error),
+    .in_reg62({be_busy, be_waiting, 6'b0, ext_buffer_error, ext_buffer_pc}),
     .in_reg63(se_reg_lb),
 
     .out_reg0(out_reg0),
@@ -329,6 +330,8 @@ buf_executor buf_exec(
            .start_addr(be_start_addr[15:0]),
            .abort(be_abort),
            .complete(be_complete),
+           .busy(be_busy),
+           .waiting(be_waiting),
            .ext_pending_ints(ext_pending_ints),
            .ext_clear_ints(ext_clear_ints),
            .ext_out_stbs(ext_out_stbs)

@@ -21,7 +21,9 @@ module buf_executor (
            input abort,
            output reg complete,
            output reg [15:0] pc,
-           output reg [7:0] error
+           output reg [7:0] error,
+           output reg busy,
+           output reg waiting
 );
 
 reg [3:0] state;
@@ -30,6 +32,9 @@ reg [3:0] next_state;
 reg [15:0] next_pc;
 
 reg [7:0] next_error;
+
+reg next_busy;
+reg next_waiting;
 
 parameter BUFFER_ADDR_LEN = 13;
 
@@ -59,11 +64,14 @@ always @(state, pc, rst, ext_out_reg_busy, start, start_addr, abort, error)
         next_error <= 0;
         ext_out_stbs <= 0;
         ext_clear_ints <= 0;
+        next_busy <= 1;
+        next_waiting <= 0;
 
         if (rst || abort)
             begin
                 next_pc <= 0;
                 next_state <= S_INIT;
+                next_busy <= 0;
                 if (abort)
                     next_error <= 8'h82;
                 else
@@ -74,6 +82,7 @@ always @(state, pc, rst, ext_out_reg_busy, start, start_addr, abort, error)
                 S_INIT:
                     begin
                         next_error <= error;
+                        next_busy <= 0;
                         if (start)
                             begin
                                 next_pc <= start_addr;
@@ -120,7 +129,10 @@ always @(state, pc, rst, ext_out_reg_busy, start, start_addr, abort, error)
                                                     next_pc <= pc + 1;
                                                 end
                                             else
-                                                next_error <= 2;
+                                                begin
+                                                    next_error <= 2;
+                                                    next_busy <= 1;
+                                                end
                                         end
                                     3: // WAIT_ANY
                                         begin
@@ -130,7 +142,10 @@ always @(state, pc, rst, ext_out_reg_busy, start, start_addr, abort, error)
                                                     next_pc <= pc + 1;
                                                 end
                                             else
-                                                next_error <= 2;
+                                                begin
+                                                    next_error <= 2;
+                                                    next_busy <= 1;
+                                                end
                                         end
                                     4: // CLEAR clear ints
                                         begin
@@ -163,6 +178,7 @@ always @(state, pc, rst, ext_out_reg_busy, start, start_addr, abort, error)
                     begin
                         next_state <= S_INIT;
                         next_error <= 0;
+                        next_busy <= 0;
                     end
             endcase
     end
@@ -172,6 +188,8 @@ always @(posedge clk)
         pc <= next_pc;
         state <= next_state;
         error <= next_error;
+        busy <= next_busy;
+        waiting <= next_waiting;
     end
 
 endmodule

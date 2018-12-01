@@ -26,9 +26,11 @@ reg [2047:0] packet = 512'hD50123456789;
 reg send_packet = 0;
 
 
+localparam BR=1000000;
+
 dds_uart_clock uclock1(
                    .clk(clk),
-                   .baudrate(50000),
+                   .baudrate(BR/100),
                    .enable_16(enable_16)
                );
 
@@ -44,8 +46,8 @@ uart_transceiver uart1(
                  );
 
 mojo_top #(
-        .AVR_BAUD_RATE(5000000),
-        .EXT_BAUD_RATE(5000000)
+        .AVR_BAUD_RATE(BR),
+        .EXT_BAUD_RATE(BR)
     ) dut (
            .clk(clk),
            .rst_n(rst_n),
@@ -143,7 +145,7 @@ initial
                 clk = 0;
                 #5;
                 cycle = cycle + 1;
-                $display(cycle);
+                // $display(cycle);
                 if (cycle == 40000) $finish();
             end
     end
@@ -166,7 +168,7 @@ always @(negedge clk)
                                 tx_data = packet[ppos-:8];
                                 tx_wr = 1;
                                 $display("time: %g send %h", $time, tx_data);
-                                #5000;
+                                #6000;
                             end
                     end
                 else
@@ -174,13 +176,13 @@ always @(negedge clk)
                         tx_data = packet[ppos-:8];
                         tx_wr = 1;
                         $display("time: %g send %h", $time, tx_data);
-                        #5000;
+                        #6000;
                     end
             end
             tx_data = dut.s3g_rx.crc;
             tx_wr = 1;
             $display("time: %g send crc %h", $time, tx_data);
-            #5000;
+            #6000;
 
         end
     end
