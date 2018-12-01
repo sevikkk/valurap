@@ -6,6 +6,7 @@
 `include "../src/cclk_detector.v"
 `include "../src/dds_uart_clock.v"
 `include "../src/uart_transceiver.v"
+`include "../src/acc_step_gen.v"
 
 module top_tb;
 

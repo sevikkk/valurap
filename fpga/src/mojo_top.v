@@ -38,8 +38,6 @@ assign spi_channel = 4'bzzzz;
 wire ready;
 wire n_rdy = !ready;
 
-reg [27:0] cnt;
-
 cclk_detector #(.CLK_RATE(CLK_RATE)) cclk_detector (
     .clk(clk),
     .rst(rst),
@@ -147,6 +145,23 @@ wire [7:0] tx_buf15;
 
 
 wire [31:0] out_reg0;
+wire [31:0] out_reg3;
+wire [31:0] out_reg4;
+wire [31:0] out_reg5;
+wire [31:0] out_reg6;
+wire [31:0] out_reg7;
+wire [31:0] out_reg8;
+wire [31:0] out_reg9;
+wire [31:0] out_reg10;
+wire [31:0] out_reg11;
+wire [31:0] out_reg12;
+wire [31:0] out_reg13;
+wire [31:0] out_reg14;
+wire [31:0] out_reg15;
+wire [31:0] out_reg16;
+wire [31:0] out_reg17;
+wire [31:0] out_reg18;
+wire [31:0] out_reg19;
 
 wire [31:0] stbs;
 
@@ -175,6 +190,24 @@ wire be_waiting;
 
 wire se_int_lb;
 wire [31:0] se_reg_lb;
+
+wire [31:0] asg_dt_val;
+wire [31:0] asg_steps_val;
+wire [31:0] asg_dt;
+wire [31:0] asg_steps;
+wire asg_load;
+wire asg_set_steps_limit;
+wire asg_set_dt_limit;
+wire asg_reset_steps;
+wire asg_reset_dt;
+wire asg_abort;
+wire asg_step;
+wire asg_done;
+
+assign asg_set_steps_limit = out_reg3[0];
+assign asg_set_dt_limit = out_reg3[1];
+assign asg_reset_steps = out_reg3[2];
+assign asg_reset_dt = out_reg3[3];
 
 s3g_rx s3g_rx(
     .clk(clk),
@@ -252,18 +285,40 @@ s3g_executor #(.INTS_TIMER(INTS_TIMER)) s3g_executor(
     .tx_buf14(tx_buf14),
     .tx_buf15(tx_buf15),
 
+    .in_reg0(asg_dt),
+    .in_reg1(asg_steps),
+
     .in_reg62({be_busy, be_waiting, 6'b0, ext_buffer_error, ext_buffer_pc}),
     .in_reg63(se_reg_lb),
 
-    .out_reg0(out_reg0),
+    .out_reg0(out_reg0), // leds
+    .out_reg1(asg_steps_val),
+    .out_reg2(asg_dt_val),
+    .out_reg3(out_reg3), // asg_control
+    .out_reg4(out_reg4),
+    .out_reg5(out_reg5),
+    .out_reg6(out_reg6),
+    .out_reg7(out_reg7),
+    .out_reg8(out_reg8),
+    .out_reg9(out_reg9),
+    .out_reg10(out_reg10),
+    .out_reg11(out_reg11),
+    .out_reg12(out_reg12),
+    .out_reg13(out_reg13),
+    .out_reg14(out_reg14),
+    .out_reg15(out_reg15),
+    .out_reg16(out_reg16),
+    .out_reg17(out_reg17),
+    .out_reg18(out_reg18),
+    .out_reg19(out_reg19),
 
     .out_reg62(be_start_addr),
     .out_reg63(se_reg_lb),
 
     .out_stbs(stbs),
 
-    .int0(1'b0),
-    .int1(1'b0),
+    .int0(asg_done),
+    .int1(asg_abort),
     .int2(1'b0),
     .int3(1'b0),
     .int4(1'b0),
@@ -309,6 +364,8 @@ s3g_executor #(.INTS_TIMER(INTS_TIMER)) s3g_executor(
     .ext_clear_ints(ext_clear_ints),
     .ext_out_stbs(ext_out_stbs)
 );
+
+assign asg_load = stbs[0];
 
 assign be_start = stbs[29];
 assign be_abort = stbs[30];
@@ -370,19 +427,21 @@ buf_executor buf_exec(
 
 assign led = out_reg0;
 
-always @(posedge clk)
-   if (rx_packet_done)
-       begin
-           cnt[27:20] <= rx_buf0;
-           cnt[19:0] <= 20'b0;
-       end
-   else if (new_rx_data)
-       begin
-           // cnt[27:20] <= rx_data;
-           // cnt[19:0] <= 20'b0;
-           cnt <= cnt;
-       end
-   else
-       cnt <= cnt;
+acc_step_gen asg(
+           .clk(clk),
+           .reset(n_rdy),
+           .dt_val(asg_dt_val),
+           .steps_val(asg_steps_val),
+           .load(asg_load),
+           .set_steps_limit(asg_set_steps_limit),
+           .set_dt_limit(asg_set_dt_limit),
+           .reset_steps(asg_reset_steps),
+           .reset_dt(asg_reset_dt),
+           .steps(asg_steps),
+           .dt(asg_dt),
+           .abort(asg_abort),
+           .step_stb(asg_step),
+           .done(asg_done)
+       );
 
 endmodule
