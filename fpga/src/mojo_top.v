@@ -1,6 +1,7 @@
 module mojo_top #(
     parameter CLK_RATE = 50000000,
-    parameter SERIAL_BAUD_RATE = 500000
+    parameter AVR_BAUD_RATE = 500000,
+    parameter EXT_BAUD_RATE = 115200
 )(
     // 50MHz clock input
     input clk,
@@ -56,7 +57,7 @@ wire enable_16;
 
 dds_uart_clock uclock1(
                    .clk(clk),
-                   .baudrate(16'd5000),
+                   .baudrate(AVR_BAUD_RATE/100),
                    .enable_16(enable_16)
                );
 
@@ -79,7 +80,7 @@ wire enable_16_2;
 
 dds_uart_clock uclock2(
                    .clk(clk),
-                   .baudrate(16'd1152),
+                   .baudrate(EXT_BAUD_RATE/100),
                    .enable_16(enable_16_2)
                );
 
@@ -143,7 +144,34 @@ wire [7:0] tx_buf13;
 wire [7:0] tx_buf14;
 wire [7:0] tx_buf15;
 
+
 wire [31:0] out_reg0;
+
+wire [31:0] stbs;
+
+wire [15:0] ext_buffer_addr;
+wire [39:0] ext_buffer_data;
+wire ext_buffer_wr;
+
+wire [7:0] ext_buffer_error;
+wire [15:0] ext_buffer_pc;
+
+wire [31:0] ext_out_reg_data;
+wire [5:0] ext_out_reg_addr;
+wire ext_out_reg_stb;
+wire ext_out_reg_busy;
+
+wire [31:0] ext_out_stbs;
+wire [31:0] ext_pending_ints;
+wire [31:0] ext_clear_ints;
+
+wire be_start;
+wire [31:0] be_start_addr;
+wire be_abort;
+wire be_complete;
+
+wire se_int_lb;
+wire [31:0] se_reg_lb;
 
 s3g_rx s3g_rx(
     .clk(clk),
@@ -221,8 +249,38 @@ s3g_executor s3g_executor(
     .tx_buf14(tx_buf14),
     .tx_buf15(tx_buf15),
 
-    .out_reg0(out_reg0)
+    .in_reg61(16'd0 & ext_buffer_pc),
+    .in_reg62(24'd0 & ext_buffer_error),
+    .in_reg63(se_reg_lb),
+
+    .out_reg0(out_reg0),
+
+    .out_reg62(be_start_addr),
+    .out_reg63(se_reg_lb),
+
+    .out_stbs(stbs),
+
+    .int30(be_complete),
+    .int31(se_int_lb),
+
+    .ext_out_reg_busy(ext_out_reg_busy),
+    .ext_out_reg_data(ext_out_reg_data),
+    .ext_out_reg_addr(ext_out_reg_addr),
+    .ext_out_reg_stb(ext_out_reg_stb),
+
+    .ext_buffer_addr(ext_buffer_addr),
+    .ext_buffer_data(ext_buffer_data),
+    .ext_buffer_wr(ext_buffer_wr),
+    .ext_buffer_pc(ext_buffer_pc),
+    .ext_buffer_error(ext_buffer_error),
+    .ext_pending_ints(ext_pending_ints),
+    .ext_clear_ints(ext_clear_ints),
+    .ext_out_stbs(ext_out_stbs)
 );
+
+assign be_start = stbs[29];
+assign be_abort = stbs[30];
+assign se_int_lb = stbs[31];
 
 s3g_tx s3g_tx1(
            .clk(clk),
@@ -251,6 +309,30 @@ s3g_tx s3g_tx1(
            .buf14(tx_buf14),
            .buf15(tx_buf15)
        );
+
+buf_executor buf_exec(
+           .clk(clk),
+           .rst(n_rdy),
+
+           .ext_out_reg_addr(ext_out_reg_addr),
+           .ext_out_reg_data(ext_out_reg_data),
+           .ext_out_reg_stb(ext_out_reg_stb),
+           .ext_out_reg_busy(ext_out_reg_busy),
+
+           .ext_buffer_addr(ext_buffer_addr),
+           .ext_buffer_data(ext_buffer_data),
+           .ext_buffer_wr(ext_buffer_wr),
+           .pc(ext_buffer_pc),
+           .error(ext_buffer_error),
+
+           .start(be_start),
+           .start_addr(be_start_addr[15:0]),
+           .abort(be_abort),
+           .complete(be_complete),
+           .ext_pending_ints(ext_pending_ints),
+           .ext_clear_ints(ext_clear_ints),
+           .ext_out_stbs(ext_out_stbs)
+);
 
 assign led = out_reg0;
 

@@ -27,6 +27,7 @@ SRC = \
 	src/s3g_rx.v \
 	src/s3g_tx.v \
 	src/s3g_executor.v \
+	src/buf_executor.v \
 	src/$(TOP).v
 
 all:		bits
@@ -51,7 +52,7 @@ download: bits
 # Simulation
 #
 
-TB?= s3g_rx_tb
+TB?= top_tb
 
 build/top_exe: $(SRC) tb/$(TB).v
 	@[ -d build ] || mkdir build
