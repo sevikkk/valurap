@@ -79,7 +79,7 @@ Reply
 |   0   |    1 |  0xD5 - header
 |   1   |    1 |  Payload length (N)
 |   2   |    2     |  Tag - copied from request or 0xFFFF
-|   4   |    1     |  Reply code Code
+|   4   |    1     |  Reply Code
 |   5   |    N - 3 |  Arguments
 |  N + 1|   1      | CRC
 
