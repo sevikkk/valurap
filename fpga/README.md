@@ -4,12 +4,14 @@ Outputs
 |Number | Name | Bits | Description
 |------ | ---- | ---- | -----------
 |0  |  LEDS | 7..0 | On-board LEDs
+|  |        | 31..8 | Unused
 |1  |  ASG_STEPS_VAL | 31..0 | Number of steps in current acceleration cycle
 |2  | ASG_DT_VAL | 31..0 | Length of each step in current cycle in clocks
 |3  | ASG_CONTROL | 0 | Set steps limit
 |   |             | 1 | Set DT limit
 |   |             | 2 | Reset steps
 |   |             | 3 | Reset DT
+|   |             | 4..31 | Unused
 |4..61| Unused
 |62 | BE_START_ADDR | 15..0 | Start address for buf_exec
 |63 | SE_REG_LB | 31..0| Looped back to Input 63
