@@ -43,7 +43,7 @@ Number | Name | Description
 
 
 Strobes
-==========
+=======
 
 Number | Name | Description
 ------ | ---- | -----------
@@ -53,3 +53,70 @@ Number | Name | Description
  30 | BE_ABORT | Abort buf_exec execution
  31 | SE_INT_LB | Looped back to Int 31
 
+
+S3G proto
+============
+
+Request
+-------
+
+ Offset | Size | Description
+ -------|------|-------------
+    0   |    1 |  0xD5 - header
+    1   |    1 |  Payload length (N)
+    2   |    2     |  Tag - will be copied to reply
+    4   |    1     |  Command Code
+    5   |    N - 3 |  Arguments
+   N + 1|   1      | CRC
+
+Reply
+-----
+
+ Offset | Size | Description
+ -------|------|-------------
+    0   |    1 |  0xD5 - header
+    1   |    1 |  Payload length (N)
+    2   |    2     |  Tag - copied from request or 0xFFFF
+    4   |    1     |  Reply code Code
+    5   |    N - 3 |  Arguments
+   N + 1|   1      | CRC
+
+Reply Codes
+-----------
+Code | Name | Description
+-----|------|------------
+  80 | Interrupt | Interrupt report (originated by device)
+ 0x80  | Error   | Error
+ 0x81  | OK   | Success, can be followed by reply args
+ 0x82  | BufError   | Error writing to buf_exec memory
+ 0x85  | Unknown | Unknown command
+
+Command Codes
+-------------
+
+Command | Name | Args | Reply
+--------|------|------|-------
+  0     | Version | -- |  OK 0xBA 0xCE
+  27    | Extended Version | -- | OK 0x01 0x00 0x01 0x00 0xCE 0x00 0x00 0x00
+  60    | Write register | 0: reg num 1..4: value | OK
+  61    | Read input | 0: input num | OK 0..3: Value
+  62    | Send Strobes | 0..3: Mask | OK
+  63    | Clear pending interrupts| 0..3: Mask
+  64    | Mask interrupts| 0..3: Mask
+  65    | Write buf_exec memory| 0: Word count 1..2: Offset 3..3+N*5: Data| {OK, BufError} 0..1: Addr 2: Curent Error 3..4: PC
+
+Buf Executor Commands
+=====================
+
+Format | Name | Description
+-------|------|-------------
+0 0 X:6 X:32 | ...
+0 1 reg_num:6 value:32 | WRITE_REG| Write value to output
+1 0 0:6 X:32 | NOP | Nop
+1 0 1:6 mask:32 | STB | Send STBs
+1 0 2:6 mask:32 | WAIT_ALL | Wait for all Ints
+1 0 3:6 mask:32 | WAIT_ANY | Wait for any of Ints
+1 0 4:6 masK:32 | CLEAR | Clear INTs
+1 0 5-62:6 X:32 | ...
+1 0 63:6 X:32 | DONE | Halt and report
+1 1 X:6 X:32 | ...
