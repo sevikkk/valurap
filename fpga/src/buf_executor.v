@@ -53,7 +53,7 @@ always @(posedge clk)
 
 localparam S_INIT = 0, S_WAIT_DONE = 1, S_REG_BUSY = 2, S_DECODE = 3, S_FETCH = 4;
 
-always @(state, pc, rst, ext_out_reg_busy, start, start_addr, abort, error)
+always @(state, pc, rst, ext_out_reg_busy, start, start_addr, abort, error, ext_pending_ints, buffer_data)
     begin
         next_pc <= pc;
         next_state <= state;
@@ -123,7 +123,7 @@ always @(state, pc, rst, ext_out_reg_busy, start, start_addr, abort, error)
                                         end
                                     2: // WAIT_ALL
                                         begin
-                                            if (ext_pending_ints & buffer_data[31:0] == buffer_data[31:0])
+                                            if ((ext_pending_ints & buffer_data[31:0]) == buffer_data[31:0])
                                                 begin
                                                     next_state <= S_FETCH;
                                                     next_pc <= pc + 1;
@@ -136,7 +136,7 @@ always @(state, pc, rst, ext_out_reg_busy, start, start_addr, abort, error)
                                         end
                                     3: // WAIT_ANY
                                         begin
-                                            if (ext_pending_ints & buffer_data[31:0] != 0)
+                                            if ((ext_pending_ints & buffer_data[31:0]) != 0)
                                                 begin
                                                     next_state <= S_FETCH;
                                                     next_pc <= pc + 1;

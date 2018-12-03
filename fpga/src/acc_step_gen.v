@@ -25,7 +25,7 @@ reg [31:0] next_steps_limit;
 reg [31:0] dt_limit;
 reg [31:0] next_dt_limit;
 
-reg [2:0] state;
+reg [2:0] state = S_INIT;
 reg [2:0] next_state;
 
 always @(state, load, dt_val, steps_val, steps, dt, reset, steps_limit, dt_limit, set_steps_limit, set_dt_limit, reset_steps, reset_dt)
@@ -70,7 +70,11 @@ always @(state, load, dt_val, steps_val, steps, dt, reset, steps_limit, dt_limit
                     begin
                         if (!load)
                             begin
-                                if (dt + 1 >= dt_limit)
+                                if (dt_limit == 0)
+                                    begin
+                                        next_state <= S_INIT;
+                                    end
+                                else if (dt + 1 >= dt_limit)
                                     begin
                                         next_dt <= 0;
                                         next_steps <= steps + 1;

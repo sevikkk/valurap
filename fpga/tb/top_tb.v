@@ -1,3 +1,5 @@
+`timescale 1ns/100ps
+
 `include "../src/mojo_top.v"
 `include "../src/buf_executor.v"
 `include "../src/s3g_executor.v"
@@ -30,6 +32,7 @@ reg send_packet = 0;
 
 reg [8*256:0] rx_buffer = 0;
 
+reg assertions_failed = 0;
 
 localparam BR=1000000;
 
@@ -73,6 +76,7 @@ mojo_top #(
 `define assert_rx(value) \
     begin if (rx_buffer != value) begin \
             $display("ASSERTION FAILED in %m at %0d: actual rx_buffer %h != expected %h", cycle, rx_buffer, value); \
+            assertions_failed <= 1; \
         end \
         rx_buffer = 0; \
     end
@@ -80,6 +84,7 @@ mojo_top #(
 `define assert_signal(name, signal, value) \
     begin if (signal != value) begin \
             $display("ASSERTION FAILED in %m at %0d: actual %s %h != expected %h", cycle, name, signal, value); \
+            assertions_failed <= 1; \
         end \
     end
 
@@ -92,44 +97,44 @@ initial
         cclk = 0;
         clk = 0;
         tx_wr = 0;
-        #5;
+        #10;
         clk = 1;
-        #5;
+        #10;
         clk = 0;
-        #5;
+        #10;
         clk = 1;
-        #5;
+        #10;
         clk = 0;
-        #3;
+        #6;
         rst_n = 1;
-        #2;
+        #4;
         clk = 1;
-        #5;
+        #10;
         clk = 0;
-        #5;
+        #10;
         clk = 1;
-        #5;
+        #10;
         clk = 0;
-        #5;
+        #10;
         clk = 1;
-        #5;
+        #10;
         clk = 0;
-        #3;
+        #6;
         cclk = 1;
-        #2;
+        #4;
         clk = 1;
-        #5;
+        #10;
         clk = 0;
-        #5;
+        #10;
         clk = 1;
-        #5;
+        #10;
         clk = 0;
-        #5;
+        #10;
         cycle = 0;
         forever
             begin
                 clk = 1;
-                #3;
+                #6;
 
                 if (tx_wr == 1)
                     tx_wr = 0;
@@ -363,12 +368,126 @@ initial
                         begin
                             `assert_rx(64'h0)
                         end
-                    300000: $finish();
+
+                    300000:
+                        begin
+                            // Load simple prog:
+                            //    0x01 -> reg0 (leds)
+                            //    10 -> reg1 (asg_steps_val), 10 steps
+                            //    1000 -> reg2 (asg_dt_val), 1ms step
+                            //    0x000F -> reg3 (asg_control), set_steps_limit, set_dt_limit, reset_steps, reset_dt
+                            //    STB 1 - asg_load
+                            //    WAIT_ALL 1 (wait for asg_done)
+                            //    CLEAR 1 (wait for asg_done)
+                            //    0 -> reg2 (asg_dt_val), go to idle
+                            //    STB 1 - asg_load
+                            //    0x02 -> reg0 (leds)
+                            //    DONE
+                            packet = {
+                                        8'hD5, 8'd61, 16'h7654,
+                                        8'd65, 8'd11, 16'h0,
+                                        { 32'h01000000, 2'b01, 6'd0}, // 0x01 > reg0
+                                        { 32'h0A000000, 2'b01, 6'd1}, // 10 > reg1
+                                        { 32'hE8030000, 2'b01, 6'd2}, // 1000 > reg2
+                                        { 32'h0F000000, 2'b01, 6'd3}, // 0x0F > reg3
+                                        { 32'h01000000, 2'b10, 6'd1}, // STB 0x1
+                                        { 32'h01000000, 2'b10, 6'd2}, // WAIT_ALL 0x1
+                                        { 32'h01000000, 2'b10, 6'd4}, // CLEAR 0x1
+                                        { 32'h00000000, 2'b01, 6'd2}, // 0 > reg2
+                                        { 32'h01000000, 2'b10, 6'd1}, // STB 0x1
+                                        { 32'h02000000, 2'b01, 6'd0}, // 0x01 > reg0
+                                        { 32'h00000000, 2'b10, 6'd63} // DONE
+                            };
+                            send_packet = 1;
+                        end
+                    344000:
+                        begin
+                            `assert_rx(128'hd5087654810000000100f7)
+                            // Send be_start stb
+                            packet = {
+                                        8'hD5, 8'd7, 16'h7654,
+                                        8'd62, 32'h00000020
+                            };
+                            send_packet = 1;
+                        end
+                    353000:
+                        begin
+                            // Execution started, leds -> 01
+                            `assert_rx(128'hd503765481a0)
+                            `assert_signal("LEDS", dut.led, 8'h01)
+                        end
+                    365000:
+                        begin
+                            // Execution done, leds -> 02
+                            `assert_rx(128'hd507ffff50010000004a)
+                            `assert_signal("LEDS", dut.led, 8'h02)
+                        end
+                    380000:
+                        begin
+                            // Interrupt retriggered
+                            `assert_rx(128'hd507ffff500000004083)
+                        end
+                    395000:
+                        begin
+                            // Interrupt retriggered
+                            `assert_rx(128'hd507ffff500000004083)
+                            // Retrigger execution
+                            packet = {
+                                        8'hD5, 8'd7, 16'h7654,
+                                        8'd62, 32'h00000020
+                            };
+                            send_packet = 1;
+                        end
+                    404000:
+                        begin
+                            // Second execution started, leds -> 01
+                            `assert_rx(128'hd503765481a0)
+                            `assert_signal("LEDS", dut.led, 8'h01)
+                        end
+                    410000:
+                        begin
+                            // Retrigger interrupt
+                            `assert_rx(128'hd507ffff500000004083)
+                        end
+                    413000:
+                        begin
+                            // Execution done, leds -> 02
+                            `assert_signal("LEDS", dut.led, 8'h02)
+                        end
+                    425000:
+                        begin
+                            // Interrupt retriggered
+                            `assert_rx(128'hd507ffff500000004083)
+                            // Clear interrupts
+                            packet = {
+                                        8'hD5, 8'd7, 16'h7654,
+                                        8'd63, 32'h00000040
+                            };
+                            send_packet = 1;
+                        end
+                    434000:
+                        begin
+                            // Retrigger interrupt
+                            `assert_rx(128'hd503765481a0)
+                        end
+                    500000:
+                        begin
+                            `assert_rx(128'h0)
+                            if (assertions_failed)
+                                begin
+                                    $display("ERROR: Some assertions failed");
+                                end
+                            else
+                                begin
+                                    $display("All passed");
+                                end
+                            $finish();
+                        end
                 endcase
 
-                #2;
+                #4;
                 clk = 0;
-                #5;
+                #10;
                 cycle = cycle + 1;
                 // $display(cycle);
             end
@@ -392,7 +511,7 @@ always @(negedge clk)
                                 tx_data = packet[ppos-:8];
                                 tx_wr = 1;
                                 $display("time: %0d send %h", cycle, tx_data);
-                                #6000;
+                                #12000;
                             end
                     end
                 else
@@ -400,13 +519,13 @@ always @(negedge clk)
                         tx_data = packet[ppos-:8];
                         tx_wr = 1;
                         $display("time: %0d send %h", cycle, tx_data);
-                        #6000;
+                        #12000;
                     end
             end
             tx_data = dut.s3g_rx.crc;
             tx_wr = 1;
             $display("time: %0d send crc %h", cycle, tx_data);
-            #6000;
+            #12000;
 
         end
     end
