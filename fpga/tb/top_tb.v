@@ -378,7 +378,7 @@ initial
                             //    0x000F -> reg3 (asg_control), set_steps_limit, set_dt_limit, reset_steps, reset_dt
                             //    STB 1 - asg_load
                             //    WAIT_ALL 1 (wait for asg_done)
-                            //    CLEAR 1 (wait for asg_done)
+                            //    CLEAR 1 (avoid triggering of too much interrupts)
                             //    0 -> reg2 (asg_dt_val), go to idle
                             //    STB 1 - asg_load
                             //    0x02 -> reg0 (leds)
