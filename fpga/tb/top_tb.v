@@ -9,6 +9,8 @@
 `include "../src/dds_uart_clock.v"
 `include "../src/uart_transceiver.v"
 `include "../src/acc_step_gen.v"
+`include "../src/motor_step_gen.v"
+`include "../src/acc_profile_gen.v"
 
 module top_tb;
 

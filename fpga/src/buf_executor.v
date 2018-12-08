@@ -132,6 +132,7 @@ always @(state, pc, rst, ext_out_reg_busy, start, start_addr, abort, error, ext_
                                                 begin
                                                     next_error <= 2;
                                                     next_busy <= 1;
+                                                    next_waiting <= 1;
                                                 end
                                         end
                                     3: // WAIT_ANY
@@ -145,6 +146,7 @@ always @(state, pc, rst, ext_out_reg_busy, start, start_addr, abort, error, ext_
                                                 begin
                                                     next_error <= 2;
                                                     next_busy <= 1;
+                                                    next_waiting <= 1;
                                                 end
                                         end
                                     4: // CLEAR clear ints

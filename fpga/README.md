@@ -11,8 +11,27 @@ Outputs
 |   |             | 1 | Set DT limit
 |   |             | 2 | Reset steps
 |   |             | 3 | Reset DT
-|   |             | 4..31 | Unused
-|4..61| Unused
+|   |             | 4..7 | Unused
+|   |             | 8 | APG_X set X
+|   |             | 9 | APG_X set V
+|   |             | 10 | APG_X set A
+|   |             | 11 | APG_X set J
+|   |             | 12 | APG_X set JJ
+|   |             | 13 | APG_X set target V
+| 4 | MSG_ALL_PRE_N | 31..0 | Length of pre-pulse (after potential direction switch)
+| 5 | MSG_ALL_PULSE_N | 31..0 | Length of pulse
+| 6 | MSG_ALL_POST_N | 31..0 | Length of post-pulse
+| 7 | MSG_CONTROL | 0 | X-motor enable (inverted output, 0 - disabled, 1 - enabled)
+|   |             | 31..1 | Unused
+| 8 | APG_X_X_VAL_LO | 31..0 | X channel X value (low half)
+| 9 | APG_X_X_VAL_HI | 31..0 | X channel X value (high half)
+| 10 | APG_X_V_VAL | 31..0 | X channel V value
+| 11 | APG_X_A_VAL | 31..0 | X channel A value
+| 12 | APG_X_J_VAL | 31..0 | X channel J value
+| 13 | APG_X_JJ_VAL | 31..0 | X channel JJ value
+| 14 | APG_X_TARGET_V_VAL | 31..0 | X channel target velocity value
+| 15 | APG_X_ABORT_A | 31..0 | X channel abort acceleration value
+|16..61| Unused
 |62 | BE_START_ADDR | 15..0 | Start address for buf_exec
 |63 | SE_REG_LB | 31..0| Looped back to Input 63
  

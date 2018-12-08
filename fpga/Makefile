@@ -29,6 +29,8 @@ SRC = \
 	src/s3g_executor.v \
 	src/buf_executor.v \
 	src/acc_step_gen.v \
+	src/acc_profile_gen.v \
+	src/motor_step_gen.v \
 	src/$(TOP).v
 
 all:		bits

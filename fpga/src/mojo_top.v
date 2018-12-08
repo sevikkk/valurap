@@ -25,7 +25,11 @@ module mojo_top #(
     input avr_rx_busy, // AVR Rx buffer full
     input ext_tx, // Ext Tx => FPGA Rx
     output ext_rx, // Ext Rx => FPGA Tx
-    input ext_rx_busy // Ext Rx buffer full
+    input ext_rx_busy, // Ext Rx buffer full
+
+    output mot_x_step,
+    output mot_x_dir,
+    output mot_x_enable
     );
 
 wire rst = ~rst_n; // make reset active high
@@ -208,6 +212,50 @@ assign asg_set_steps_limit = out_reg3[0];
 assign asg_set_dt_limit = out_reg3[1];
 assign asg_reset_steps = out_reg3[2];
 assign asg_reset_dt = out_reg3[3];
+
+wire [31:0] msg_all_pre_n;
+wire [31:0] msg_all_pulse_n;
+wire [31:0] msg_all_post_n;
+
+assign msg_all_pre_n = out_reg4;
+assign msg_all_pulse_n = out_reg5;
+assign msg_all_post_n = out_reg6;
+assign mot_x_enable = ~out_reg7[0];
+
+wire apg_x_set_x;
+wire apg_x_set_v;
+wire apg_x_set_a;
+wire apg_x_set_j;
+wire apg_x_set_jj;
+wire apg_x_set_target_v;
+
+assign apg_x_set_x = out_reg3[8];
+assign apg_x_set_v = out_reg3[9];
+assign apg_x_set_a = out_reg3[10];
+assign apg_x_set_j = out_reg3[11];
+assign apg_x_set_jj = out_reg3[12];
+assign apg_x_set_target_v = out_reg3[13];
+
+wire signed [63:0] apg_x_x_val;
+wire signed [31:0] apg_x_v_val;
+wire signed [31:0] apg_x_a_val;
+wire signed [31:0] apg_x_j_val;
+wire signed [31:0] apg_x_jj_val;
+wire signed [31:0] apg_x_target_v_val;
+wire signed [31:0] apg_x_abort_a;
+
+assign apg_x_x_val[31:0] = out_reg8;
+assign apg_x_x_val[63:32] = out_reg9;
+assign apg_x_v_val = out_reg10;
+assign apg_x_a_val = out_reg11;
+assign apg_x_j_val = out_reg12;
+assign apg_x_jj_val = out_reg13;
+assign apg_x_target_v_val = out_reg14;
+assign apg_x_abort_a = out_reg15;
+
+wire apg_x_step;
+wire apg_x_dir;
+wire apg_x_stopped;
 
 s3g_rx s3g_rx(
     .clk(clk),
@@ -425,7 +473,7 @@ buf_executor buf_exec(
            .ext_out_stbs(ext_out_stbs)
 );
 
-assign led = out_reg0;
+assign led = out_reg0[7:0];
 
 acc_step_gen asg(
            .clk(clk),
@@ -443,5 +491,50 @@ acc_step_gen asg(
            .step_stb(asg_step),
            .done(asg_done)
        );
+
+acc_profile_gen apg_x(
+           .clk(clk),
+           .reset(n_rdy),
+           .acc_step(asg_step),
+           .load(asg_load),
+           .set_x(apg_x_set_x),
+           .set_v(apg_x_set_v),
+           .set_a(apg_x_set_a),
+           .set_j(apg_x_set_j),
+           .set_jj(apg_x_set_jj),
+           .set_target_v(apg_x_set_target_v),
+           .x_val(apg_x_x_val),
+           .v_val(apg_x_v_val),
+           .a_val(apg_x_a_val),
+           .j_val(apg_x_j_val),
+           .jj_val(apg_x_jj_val),
+           .target_v_val(apg_x_target_v_val),
+           .abort_a_val(apg_x_abort_a),
+           .step_bit(16),
+           .abort(asg_abort),
+           .x(),
+           .v(),
+           .a(),
+           .j(),
+           .jj(),
+           .step_start_x(),
+           .step_start_v(),
+           .step(apg_x_step),
+           .dir(apg_x_dir),
+           .stopped(apg_x_stopped)
+);
+
+motor_step_gen msg_x(
+           .clk(clk),
+           .reset(n_rdy),
+           .pre_n(msg_all_pre_n),
+           .pulse_n(msg_all_pulse_n),
+           .post_n(msg_all_post_n),
+           .step_stb(apg_x_step),
+           .step_dir(apg_x_dir),
+           .step(mot_x_step),
+           .dir(mot_x_dir),
+           .missed()
+);
 
 endmodule
