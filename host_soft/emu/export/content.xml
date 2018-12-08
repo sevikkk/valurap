@@ -1,0 +1,272 @@
+<wxMaximaDocument activecell="8" version="1.5" zoom="108">
+
+<cell type="code">
+<input>
+<editor type="input">
+<line>jj(t, c) := c[1];</line>
+<line>j(t, c) := c[2] + defint(jj(t1, c), t1, 0, t);</line>
+<line>a(t, c) := c[3] + defint(j(t1, c), t1, 0, t);</line>
+<line>v(t, c) := c[4] + defint(a(t1, c), t1, 0, t);</line>
+<line>x(t, c) := c[5] + defint(v(t1, c), t1, 0, t);</line>
+<line>delta2(t, c1, c2) := (x(t, c1) - x(t, c2)) ** 2 ;</line>
+<line>ddelta2(t, c1, c2) := diff(delta2(t, c1, c2), t);</line>
+</editor>
+</input>
+</cell>
+
+<cell type="code">
+<input>
+<editor type="input">
+<line>expand(x(t,c_x));</line>
+<line>expand(v(t,c_x));</line>
+<line>expand(a(t,c_x));</line>
+<line>expand(j(t,c_x));</line>
+<line>expand(jj(t,c_x));</line>
+<line>expand(ddelta2(t, c1, c2));</line>
+<line />
+</editor>
+</input>
+</cell>
+
+<cell type="text">
+<editor type="text">
+<line>Single axis with given acceleration and error </line>
+</editor>
+
+</cell>
+
+<cell type="code">
+<input>
+<editor type="input">
+<line>breakup:true$</line>
+<line>backsubst:false$</line>
+<line>programmode:true$</line>
+<line>realonly:true$</line>
+<line />
+<line>assume(v_a &gt; 0, v_b &gt; 0, v_a &lt; v_b, a_max&gt;0, d_max &gt; 0, t_a&lt;0, t_b&gt;0, k&gt;0);</line>
+<line>declare(v_a, real);</line>
+<line>declare(v_b, real);</line>
+<line>declare(a_max, real);</line>
+<line>declare(d_max, real);</line>
+<line>facts();</line>
+<line />
+<line>move_eq:[</line>
+<line>        x(t_a,c_x) = v_a*t_a*k,</line>
+<line>        x(t_b,c_x) = v_b*t_b*k,</line>
+<line>        v(t_a,c_x) = v_a*k,</line>
+<line>        v(t_b,c_x) = v_b*k,</line>
+<line>        delta2(0, c_x, [0,0,0,v_a*k,0]) = d_max,</line>
+<line>        a(0, c_x) = a_max,</line>
+<line>        j(0, c_x) = 0,</line>
+<line>        jj(0, c_x) = 0</line>
+<line>    ];</line>
+<line>first_step:solve(move_eq,</line>
+<line>    [</line>
+<line>        c_x[1], c_x[2], c_x[3], c_x[4], c_x[5],</line>
+<line>        t_a, t_b, k</line>
+<line>    ]</line>
+<line>);</line>
+<line>second_step:solve(move_eq,</line>
+<line>    [</line>
+<line>        c_x[1], c_x[2], c_x[3], c_x[4], c_x[5],</line>
+<line>        t_a, t_b, d_max</line>
+<line>    ]</line>
+<line>);</line>
+<line>third_step:solve(move_eq,</line>
+<line>    [</line>
+<line>        c_x[1], c_x[2], c_x[3], c_x[4], c_x[5],</line>
+<line>        t_a, d_max, a_max</line>
+<line>    ]</line>
+<line>);</line>
+</editor>
+</input>
+</cell>
+
+<cell type="code">
+<input>
+<editor type="input">
+<line>first_step_sol:first_step[3];</line>
+<line>c_fs:[</line>
+<line>    rhs(first_step_sol[1]),</line>
+<line>    rhs(first_step_sol[2]),</line>
+<line>    rhs(first_step_sol[3]),</line>
+<line>    rhs(first_step_sol[4]),</line>
+<line>    rhs(first_step_sol[5])</line>
+<line>];</line>
+<line>t_a_fs:rhs(first_step_sol[6]);</line>
+<line>t_b_fs:rhs(first_step_sol[7]);</line>
+<line>k_fs:rhs(first_step_sol[8]);</line>
+<line />
+<line>second_step_sol:second_step[1];</line>
+<line>c_ss:[</line>
+<line>    rhs(second_step_sol[1]),</line>
+<line>    rhs(second_step_sol[2]),</line>
+<line>    rhs(second_step_sol[3]),</line>
+<line>    rhs(second_step_sol[4]),</line>
+<line>    rhs(second_step_sol[5])</line>
+<line>];</line>
+<line>d_max_ss:rhs(second_step_sol[8]);</line>
+<line>t_b_ss:rhs(second_step_sol[7]);</line>
+<line />
+<line>third_step_sol:third_step[1];</line>
+<line>c_ts:[</line>
+<line>    rhs(third_step_sol[1]),</line>
+<line>    rhs(third_step_sol[2]),</line>
+<line>    rhs(third_step_sol[3]),</line>
+<line>    rhs(third_step_sol[4]),</line>
+<line>    rhs(third_step_sol[5])</line>
+<line>];</line>
+<line>d_max_ts:rhs(third_step_sol[7]);</line>
+<line>a_max_ts:rhs(third_step_sol[8]);</line>
+<line />
+</editor>
+</input>
+</cell>
+
+<cell type="code">
+<input>
+<editor type="input">
+<line>breakup:true$</line>
+<line>backsubst:false$</line>
+<line>programmode:true$</line>
+<line>realonly:false$</line>
+<line />
+<line>forget();</line>
+<line>facts();</line>
+<line />
+<line>c_vb: [0,0,0,v_b,0];</line>
+<line />
+<line>move2_eq:[</line>
+<line>        x(t_a, c_x) = x(t_a, c_va),</line>
+<line>        v(t_a, c_x) = v(t_a, c_va),</line>
+<line>        a(t_a, c_x) = a(t_a, c_va),</line>
+<line>    </line>
+<line>        x(t_b, c_x) = x(t_b, c_vb),</line>
+<line>        v(t_b, c_x) = v(t_b, c_vb),</line>
+<line>        a(t_b, c_x) = 0</line>
+<line>      </line>
+<line>];</line>
+<line>expand(move2_eq);</line>
+<line>z: [</line>
+<line>    ];</line>
+<line />
+<line>fourth_step:solve(move2_eq,</line>
+<line>    [</line>
+<line>        c_x[1], c_x[2], c_x[3], c_x[4], c_x[5], t_b</line>
+<line>    ]</line>
+<line>);</line>
+</editor>
+</input>
+</cell>
+
+<cell type="code">
+<input>
+<editor type="input">
+<line>t_b_4s:rhs(fourth_step[2][6]);</line>
+<line>c_4s:[rhs(fourth_step[2][1]),rhs(fourth_step[2][2]),rhs(fourth_step[2][3]),</line>
+<line>    rhs(fourth_step[2][4]),rhs(fourth_step[2][5])];</line>
+</editor>
+</input>
+</cell>
+
+<cell type="code">
+<input>
+<editor type="input">
+<line>v_xa_i: 150;</line>
+<line>v_ya_i: 50;</line>
+<line>v_xb_i: 50;</line>
+<line>v_yb_i: 100;</line>
+<line>a_max_x_i: 1500;</line>
+<line>a_max_y_i: 1500;</line>
+<line>d_max_i: 0.1**2;</line>
+<line />
+<line>d_max_x_i: d_max_i;</line>
+<line>d_max_y_i: d_max_i;</line>
+<line />
+<line>conds_fs_x: [v_a = v_xa_i, v_b = v_xb_i, a_max = a_max_x_i, d_max = d_max_x_i];</line>
+<line>c_fs_x: at(c_fs, conds_fs_x);</line>
+<line>t_a_fs_x: at(t_a_fs, conds_fs_x);</line>
+<line>t_b_fs_x: at(t_b_fs, conds_fs_x);</line>
+<line>k_fs_x: at(k_fs, conds_fs_x);</line>
+<line />
+<line>conds_fs_y: [v_a = v_ya_i, v_b = v_yb_i, a_max = a_max_y_i, d_max = d_max_y_i];</line>
+<line>c_fs_y: at(c_fs, conds_fs_y);</line>
+<line>t_a_fs_y: at(t_a_fs, conds_fs_y);</line>
+<line>t_b_fs_y: at(t_b_fs, conds_fs_y);</line>
+<line>k_fs_y: at(k_fs, conds_fs_y);</line>
+<line />
+<line>if k_fs_x &lt; 0 then a_mult_x: -1 else a_mult_x: 1;</line>
+<line>if k_fs_y &lt; 0 then a_mult_y: -1 else a_mult_y: 1;</line>
+<line />
+<line>if abs(k_fs_x) &lt; abs(k_fs_y)</line>
+<line>    then block([],</line>
+<line>        k_ss: abs(k_fs_x),</line>
+<line>        conds_ss: [</line>
+<line>                    v_a = v_xa_i,</line>
+<line>                    v_b = v_xb_i,</line>
+<line>                    a_max = a_max_x_i * a_mult_x,</line>
+<line>                    k = k_ss</line>
+<line>                  ]</line>
+<line>        )</line>
+<line>    else block([],</line>
+<line>        k_ss: abs(k_fs_y),</line>
+<line>        conds_ss: [</line>
+<line>                    v_a = v_ya_i,</line>
+<line>                    v_b = v_yb_i,</line>
+<line>                    a_max = a_max_y_i * a_mult_y,</line>
+<line>                    k = k_ss</line>
+<line>                  ]</line>
+<line>        );</line>
+<line>t_ts: at(t_b_ss, conds_ss);</line>
+<line />
+<line>float_time: float(t_ts);</line>
+<line>float_k: float(k_ss);</line>
+<line />
+<line>d_max_ts: at(d_max_ss, conds_ss);</line>
+<line />
+<line>conds_ts_x: [</line>
+<line>    v_a = v_xa_i,</line>
+<line>    v_b = v_xb_i,</line>
+<line>    a_max = a_max_x_i*a_mult_x,</line>
+<line>    k = k_ss,</line>
+<line>    t_b = t_ts</line>
+<line>];</line>
+<line>c_ts_x: map('float, at(c_ts, conds_ts_x));</line>
+<line>d_max_ts_x: float(at(d_max_ts, conds_ts_x));</line>
+<line>a_max_ts_x: float(at(a_max_ts, conds_ts_x));</line>
+<line />
+<line>conds_ts_y: [</line>
+<line>    v_a = v_ya_i,</line>
+<line>    v_b = v_yb_i,</line>
+<line>    a_max = a_max_y_i*a_mult_y,</line>
+<line>    k = k_ss,</line>
+<line>    t_b = t_ts</line>
+<line>];</line>
+<line>c_ts_y: map('float, at(c_ts, conds_ts_y));</line>
+<line>d_max_ts_y: float(at(d_max_ts, conds_ts_y));</line>
+<line>a_max_ts_y: float(at(a_max_ts, conds_ts_y));</line>
+<line />
+<line />
+<line>v_xa_p: v_xa_i * k_ss;</line>
+<line>v_xb_p: v_xb_i * k_ss;</line>
+<line>v_ya_p: v_ya_i * k_ss;</line>
+<line>v_yb_p: v_yb_i * k_ss;</line>
+<line>c_va_x: [0,0,0,v_xa_p,0];</line>
+<line>c_va_y: [0,0,0,v_ya_p,0];</line>
+<line>c_vb_x: [0,0,0,v_xb_p,0];</line>
+<line>c_vb_y: [0,0,0,v_yb_p,0];</line>
+<line />
+<line>x_t(t) := if t &lt; 0 then x(t, c_va_x) else x(t, c_vb_x);</line>
+<line>y_t(t) := if t &lt; 0 then x(t, c_va_y) else x(t, c_vb_y);</line>
+<line>x_p(t) := if t &lt; -t_ts then x(t, c_va_x) else if t &lt; t_ts then x(t, c_ts_x) else x(t, c_vb_x);</line>
+<line>y_p(t) := if t &lt; -t_ts then x(t, c_va_y) else if t &lt; t_ts then x(t, c_ts_y) else x(t, c_vb_y);</line>
+<line />
+<line>wxplot2d([</line>
+<line>    [parametric, x_t(t), y_t(t), [t, -3*t_ts, 3*t_ts]],</line>
+<line>    [parametric, x_p(t), y_p(t), [t, -3*t_ts, 3*t_ts]]</line>
+<line>], [legend, "theory", "real"], [color, blue, red], [style, [lines, 3], [lines, 1]]);</line>
+</editor>
+</input>
+</cell>
+
+</wxMaximaDocument>
