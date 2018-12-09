@@ -80,7 +80,7 @@ mojo_top #(
 `define assert_rx(value) \
     begin if (rx_buffer != value) begin \
             $display("ASSERTION FAILED in %m at %0d: actual rx_buffer %h != expected %h", cycle, rx_buffer, value); \
-            assertions_failed <= 1; \
+            assertions_failed = 1; \
         end \
         rx_buffer = 0; \
     end
@@ -88,7 +88,7 @@ mojo_top #(
 `define assert_signal(name, signal, value) \
     begin if (signal != value) begin \
             $display("ASSERTION FAILED in %m at %0d: actual %s %h != expected %h", cycle, name, signal, value); \
-            assertions_failed <= 1; \
+            assertions_failed = 1; \
         end \
     end
 
@@ -460,8 +460,156 @@ initial
                             `assert_rx(128'hd503765481a0)
                         end
 
+                    450000:
+                        begin
+                            // Load simple prog:
+                            //    0x01 -> reg0 (leds)
+                            //    10 -> reg1 (asg_steps_val), 10 steps
+                            //    1000 -> reg2 (asg_dt_val), 1ms step
+                            //    0x000F -> reg3 (asg_control), set_steps_limit, set_dt_limit, reset_steps, reset_dt
+                            //    STB 1 - asg_load
+                            //    WAIT_ALL 1 (wait for asg_done)
+                            //    CLEAR 1 (avoid triggering of too much interrupts)
+                            //    0 -> reg2 (asg_dt_val), go to idle
+                            //    STB 1 - asg_load
+                            //    0x02 -> reg0 (leds)
+                            //    DONE
+                            packet = {
+                                        buf_cmds.S3G_WRITE_BUFFER_HDR(0, 36),
 
-                    500000:
+                                        // LEDS 0x1
+                                        buf_cmds.OUTPUT(buf_cmds.LEDS, 1),
+                                        // Step 1 - constant acceleration speed up to V = 5050
+                                        buf_cmds.OUTPUT(buf_cmds.ASG_STEPS_VAL, 70),
+                                        buf_cmds.OUTPUT(buf_cmds.ASG_DT_VAL, 1000),
+                                        buf_cmds.OUTPUT(buf_cmds.ASG_CONTROL,
+                                                            buf_cmds.ASG_CONTROL_SET_STEPS_LIMIT |
+                                                            buf_cmds.ASG_CONTROL_SET_DT_LIMIT |
+                                                            buf_cmds.ASG_CONTROL_RESET_STEPS |
+                                                            buf_cmds.ASG_CONTROL_RESET_DT |
+                                                            buf_cmds.ASG_CONTROL_APG_X_SET_A |
+                                                            buf_cmds.ASG_CONTROL_APG_X_SET_TARGET_V
+                                                       ),
+                                        buf_cmds.OUTPUT(buf_cmds.MSG_ALL_PRE_N, 10),
+                                        buf_cmds.OUTPUT(buf_cmds.MSG_ALL_PULSE_N, 20),
+                                        buf_cmds.OUTPUT(buf_cmds.MSG_ALL_POST_N, 30),
+                                        buf_cmds.OUTPUT(buf_cmds.MSG_CONTROL,
+                                                            buf_cmds.MSG_CONTROL_ENABLE_X
+                                                       ),
+                                        buf_cmds.OUTPUT(buf_cmds.APG_X_A_VAL, 100),
+                                        buf_cmds.OUTPUT(buf_cmds.APG_X_ABORT_A_VAL, 200),
+                                        buf_cmds.OUTPUT(buf_cmds.APG_X_TARGET_V_VAL, 5050),
+                                        buf_cmds.OUTPUT(buf_cmds.BE_START_ADDR, 0),
+                                        // Load params
+                                        buf_cmds.STB(buf_cmds.STB_ASG_LOAD),
+                                        // Step 2 - constant acceleration speed down and reverse to V = -5050
+                                        buf_cmds.OUTPUT(buf_cmds.ASG_CONTROL,
+                                                            buf_cmds.ASG_CONTROL_SET_STEPS_LIMIT |
+                                                            buf_cmds.ASG_CONTROL_RESET_STEPS |
+                                                            buf_cmds.ASG_CONTROL_APG_X_SET_A |
+                                                            buf_cmds.ASG_CONTROL_APG_X_SET_TARGET_V
+                                                       ),
+                                        buf_cmds.OUTPUT(buf_cmds.ASG_STEPS_VAL, 140),
+                                        buf_cmds.OUTPUT(buf_cmds.APG_X_A_VAL, -100),
+                                        buf_cmds.OUTPUT(buf_cmds.APG_X_TARGET_V_VAL, -5050),
+                                        // Wait for prev step completion
+                                        buf_cmds.WAIT_ALL(buf_cmds.INT_ASG_DONE),
+                                        // Clear int and load
+                                        buf_cmds.CLEAR(buf_cmds.INT_ASG_DONE),
+                                        buf_cmds.STB(buf_cmds.STB_ASG_LOAD),
+                                        buf_cmds.OUTPUT(buf_cmds.LEDS, 3),
+                                        // Step 3 - constant acceleration speed down to V = 0
+                                        buf_cmds.OUTPUT(buf_cmds.ASG_CONTROL,
+                                                            buf_cmds.ASG_CONTROL_SET_STEPS_LIMIT |
+                                                            buf_cmds.ASG_CONTROL_RESET_STEPS |
+                                                            buf_cmds.ASG_CONTROL_APG_X_SET_A |
+                                                            buf_cmds.ASG_CONTROL_APG_X_SET_TARGET_V
+                                                       ),
+                                        buf_cmds.OUTPUT(buf_cmds.ASG_STEPS_VAL, 70),
+                                        buf_cmds.OUTPUT(buf_cmds.APG_X_A_VAL, 100),
+                                        buf_cmds.OUTPUT(buf_cmds.APG_X_TARGET_V_VAL, 0),
+                                        // Wait for prev step completion
+                                        buf_cmds.WAIT_ALL(buf_cmds.INT_ASG_DONE),
+                                        // Clear int and load
+                                        buf_cmds.CLEAR(buf_cmds.INT_ASG_DONE),
+                                        buf_cmds.STB(buf_cmds.STB_ASG_LOAD),
+                                        buf_cmds.OUTPUT(buf_cmds.LEDS, 7),
+                                        // Params for shutdown
+                                        buf_cmds.OUTPUT(buf_cmds.ASG_CONTROL,
+                                                            buf_cmds.ASG_CONTROL_SET_DT_LIMIT
+                                                       ),
+                                        // Wait for step 3 completion
+                                        buf_cmds.WAIT_ALL(buf_cmds.INT_ASG_DONE),
+                                        buf_cmds.CLEAR(buf_cmds.INT_ASG_DONE),
+                                        buf_cmds.OUTPUT(buf_cmds.ASG_DT_VAL, 0),
+                                        buf_cmds.STB(buf_cmds.STB_ASG_LOAD),
+                                        buf_cmds.OUTPUT(buf_cmds.LEDS, 15),
+                                        buf_cmds.DONE(0)
+                            };
+                            send_packet = 1;
+                        end
+                    580000:
+                        begin
+                            `assert_rx(128'hd5087654810000000a00d4)
+                            // Send be_start stb
+                            packet = buf_cmds.S3G_STB(buf_cmds.STB_BE_START);
+                            send_packet = 1;
+                        end
+                    590000:
+                        begin
+                            // Execution started, leds -> 01
+                            `assert_rx(128'hd503765481a0)
+                            `assert_signal("LEDS", dut.led, 8'h01)
+                        end
+                    620000:
+                        begin
+                            `assert_signal("A", dut.apg_x.a, 100)
+                        end
+                    645000:
+                        begin
+                            `assert_signal("V", dut.apg_x.v, 5050)
+                            `assert_signal("A", dut.apg_x.a, 0)
+                        end
+                    690000:
+                        begin
+                            // Step 2 started, leds -> 03
+                            `assert_rx(128'hd507ffff50010000004a)
+                            `assert_signal("LEDS", dut.led, 8'h03)
+                            `assert_signal("A", dut.apg_x.a, -100)
+                        end
+                    770000:
+                        begin
+                            `assert_signal("V", dut.apg_x.v, -5050)
+                            `assert_signal("A", dut.apg_x.a, 0)
+                        end
+                    820000:
+                        begin
+                            // Step 2 started, leds -> 03
+                            `assert_rx(128'hd507ffff50010000004a)
+                            `assert_signal("LEDS", dut.led, 8'h07)
+                            `assert_signal("A", dut.apg_x.a, 100)
+                        end
+                    860000:
+                        begin
+                            `assert_signal("V", dut.apg_x.v, 0)
+                            `assert_signal("A", dut.apg_x.a, 0)
+                        end
+                    875000:
+                        begin
+                            // Execution done, leds -> 02
+                            `assert_signal("LEDS", dut.led, 8'h0f)
+                            // Interrupt retriggered
+                            `assert_rx(128'hd507ffff50010000004a)
+                            // Clear interrupts
+                            packet = buf_cmds.S3G_CLEAR(32'h40000000);
+                            send_packet = 1;
+                        end
+                    890000:
+                        begin
+                            // Execution started, leds -> 01
+                            `assert_rx(128'hd503765481a0)
+                        end
+                    1000000:
                         begin
                             `assert_rx(128'h0)
                             if (assertions_failed)

@@ -74,6 +74,7 @@ always @(reset, acc_step, load,
                 next_target_set <= 0;
                 next_target_v <= 0;
                 next_step_start_x <= 0;
+                next_step_start_v <= 0;
             end
         else if (load)
             begin
@@ -166,10 +167,10 @@ reg next_dir;
 reg next_step;
 reg signed [63:0] next_x;
 wire signed [63:0] x_acc;
-wire signed [31:0] v_effective;
+wire signed [32:0] v_effective;
 
-assign v_effective = (v + step_start_v) >> 1;
-assign x_acc = x + v_effective;
+assign v_effective = v + step_start_v;
+assign x_acc = x + v_effective[32:1];
 
 always @(reset, load, set_x, x_val, x, v, dir, step_bit, stopped, x_acc, v_effective)
     begin

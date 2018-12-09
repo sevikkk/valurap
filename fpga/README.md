@@ -39,7 +39,7 @@ Outputs
 | 12 | APG_X_J_VAL | 31..0 | X channel J value
 | 13 | APG_X_JJ_VAL | 31..0 | X channel JJ value
 | 14 | APG_X_TARGET_V_VAL | 31..0 | X channel target velocity value
-| 15 | APG_X_ABORT_A | 31..0 | X channel abort acceleration value
+| 15 | APG_X_ABORT_A_VAL | 31..0 | X channel abort acceleration value
 |16..61| Unused
 |62 | BE_START_ADDR | 15..0 | Start address for buf_exec
 |63 | SE_REG_LB | 31..0| Looped back to Input 63

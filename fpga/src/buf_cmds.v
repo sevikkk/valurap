@@ -129,5 +129,48 @@ function [71:0] S3G_MASK;
     end
 endfunction
 
+localparam
+    LEDS =                   0,
+    ASG_STEPS_VAL =          1,
+    ASG_DT_VAL =             2,
+    ASG_CONTROL =            3,
+        ASG_CONTROL_SET_STEPS_LIMIT =       32'h00000001,
+        ASG_CONTROL_SET_DT_LIMIT =          32'h00000002,
+        ASG_CONTROL_RESET_STEPS =           32'h00000004,
+        ASG_CONTROL_RESET_DT =              32'h00000008,
+        ASG_CONTROL_APG_X_SET_X =           32'h00000100,
+        ASG_CONTROL_APG_X_SET_V =           32'h00000200,
+        ASG_CONTROL_APG_X_SET_A =           32'h00000400,
+        ASG_CONTROL_APG_X_SET_J =           32'h00000800,
+        ASG_CONTROL_APG_X_SET_JJ =          32'h00001000,
+        ASG_CONTROL_APG_X_SET_TARGET_V =    32'h00002000,
+    MSG_ALL_PRE_N =          4,
+    MSG_ALL_PULSE_N =        5,
+    MSG_ALL_POST_N =         6,
+    MSG_CONTROL =            7,
+        MSG_CONTROL_ENABLE_X =              32'h00000001,
+    APG_X_X_VAL_LO =         8,
+    APG_X_X_VAL_HI =         9,
+    APG_X_V_VAL =           10,
+    APG_X_A_VAL =           11,
+    APG_X_J_VAL =           12,
+    APG_X_JJ_VAL =          13,
+    APG_X_TARGET_V_VAL =    14,
+    APG_X_ABORT_A_VAL =     15,
+    BE_START_ADDR =         62,
+    SE_REG_LB =             63;
+
+localparam
+    STB_ASG_LOAD =          32'h00000001,
+    STB_BE_START =          32'h20000000,
+    STB_BE_ABORT =          32'h40000000,
+    STB_SE_INT_LB =         32'h80000000;
+
+localparam
+    INT_ASG_DONE =          32'h00000001,
+    INT_ASG_ABORT =         32'h00000002,
+    INT_BE_COMPLETE =       32'h40000000,
+    INT_SE_INT_LB =         32'h80000000;
+
 endmodule
 
