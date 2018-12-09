@@ -196,7 +196,7 @@ initial
                     35000:
                         begin
                             // Write register 0 (Leds)
-                            packet = {8'hD5, 8'd8, 16'h2345, 8'd60, 8'd0, 32'h12345678};
+                            packet = buf_cmds.S3G_OUTPUT_T(0, 32'h78563412, 16'h2345);
                             send_packet = 1;
                         end
                     44500:
@@ -316,8 +316,7 @@ initial
                             //    0x88776655 -> reg0
                             //    DONE
                             packet = {
-                                        8'hD5, 8'd16, 16'h7654,
-                                        8'd65, 8'd2, 16'h0,
+                                        buf_cmds.S3G_WRITE_BUFFER_HDR(0, 2),
                                         buf_cmds.OUTPUT(0, 32'h88776655),
                                         buf_cmds.DONE(0)
                             };
@@ -330,10 +329,7 @@ initial
                     220000:
                         begin
                             // Set start addr for buf_exec
-                            packet = {
-                                        8'hD5, 8'd8, 16'h7654,
-                                        8'd60, 8'd62, 32'h0
-                            };
+                            packet = buf_cmds.S3G_OUTPUT(62, 0);
                             send_packet = 1;
                         end
                     229500:
@@ -343,10 +339,7 @@ initial
                     230000:
                         begin
                             // Send be_start strobe
-                            packet = {
-                                        8'hD5, 8'd7, 16'h7654,
-                                        8'd62, 32'h00000020
-                            };
+                            packet = buf_cmds.S3G_STB(32'h20000000);
                             send_packet = 1;
                         end
                     239000:
@@ -362,7 +355,7 @@ initial
                     245000:
                         begin
                             // Clear be_complete interrupt
-                            packet = {8'hD5, 8'd7, 16'h7654, 8'd63, 32'h00000040};
+                            packet = buf_cmds.S3G_CLEAR(32'h40000000);
                             send_packet = 1;
                         end
                     254000:
@@ -389,8 +382,8 @@ initial
                             //    0x02 -> reg0 (leds)
                             //    DONE
                             packet = {
-                                        8'hD5, 8'd61, 16'h7654,
-                                        8'd65, 8'd11, 16'h0,
+                                        buf_cmds.S3G_WRITE_BUFFER_HDR(0, 11),
+
                                         buf_cmds.OUTPUT(0, 1),
                                         buf_cmds.OUTPUT(1, 10),
                                         buf_cmds.OUTPUT(2, 1000),
@@ -409,10 +402,7 @@ initial
                         begin
                             `assert_rx(128'hd5087654810000000100f7)
                             // Send be_start stb
-                            packet = {
-                                        8'hD5, 8'd7, 16'h7654,
-                                        8'd62, 32'h00000020
-                            };
+                            packet = buf_cmds.S3G_STB(32'h20000000);
                             send_packet = 1;
                         end
                     353000:
@@ -437,10 +427,7 @@ initial
                             // Interrupt retriggered
                             `assert_rx(128'hd507ffff500000004083)
                             // Retrigger execution
-                            packet = {
-                                        8'hD5, 8'd7, 16'h7654,
-                                        8'd62, 32'h00000020
-                            };
+                            packet = buf_cmds.S3G_STB(32'h20000000);
                             send_packet = 1;
                         end
                     404000:
@@ -464,10 +451,7 @@ initial
                             // Interrupt retriggered
                             `assert_rx(128'hd507ffff500000004083)
                             // Clear interrupts
-                            packet = {
-                                        8'hD5, 8'd7, 16'h7654,
-                                        8'd63, 32'h00000040
-                            };
+                            packet = buf_cmds.S3G_CLEAR(32'h40000000);
                             send_packet = 1;
                         end
                     434000:

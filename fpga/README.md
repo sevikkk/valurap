@@ -124,16 +124,16 @@ Reply Codes
 Command Codes
 -------------
 
-|Command | Name | Args | Reply
-|--------|------|------|-------
-|  0     | Version | -- |  OK 0xBA 0xCE
-|  27    | Extended Version | -- | OK 0x01 0x00 0x01 0x00 0xCE 0x00 0x00 0x00
-|  60    | Write register | 0: reg num 1..4: value | OK
-|  61    | Read input | 0: input num | OK 0..3: Value
-|  62    | Send Strobes | 0..3: Mask | OK
-|  63    | Clear pending interrupts| 0..3: Mask
-|  64    | Mask interrupts| 0..3: Mask
-|  65    | Write buf_exec memory| 0: Word count 1..2: Offset 3..3+N*5: Data| {OK, BufError} 0..1: Addr 2: Curent Error 3..4: PC
+|Command | CMD | Name | Args | Reply
+|--------|-----|------|------|-------
+|  0     | VERSION  | Version | -- |  OK 0xBA 0xCE
+|  27    | EXT_VER  | Extended Version | -- | OK 0x01 0x00 0x01 0x00 0xCE 0x00 0x00 0x00
+|  60    | OUTPUT  | Write output | 0: reg num 1..4: value | OK
+|  61    | INPUT  | Read input | 0: input num | OK 0..3: Value
+|  62    | STB   | Send Strobes | 0..3: Mask | OK
+|  63    | CLEAR  | Clear pending interrupts| 0..3: Mask
+|  64    | MASK  | Mask interrupts| 0..3: Mask
+|  65    | WRITE_BUFFER | Write buf_exec memory| 0: Word count 1..2: Offset 3..3+N*5: Data| {OK, BufError} 0..1: Addr 2: Curent Error 3..4: PC
 
 Buf Executor Commands
 =====================
