@@ -1,5 +1,6 @@
 `timescale 1ns/100ps
 
+`include "../src/crc8.v"
 `include "../src/mojo_top.v"
 `include "../src/buf_executor.v"
 `include "../src/s3g_executor.v"
@@ -11,6 +12,7 @@
 `include "../src/acc_step_gen.v"
 `include "../src/motor_step_gen.v"
 `include "../src/acc_profile_gen.v"
+`include "../src/buf_cmds.v"
 
 module top_tb;
 
@@ -89,6 +91,7 @@ mojo_top #(
             assertions_failed <= 1; \
         end \
     end
+
 
 initial
     begin
@@ -315,8 +318,8 @@ initial
                             packet = {
                                         8'hD5, 8'd16, 16'h7654,
                                         8'd65, 8'd2, 16'h0,
-                                        { 32'h55667788, 2'b01, 6'd0},
-                                        { 32'h00000000, 2'b10, 6'd63}
+                                        buf_cmds.OUTPUT(0, 32'h88776655),
+                                        buf_cmds.DONE(0)
                             };
                             send_packet = 1;
                         end
@@ -388,17 +391,17 @@ initial
                             packet = {
                                         8'hD5, 8'd61, 16'h7654,
                                         8'd65, 8'd11, 16'h0,
-                                        { 32'h01000000, 2'b01, 6'd0}, // 0x01 > reg0
-                                        { 32'h0A000000, 2'b01, 6'd1}, // 10 > reg1
-                                        { 32'hE8030000, 2'b01, 6'd2}, // 1000 > reg2
-                                        { 32'h0F000000, 2'b01, 6'd3}, // 0x0F > reg3
-                                        { 32'h01000000, 2'b10, 6'd1}, // STB 0x1
-                                        { 32'h01000000, 2'b10, 6'd2}, // WAIT_ALL 0x1
-                                        { 32'h01000000, 2'b10, 6'd4}, // CLEAR 0x1
-                                        { 32'h00000000, 2'b01, 6'd2}, // 0 > reg2
-                                        { 32'h01000000, 2'b10, 6'd1}, // STB 0x1
-                                        { 32'h02000000, 2'b01, 6'd0}, // 0x01 > reg0
-                                        { 32'h00000000, 2'b10, 6'd63} // DONE
+                                        buf_cmds.OUTPUT(0, 1),
+                                        buf_cmds.OUTPUT(1, 10),
+                                        buf_cmds.OUTPUT(2, 1000),
+                                        buf_cmds.OUTPUT(3, 32'h0000000F),
+                                        buf_cmds.STB(32'h00000001),
+                                        buf_cmds.WAIT_ALL(32'h00000001),
+                                        buf_cmds.CLEAR(32'h00000001),
+                                        buf_cmds.OUTPUT(2, 0),
+                                        buf_cmds.STB(32'h00000001),
+                                        buf_cmds.OUTPUT(0, 2),
+                                        buf_cmds.DONE(0)
                             };
                             send_packet = 1;
                         end
@@ -472,6 +475,8 @@ initial
                             // Retrigger interrupt
                             `assert_rx(128'hd503765481a0)
                         end
+
+
                     500000:
                         begin
                             `assert_rx(128'h0)

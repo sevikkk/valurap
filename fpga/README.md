@@ -141,7 +141,7 @@ Buf Executor Commands
 |Format | Name | Description
 |-------|------|-------------
 |0 0 X:6 X:32 | Unused
-|0 1 reg_num:6 value:32 | WRITE_REG| Write value to output
+|0 1 reg_num:6 value:32 | OUTPUT | Write value to output
 |1 0 0:6 X:32 | NOP | Nop
 |1 0 1:6 mask:32 | STB | Send STBs
 |1 0 2:6 mask:32 | WAIT_ALL | Wait for all Ints
