@@ -1,3 +1,11 @@
+Abbrevs
+=======
+ASG - Acceleration step generator
+APG - Acceleration profile generator
+MSG - Motor step generator
+BE - buffer commands executor
+SE - S3G commands executor
+
 Outputs
 =======
 
@@ -23,8 +31,8 @@ Outputs
 | 6 | MSG_ALL_POST_N | 31..0 | Length of post-pulse
 | 7 | MSG_CONTROL | 0 | X-motor enable (inverted output, 0 - disabled, 1 - enabled)
 |   |             | 31..1 | Unused
-| 8 | APG_X_X_VAL_LO | 31..0 | X channel X value (low half)
-| 9 | APG_X_X_VAL_HI | 31..0 | X channel X value (high half)
+| 8 | APG_X_X_VAL_LO | 31..0 | X channel X value (lower half)
+| 9 | APG_X_X_VAL_HI | 31..0 | X channel X value (higher half)
 | 10 | APG_X_V_VAL | 31..0 | X channel V value
 | 11 | APG_X_A_VAL | 31..0 | X channel A value
 | 12 | APG_X_J_VAL | 31..0 | X channel J value
@@ -43,11 +51,11 @@ Inputs
 |  0 | ASG_DT | 31..0 | Current accel step clock number
 |  1 | ASG_STEP | 31..0 | Current step in accel cycle
 |  2..61 | Unused
-|  62 | BE_CONTROL | 31 | BE_BUSY - buf_exec is eecuting
-|      |          | 30 | BE_WAITING - buf_exec is waiting for int
+|  62 | BE_CONTROL | 31 | BE_BUSY - buf_exec is executing
+|      |          | 30 | BE_WAITING - buf_exec is waiting for interrupt
 |      |          |29..24| Unused
 |      |          | 23..16 | BE_ERROR - current error code
-|      |          | 15..0 | BE_PC - current PC of bef_exec
+|      |          | 15..0 | BE_PC - current PC of buf_exec
 |   63 | SE_REG_LB | 31..0 | Loopback from output 63
 
 
@@ -57,7 +65,7 @@ Interrupts
 |Number | Name | Description
 |------ | ---- | -----------
 | 0 | ASG_DONE | Current accel cycle is done, load required
-| 1 | ASG_ABORT | Aborting current activity as new params are not loaded in time
+| 1 | ASG_ABORT | Aborting current activity as new params were not loaded in time
 | 2..29| Unused
 | 30 | BE_COMPLETE | buf_exec done executing
 | 31 | SE_INT_LB | Looped back to Strobe 0
@@ -109,7 +117,7 @@ Reply Codes
 |  80 | Interrupt | Interrupt report (originated by device)
 | 0x80  | Error   | Error
 | 0x81  | OK   | Success, can be followed by reply args
-| 0x82  | BufError   | Error writing to buf_exec memory
+| 0x82  | BufError   | Error writing to buf_exec memory because of new command arrival
 | 0x85  | Unknown | Unknown command
 
 Command Codes
