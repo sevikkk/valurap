@@ -151,3 +151,161 @@ Buf Executor Commands
 |1 0 63:6 X:32 | DONE | Halt and report
 |1 1 X:6 X:32 | Unused
 
+
+Utilization for single full channel
+===================================
+
+```
+Device Utilization Summary:
+
+Slice Logic Utilization:
+  Number of Slice Registers:                 1,395 out of  11,440   12%
+    Number used as Flip Flops:               1,395
+    Number used as Latches:                      0
+    Number used as Latch-thrus:                  0
+    Number used as AND/OR logics:                0
+  Number of Slice LUTs:                      2,315 out of   5,720   40%
+    Number used as logic:                    2,303 out of   5,720   40%
+      Number using O6 output only:           1,690
+      Number using O5 output only:             122
+      Number using O5 and O6:                  491
+      Number used as ROM:                        0
+    Number used as Memory:                       2 out of   1,440    1%
+      Number used as Dual Port RAM:              0
+      Number used as Single Port RAM:            0
+      Number used as Shift Register:             2
+        Number using O6 output only:             2
+        Number using O5 output only:             0
+        Number using O5 and O6:                  0
+    Number used exclusively as route-thrus:     10
+      Number with same-slice register load:      5
+      Number with same-slice carry load:         5
+      Number with other load:                    0
+
+Slice Logic Distribution:
+  Number of occupied Slices:                   712 out of   1,430   49%
+  Nummber of MUXCYs used:                      764 out of   2,860   26%
+  Number of LUT Flip Flop pairs used:        2,524
+    Number with an unused Flip Flop:         1,180 out of   2,524   46%
+    Number with an unused LUT:                 209 out of   2,524    8%
+    Number of fully used LUT-FF pairs:       1,135 out of   2,524   44%
+    Number of slice register sites lost
+      to control set restrictions:               0 out of  11,440    0%
+
+  A LUT Flip Flop pair for this architecture represents one LUT paired with
+  one Flip Flop within a slice.  A control set is a unique combination of
+  clock, reset, set, and enable signals for a registered element.
+  The Slice Logic Distribution report is not meaningful if the design is
+  over-mapped for a non-slice resource or if Placement fails.
+
+IO Utilization:
+  Number of bonded IOBs:                        23 out of     102   22%
+    Number of LOCed IOBs:                       20 out of      23   86%
+    IOB Flip Flops:                              1
+
+Specific Feature Utilization:
+  Number of RAMB16BWERs:                        21 out of      32   65%
+  Number of RAMB8BWERs:                          0 out of      64    0%
+  Number of BUFIO2/BUFIO2_2CLKs:                 0 out of      32    0%
+  Number of BUFIO2FB/BUFIO2FB_2CLKs:             0 out of      32    0%
+  Number of BUFG/BUFGMUXs:                       1 out of      16    6%
+    Number used as BUFGs:                        1
+    Number used as BUFGMUX:                      0
+  Number of DCM/DCM_CLKGENs:                     0 out of       4    0%
+  Number of ILOGIC2/ISERDES2s:                   0 out of     200    0%
+  Number of IODELAY2/IODRP2/IODRP2_MCBs:         0 out of     200    0%
+  Number of OLOGIC2/OSERDES2s:                   1 out of     200    1%
+    Number used as OLOGIC2s:                     1
+    Number used as OSERDES2s:                    0
+  Number of BSCANs:                              0 out of       4    0%
+  Number of BUFHs:                               0 out of     128    0%
+  Number of BUFPLLs:                             0 out of       8    0%
+  Number of BUFPLL_MCBs:                         0 out of       4    0%
+  Number of DSP48A1s:                            0 out of      16    0%
+  Number of ICAPs:                               0 out of       1    0%
+  Number of MCBs:                                0 out of       2    0%
+  Number of PCILOGICSEs:                         0 out of       2    0%
+  Number of PLL_ADVs:                            0 out of       2    0%
+  Number of PMVs:                                0 out of       1    0%
+  Number of STARTUPs:                            0 out of       1    0%
+  Number of SUSPEND_SYNCs:                       0 out of       1    0%
+```
+
+Utilization for two full channels
+===================================
+
+```
+Device Utilization Summary:
+
+Slice Logic Utilization:
+  Number of Slice Registers:                 1,856 out of  11,440   16%
+    Number used as Flip Flops:               1,856
+    Number used as Latches:                      0
+    Number used as Latch-thrus:                  0
+    Number used as AND/OR logics:                0
+  Number of Slice LUTs:                      3,304 out of   5,720   57%
+    Number used as logic:                    3,291 out of   5,720   57%
+      Number using O6 output only:           2,336
+      Number using O5 output only:             152
+      Number using O5 and O6:                  803
+      Number used as ROM:                        0
+    Number used as Memory:                       2 out of   1,440    1%
+      Number used as Dual Port RAM:              0
+      Number used as Single Port RAM:            0
+      Number used as Shift Register:             2
+        Number using O6 output only:             2
+        Number using O5 output only:             0
+        Number using O5 and O6:                  0
+    Number used exclusively as route-thrus:     11
+      Number with same-slice register load:      5
+      Number with same-slice carry load:         6
+      Number with other load:                    0
+
+Slice Logic Distribution:
+  Number of occupied Slices:                 1,010 out of   1,430   70%
+  Nummber of MUXCYs used:                    1,272 out of   2,860   44%
+  Number of LUT Flip Flop pairs used:        3,508
+    Number with an unused Flip Flop:         1,779 out of   3,508   50%
+    Number with an unused LUT:                 204 out of   3,508    5%
+    Number of fully used LUT-FF pairs:       1,525 out of   3,508   43%
+    Number of slice register sites lost
+      to control set restrictions:               0 out of  11,440    0%
+
+  A LUT Flip Flop pair for this architecture represents one LUT paired with
+  one Flip Flop within a slice.  A control set is a unique combination of
+  clock, reset, set, and enable signals for a registered element.
+  The Slice Logic Distribution report is not meaningful if the design is
+  over-mapped for a non-slice resource or if Placement fails.
+
+IO Utilization:
+  Number of bonded IOBs:                        26 out of     102   25%
+    Number of LOCed IOBs:                       20 out of      26   76%
+    IOB Flip Flops:                              2
+
+Specific Feature Utilization:
+  Number of RAMB16BWERs:                        21 out of      32   65%
+  Number of RAMB8BWERs:                          0 out of      64    0%
+  Number of BUFIO2/BUFIO2_2CLKs:                 0 out of      32    0%
+  Number of BUFIO2FB/BUFIO2FB_2CLKs:             0 out of      32    0%
+  Number of BUFG/BUFGMUXs:                       1 out of      16    6%
+    Number used as BUFGs:                        1
+    Number used as BUFGMUX:                      0
+  Number of DCM/DCM_CLKGENs:                     0 out of       4    0%
+  Number of ILOGIC2/ISERDES2s:                   0 out of     200    0%
+  Number of IODELAY2/IODRP2/IODRP2_MCBs:         0 out of     200    0%
+  Number of OLOGIC2/OSERDES2s:                   2 out of     200    1%
+    Number used as OLOGIC2s:                     2
+    Number used as OSERDES2s:                    0
+  Number of BSCANs:                              0 out of       4    0%
+  Number of BUFHs:                               0 out of     128    0%
+  Number of BUFPLLs:                             0 out of       8    0%
+  Number of BUFPLL_MCBs:                         0 out of       4    0%
+  Number of DSP48A1s:                            0 out of      16    0%
+  Number of ICAPs:                               0 out of       1    0%
+  Number of MCBs:                                0 out of       2    0%
+  Number of PCILOGICSEs:                         0 out of       2    0%
+  Number of PLL_ADVs:                            0 out of       2    0%
+  Number of PMVs:                                0 out of       1    0%
+  Number of STARTUPs:                            0 out of       1    0%
+  Number of SUSPEND_SYNCs:                       0 out of       1    0%
+```
