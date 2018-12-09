@@ -32,29 +32,6 @@ module s3g_rx(
            buf15
        );
 
-function [7:0] nextCRC8_D8;
-
-    input [7:0] Data;
-    input [7:0] crc;
-    reg [7:0] d;
-    reg [7:0] c;
-    reg [7:0] newcrc;
-    begin
-        d = Data;
-        c = crc;
-
-        newcrc[7] = d[1] ^ d[3] ^ d[4] ^ d[7] ^ c[7] ^ c[4] ^ c[3] ^ c[1];
-        newcrc[6] = d[0] ^ d[2] ^ d[3] ^ d[6] ^ c[6] ^ c[3] ^ c[2] ^ c[0];
-        newcrc[5] = d[1] ^ d[2] ^ d[5] ^ c[5] ^ c[2] ^ c[1];
-        newcrc[4] = d[0] ^ d[1] ^ d[4] ^ c[4] ^ c[1] ^ c[0];
-        newcrc[3] = d[0] ^ d[1] ^ d[4] ^ d[7] ^ c[7] ^ c[4] ^ c[1] ^ c[0];
-        newcrc[2] = d[0] ^ d[1] ^ d[4] ^ d[6] ^ d[7] ^ c[7] ^ c[6] ^ c[4] ^ c[1] ^ c[0];
-        newcrc[1] = d[0] ^ d[3] ^ d[5] ^ d[6] ^ c[6] ^ c[5] ^ c[3] ^ c[0];
-        newcrc[0] = d[2] ^ d[4] ^ d[5] ^ c[5] ^ c[4] ^ c[2];
-        nextCRC8_D8 = newcrc;
-    end
-endfunction
-
 input clk;
 input rst;
 input [7:0] rx1_data;
@@ -226,7 +203,7 @@ always @(state, byte_cnt, crc, save_addr, cmd_src, rst,
                 if (rx_done)
                     begin
                         next_byte_cnt <= byte_cnt - 1;
-                        next_crc <= nextCRC8_D8(rx_data, crc);
+                        next_crc <= crc8.nextCRC8_D8(rx_data, crc);
 
                         save_buf <= 1;
                         next_save_addr <= save_addr + 1;

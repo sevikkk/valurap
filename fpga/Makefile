@@ -21,6 +21,7 @@ PARFLAGS	= -ol high
 # Top 
 
 SRC = \
+	src/crc8.v \
 	src/cclk_detector.v \
 	src/dds_uart_clock.v \
 	src/uart_transceiver.v \
