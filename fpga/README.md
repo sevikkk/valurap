@@ -309,3 +309,34 @@ Specific Feature Utilization:
   Number of STARTUPs:                            0 out of       1    0%
   Number of SUSPEND_SYNCs:                       0 out of       1    0%
 ```
+
+Utilization for 2 full channels and 2 XVA only channels
+=======================================================
+
+Also X is limited to 48 bits. But it does not fit anyway.
+Patch is in `patch/4chan.patch`.
+
+```
+Slice Logic Utilization:
+ Number of Slice Registers:            2523  out of  11440    22%
+ Number of Slice LUTs:                 7017  out of   5720   122% (*)
+    Number used as Logic:              7015  out of   5720   122% (*)
+    Number used as Memory:                2  out of   1440     0%
+       Number used as SRL:                2
+
+Slice Logic Distribution:
+ Number of LUT Flip Flop pairs used:   7212
+   Number with an unused Flip Flop:    4689  out of   7212    65%
+   Number with an unused LUT:           195  out of   7212     2%
+   Number of fully used LUT-FF pairs:  2328  out of   7212    32%
+   Number of unique control sets:        73
+
+IO Utilization:
+ Number of IOs:                          37
+ Number of bonded IOBs:                  32  out of    102    31%
+
+Specific Feature Utilization:
+ Number of Block RAM/FIFO:               21  out of     32    65%
+    Number using Block RAM only:         21
+ Number of BUFG/BUFGCTRLs:                1  out of     16     6%
+```
