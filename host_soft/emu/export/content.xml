@@ -65,19 +65,19 @@
 <line>        c_x[1], c_x[2], c_x[3], c_x[4], c_x[5],</line>
 <line>        t_a, t_b, k</line>
 <line>    ]</line>
-<line>);</line>
+<line>)$</line>
 <line>second_step:solve(move_eq,</line>
 <line>    [</line>
 <line>        c_x[1], c_x[2], c_x[3], c_x[4], c_x[5],</line>
 <line>        t_a, t_b, d_max</line>
 <line>    ]</line>
-<line>);</line>
+<line>)$</line>
 <line>third_step:solve(move_eq,</line>
 <line>    [</line>
 <line>        c_x[1], c_x[2], c_x[3], c_x[4], c_x[5],</line>
 <line>        t_a, d_max, a_max</line>
 <line>    ]</line>
-<line>);</line>
+<line>)$</line>
 </editor>
 </input>
 </cell>
@@ -146,15 +146,12 @@
 <line>        a(t_b, c_x) = 0</line>
 <line>      </line>
 <line>];</line>
-<line>expand(move2_eq);</line>
-<line>z: [</line>
-<line>    ];</line>
 <line />
 <line>fourth_step:solve(move2_eq,</line>
 <line>    [</line>
 <line>        c_x[1], c_x[2], c_x[3], c_x[4], c_x[5], t_b</line>
 <line>    ]</line>
-<line>);</line>
+<line>)$</line>
 </editor>
 </input>
 </cell>
@@ -164,7 +161,7 @@
 <editor type="input">
 <line>t_b_4s:rhs(fourth_step[2][6]);</line>
 <line>c_4s:[rhs(fourth_step[2][1]),rhs(fourth_step[2][2]),rhs(fourth_step[2][3]),</line>
-<line>    rhs(fourth_step[2][4]),rhs(fourth_step[2][5])];</line>
+<line>    rhs(fourth_step[2][4]),rhs(fourth_step[2][5])]$</line>
 </editor>
 </input>
 </cell>
