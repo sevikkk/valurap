@@ -1,10 +1,11 @@
 Abbrevs
 =======
-ASG - Acceleration step generator
-APG - Acceleration profile generator
-MSG - Motor step generator
-BE - buffer commands executor
-SE - S3G commands executor
+
+* ASG - Acceleration step generator
+* APG - Acceleration profile generator
+* MSG - Motor step generator
+* BE - buffer commands executor
+* SE - S3G commands executor
 
 Outputs
 =======
@@ -139,14 +140,14 @@ Buf Executor Commands
 
 |Format | Name | Description
 |-------|------|-------------
-|0 0 X:6 X:32 | ...
+|0 0 X:6 X:32 | Unused
 |0 1 reg_num:6 value:32 | WRITE_REG| Write value to output
 |1 0 0:6 X:32 | NOP | Nop
 |1 0 1:6 mask:32 | STB | Send STBs
 |1 0 2:6 mask:32 | WAIT_ALL | Wait for all Ints
 |1 0 3:6 mask:32 | WAIT_ANY | Wait for any of Ints
 |1 0 4:6 masK:32 | CLEAR | Clear INTs
-|1 0 5-62:6 X:32 | ...
+|1 0 5-62:6 X:32 | Unused
 |1 0 63:6 X:32 | DONE | Halt and report
-|1 1 X:6 X:32 | ...
+|1 1 X:6 X:32 | Unused
 
