@@ -119,3 +119,7 @@ $(DESIGN).bit:	build/project_r.ncd build/project_r.twr
 		cd build && bitgen project_r.ncd -l -w $(BGFLAGS)
 		@cp -f build/project_r.bit $@
 
+$(DESIGN).bin:	$(DESIGN).bit
+		cd build && promgen -u 0x0 project_r.bit -p bin -b -w
+		@cp -f build/project_r.bin $@
+
