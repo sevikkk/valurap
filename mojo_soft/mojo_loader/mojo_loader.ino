@@ -207,7 +207,7 @@ void loop() {
               
               if (destination) {
                 state = WRITE_TO_FPGA;
-                initLoad(); // get the FPGA read for a load
+                initLoad(); // get the FPGA ready for a load
                 startLoad(); // start the load
               }
               else {
@@ -333,7 +333,6 @@ void uartTask() {
     while ((w = Serial.read()) >= 0) {
       cmdlineInputFunc((uint8_t)w);
       cmdlineMainLoop();
-      Serial1.write(w);
     }
   }
 }
