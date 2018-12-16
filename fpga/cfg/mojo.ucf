@@ -34,3 +34,11 @@ NET "ext_tx" LOC = P119 | IOSTANDARD = LVTTL;
 NET "ext_rx" LOC = P120 | IOSTANDARD = LVTTL;
 NET "ext_rx_busy" LOC = P118 | IOSTANDARD = LVTTL;
 
+NET "mot_x_enable" LOC = P51 | IOSTANDARD = LVTTL;
+NET "mot_x_step" LOC = P41 | IOSTANDARD = LVTTL;
+NET "mot_x_dir" LOC = P35 | IOSTANDARD = LVTTL;
+
+NET "mot_y_enable" LOC = P50 | IOSTANDARD = LVTTL;
+NET "mot_y_step" LOC = P40 | IOSTANDARD = LVTTL;
+NET "mot_y_dir" LOC = P34 | IOSTANDARD = LVTTL;
+
