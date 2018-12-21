@@ -62,6 +62,11 @@ wire [7:0] rx_data;
 wire new_rx_data;
 wire enable_16;
 
+reg [23:0] blink_cnt = 0;
+
+always @(posedge clk)
+    blink_cnt <= blink_cnt + 1;
+
 dds_uart_clock uclock1(
                    .clk(clk),
                    .baudrate(AVR_BAUD_RATE/100),
@@ -533,7 +538,8 @@ buf_executor buf_exec(
            .ext_out_stbs(ext_out_stbs)
 );
 
-assign led = out_reg0[7:0];
+assign led[6:0] = out_reg0[6:0];
+assign led[7] = blink_cnt[23];
 
 acc_step_gen asg(
            .clk(clk),
@@ -570,7 +576,7 @@ acc_profile_gen apg_x(
            .jj_val(apg_x_jj_val),
            .target_v_val(apg_x_target_v_val),
            .abort_a_val(apg_x_abort_a),
-           .step_bit(16),
+           .step_bit(32),
            .abort(asg_abort),
            .x(),
            .v(),
@@ -615,7 +621,7 @@ acc_profile_gen apg_y(
            .jj_val(apg_y_jj_val),
            .target_v_val(apg_y_target_v_val),
            .abort_a_val(apg_y_abort_a),
-           .step_bit(16),
+           .step_bit(32),
            .abort(asg_abort),
            .x(),
            .v(),
