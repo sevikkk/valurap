@@ -71,7 +71,7 @@ class S3GFormatter(object):
         self.data = bytearray()
 
     def unexpected_packet(self, packet):
-        print("Unexpected packet: {}".format(str(packet)))
+        print("Unexpected packet: {}".format(repr(packet)))
 
     def send_and_wait_reply(self, payload, cmd_id=None):
         if cmd_id is None:
@@ -97,8 +97,7 @@ class S3GFormatter(object):
 
     def S3G_OUTPUT(self, reg, value, cmd_id=None):
         """
-        Get the firmware version number of the connected machine
-        @return Version number
+        Set output to value
         """
         payload = struct.pack('<BBi', 60, reg, value)
 
@@ -110,8 +109,8 @@ class S3GFormatter(object):
 
     def S3G_INPUT(self, reg, cmd_id=None):
         """
-        Get the firmware version number of the connected machine
-        @return Version number
+        Get value of input
+        @return value
         """
         payload = struct.pack('<BB', 61, reg)
 
@@ -124,8 +123,7 @@ class S3GFormatter(object):
 
     def S3G_STB(self, value, cmd_id=None):
         """
-        Get the firmware version number of the connected machine
-        @return Version number
+        Send strobe
         """
         payload = struct.pack('<Bi', 62, value)
 
@@ -137,8 +135,7 @@ class S3GFormatter(object):
 
     def S3G_CLEAR(self, value, cmd_id=None):
         """
-        Get the firmware version number of the connected machine
-        @return Version number
+        Clear pending interrupt
         """
         payload = struct.pack('<Bi', 63, value)
 
@@ -150,8 +147,7 @@ class S3GFormatter(object):
 
     def S3G_MASK(self, value, cmd_id=None):
         """
-        Get the firmware version number of the connected machine
-        @return Version number
+        Mask interrupts
         """
         payload = struct.pack('<Bi', 64, value)
 
@@ -161,42 +157,9 @@ class S3GFormatter(object):
         return
 
 
-    def format_buf_cmd(self, cmd, *args):
-        code = 0
-        arg = 0
-        if cmd == "OUTPUT":
-            code = 0x40 + args[0]
-            arg = args[1]
-        elif cmd == "NOP":
-            code = 0x80
-        elif cmd == "STB":
-            code = 0x81
-            arg = self.list_to_val(args[0])
-        elif cmd == "WAIT_ALL":
-            code = 0x82
-            arg = self.list_to_val(args[0])
-        elif cmd == "WAIT_ANY":
-            code = 0x83
-            arg = self.list_to_val(args[0])
-        elif cmd == "CLEAR":
-            code = 0x84
-            arg = self.list_to_val(args[0])
-        elif cmd == "DONE":
-            code = 0xBF
-            if len(args) > 0:
-                arg = args[0]
-            else:
-                arg = 127
-        else:
-            raise RuntimeError, "bad command"
-
-        return code, arg
-
-
-    def S3G_WRITE_BUFFER(self, addr, cmd_id=None, *values):
+    def S3G_WRITE_BUFFER(self, addr, *values, **kw):
         """
-        Get the firmware version number of the connected machine
-        @return Version number
+        Write data to buf_executor memory
         """
 
         data = bytearray().join(values)
@@ -222,16 +185,74 @@ class S3GFormatter(object):
             ) + packet_data
 
             addr += packet_cmds
-            reply = self.send_and_wait_reply(payload, cmd_id)
+            print(`payload`)
+            reply = self.send_and_wait_reply(payload, kw.get("cmd_id", None))
             if reply[0] != 0x81:
                 raise RuntimeError("Unexpected reply code")
         return
+
+    def BUF_OUTPUT(self, reg, *args):
+        """
+        Set output to value
+        """
+        val = 0
+        for v in args:
+            val |= v
+
+        data = struct.pack('<iB', val, 64+reg)
+
+        return data
+
+
+    def _BUF_simple(self, cmd, args):
+        """
+        Generic template
+        """
+        val = 0
+        for v in args:
+            val |= v
+
+        data = struct.pack('<iB', val, 128 + cmd)
+
+        return data
+
+    def BUF_STB(self, *args):
+        """
+        Send strobes
+        """
+
+        return self._BUF_simple(1, args)
+
+    def BUF_WAIT_ALL(self, *args):
+        """
+        Wait for all specified interrupts
+        """
+        return self._BUF_simple(2, args)
+
+    def BUF_WAIT_ANY(self, *args):
+        """
+        Wait for any of specified interrupts
+        """
+        return self._BUF_simple(3, args)
+
+    def BUF_CLEAR(self, *args):
+        """
+        Clear pending interrupts
+        """
+        return self._BUF_simple(4, args)
+
+    def BUF_DONE(self, *args):
+        """
+        Finish execution
+        """
+        return self._BUF_simple(63, args)
 
 
 def test_LEDS():
     bot = S3GFormatter()
     serial = i2c(port=0, address=0x3C)
     device = ssd1306(serial)
+    bot.S3G_CLEAR(-1)
 
     i = 0
     while 1:
@@ -245,5 +266,102 @@ def test_LEDS():
             draw.rectangle(device.bounding_box, outline="white", fill="black")
             draw.text((10, 10), "i: {:3d}".format(i), fill="white")
 
+def test_executor():
+    bot = S3GFormatter()
+    bot.S3G_CLEAR(-1)
+    bot.S3G_CLEAR(-1)
+    bot.S3G_OUTPUT(bot.OUT_LEDS, 0x55)
+    bot.S3G_WRITE_BUFFER(
+        0,
+        bot.BUF_OUTPUT(bot.OUT_LEDS, 0x1),
+
+        bot.BUF_OUTPUT(bot.OUT_MSG_ALL_PRE_N, 100), # 10 ms on step cycle - 2-6-2 ms
+        bot.BUF_OUTPUT(bot.OUT_MSG_ALL_PULSE_N, 500),
+        bot.BUF_OUTPUT(bot.OUT_MSG_ALL_POST_N, 600),
+
+        bot.BUF_OUTPUT(bot.OUT_ASG_DT_VAL, 50000), # 1 kHz acceleration steps
+        bot.BUF_OUTPUT(bot.OUT_APG_X_ABORT_A_VAL, 100),
+
+        bot.BUF_OUTPUT(bot.OUT_MSG_CONTROL,
+                       bot.OUT_MSG_CONTROL_ENABLE_X
+                       ),
+
+        bot.BUF_OUTPUT(bot.OUT_ASG_STEPS_VAL, 10000), # 0.5 seconds
+        bot.BUF_OUTPUT(bot.OUT_ASG_CONTROL,
+                        bot.OUT_ASG_CONTROL_SET_STEPS_LIMIT,
+                        bot.OUT_ASG_CONTROL_SET_DT_LIMIT,
+                        bot.OUT_ASG_CONTROL_RESET_STEPS,
+                        bot.OUT_ASG_CONTROL_RESET_DT,
+                        bot.OUT_ASG_CONTROL_APG_X_SET_JJ,
+                        bot.OUT_ASG_CONTROL_APG_X_SET_J,
+                        bot.OUT_ASG_CONTROL_APG_X_SET_A,
+                        bot.OUT_ASG_CONTROL_APG_X_SET_V,
+                        bot.OUT_ASG_CONTROL_APG_X_SET_X,
+                        bot.OUT_ASG_CONTROL_APG_X_SET_TARGET_V
+                       ),
+        bot.BUF_OUTPUT(bot.OUT_APG_X_X_VAL_LO, 0),
+        bot.BUF_OUTPUT(bot.OUT_APG_X_X_VAL_HI, 0),
+        bot.BUF_OUTPUT(bot.OUT_APG_X_V_VAL, 0),
+        bot.BUF_OUTPUT(bot.OUT_APG_X_A_VAL, 200),
+        bot.BUF_OUTPUT(bot.OUT_APG_X_J_VAL, 0),
+        bot.BUF_OUTPUT(bot.OUT_APG_X_JJ_VAL, 0),
+        bot.BUF_OUTPUT(bot.OUT_APG_X_TARGET_V_VAL,2000000),
+
+        bot.BUF_STB(bot.STB_ASG_LOAD),
+        bot.BUF_OUTPUT(bot.OUT_ASG_CONTROL,
+                         bot.OUT_ASG_CONTROL_SET_STEPS_LIMIT |
+                         bot.OUT_ASG_CONTROL_RESET_STEPS |
+                         bot.OUT_ASG_CONTROL_APG_X_SET_A
+                        ),
+        bot.BUF_OUTPUT(bot.OUT_ASG_STEPS_VAL, 3000),
+        bot.BUF_OUTPUT(bot.OUT_APG_X_A_VAL, 0),
+
+        bot.BUF_WAIT_ALL(bot.INT_ASG_DONE),
+        bot.BUF_CLEAR(bot.INT_ASG_DONE),
+        bot.BUF_STB(bot.STB_ASG_LOAD),
+        bot.BUF_OUTPUT(bot.OUT_LEDS, 0x3),
+
+        bot.BUF_OUTPUT(bot.OUT_ASG_CONTROL,
+                       bot.OUT_ASG_CONTROL_SET_STEPS_LIMIT |
+                       bot.OUT_ASG_CONTROL_RESET_STEPS |
+                       bot.OUT_ASG_CONTROL_APG_X_SET_A |
+                       bot.OUT_ASG_CONTROL_APG_X_SET_TARGET_V
+                       ),
+        bot.BUF_OUTPUT(bot.OUT_ASG_STEPS_VAL, 10000),
+        bot.BUF_OUTPUT(bot.OUT_APG_X_A_VAL, -300),
+        bot.BUF_OUTPUT(bot.OUT_APG_X_TARGET_V_VAL, 0),
+
+        bot.BUF_WAIT_ALL(bot.INT_ASG_DONE),
+        bot.BUF_CLEAR(bot.INT_ASG_DONE),
+        bot.BUF_STB(bot.STB_ASG_LOAD),
+        bot.BUF_OUTPUT(bot.OUT_LEDS, 0x7),
+
+        bot.BUF_OUTPUT(bot.OUT_ASG_CONTROL,
+                        bot.OUT_ASG_CONTROL_SET_DT_LIMIT
+                        ),
+        bot.BUF_OUTPUT(bot.OUT_ASG_DT_VAL, 0), # 1 kHz acceleration steps
+
+        bot.BUF_WAIT_ALL(bot.INT_ASG_DONE),
+        bot.BUF_CLEAR(bot.INT_ASG_DONE),
+        bot.BUF_STB(bot.STB_ASG_LOAD),
+        bot.BUF_OUTPUT(bot.OUT_LEDS, 0xf),
+        bot.BUF_OUTPUT(bot.OUT_MSG_CONTROL, 0),
+        bot.BUF_DONE()
+    )
+    bot.S3G_OUTPUT(bot.OUT_BE_START_ADDR, 0)
+    bot.S3G_MASK(0)
+    bot.S3G_STB(bot.STB_BE_START)
+    while 1:
+        status = bot.S3G_INPUT(62)
+        print("%8X" % status)
+        time.sleep(0.1)
+        if status > 0:
+            break
+
+    bot.S3G_CLEAR(-1)
+
+
+
 if __name__ == "__main__":
-    test_LEDS()
+    #test_LEDS()
+    test_executor()
