@@ -42,3 +42,7 @@ NET "mot_y_enable" LOC = P50 | IOSTANDARD = LVTTL;
 NET "mot_y_step" LOC = P40 | IOSTANDARD = LVTTL;
 NET "mot_y_dir" LOC = P34 | IOSTANDARD = LVTTL;
 
+NET "mot_z_enable" LOC = P33 | IOSTANDARD = LVTTL;
+NET "mot_z_step" LOC = P30 | IOSTANDARD = LVTTL;
+NET "mot_z_dir" LOC = P27 | IOSTANDARD = LVTTL;
+
