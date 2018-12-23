@@ -13,6 +13,8 @@ from luma.core.interface.serial import i2c
 from luma.core.render import canvas
 from luma.oled.device import ssd1306
 
+import spidev
+
 class S3GFormatter(object):
     OUT_LEDS = 0
     OUT_ASG_STEPS_VAL = 1
@@ -267,6 +269,19 @@ def test_LEDS():
             draw.text((10, 10), "i: {:3d}".format(i), fill="white")
 
 def test_executor():
+    dev = spidev.SpiDev()
+    dev.open(1,0)
+    dev.xfer2([0x80,0,0,0,1])
+    dev.xfer2([0x90,0,0,16,16])
+    dev.xfer2([0x6c+0x80,0x04,0x00,0x80,0x08])
+
+    serial = i2c(port=0, address=0x3C)
+    device = ssd1306(serial)
+
+    with canvas(device) as draw:
+        draw.rectangle(device.bounding_box, outline="white", fill="black")
+        draw.text((10, 10), "Start", fill="white")
+
     bot = S3GFormatter()
     bot.S3G_CLEAR(-1)
     bot.S3G_CLEAR(-1)
@@ -354,14 +369,29 @@ def test_executor():
     while 1:
         status = bot.S3G_INPUT(62)
         print("%8X" % status)
+        with canvas(device) as draw:
+            draw.rectangle(device.bounding_box, outline="white", fill="black")
+            draw.text((10, 10), "Status: {:x}".format(status), fill="white")
         time.sleep(0.1)
         if status > 0:
             break
 
     bot.S3G_CLEAR(-1)
+    with canvas(device) as draw:
+        draw.rectangle(device.bounding_box, outline="white", fill="black")
+        draw.text((10, 10), "Done", fill="white")
+
+def test_spi():
+    dev = spidev.SpiDev()
+    dev.open(1,0)
+    a = dev.xfer2([0x0,0,0,0,0]*6)
+    print(a)
+    a = dev.xfer2([0x0,0,0,0,0]*6)
+    print(a)
 
 
 
 if __name__ == "__main__":
     #test_LEDS()
     test_executor()
+    #test_spi()
