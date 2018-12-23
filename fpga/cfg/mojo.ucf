@@ -34,15 +34,27 @@ NET "ext_tx" LOC = P119 | IOSTANDARD = LVTTL;
 NET "ext_rx" LOC = P120 | IOSTANDARD = LVTTL;
 NET "ext_rx_busy" LOC = P118 | IOSTANDARD = LVTTL;
 
-NET "mot_x_enable" LOC = P51 | IOSTANDARD = LVTTL;
-NET "mot_x_step" LOC = P41 | IOSTANDARD = LVTTL;
-NET "mot_x_dir" LOC = P35 | IOSTANDARD = LVTTL;
+NET "mot_1_enable" LOC = P51 | IOSTANDARD = LVTTL;
+NET "mot_1_step" LOC = P41 | IOSTANDARD = LVTTL;
+NET "mot_1_dir" LOC = P35 | IOSTANDARD = LVTTL;
 
-NET "mot_y_enable" LOC = P50 | IOSTANDARD = LVTTL;
-NET "mot_y_step" LOC = P40 | IOSTANDARD = LVTTL;
-NET "mot_y_dir" LOC = P34 | IOSTANDARD = LVTTL;
+NET "mot_6_enable" LOC = P50 | IOSTANDARD = LVTTL;
+NET "mot_6_step" LOC = P40 | IOSTANDARD = LVTTL;
+NET "mot_6_dir" LOC = P34 | IOSTANDARD = LVTTL;
 
-NET "mot_z_enable" LOC = P33 | IOSTANDARD = LVTTL;
-NET "mot_z_step" LOC = P30 | IOSTANDARD = LVTTL;
-NET "mot_z_dir" LOC = P27 | IOSTANDARD = LVTTL;
+NET "mot_2_enable" LOC = P33 | IOSTANDARD = LVTTL;
+NET "mot_2_step" LOC = P30 | IOSTANDARD = LVTTL;
+NET "mot_2_dir" LOC = P27 | IOSTANDARD = LVTTL;
+
+NET "mot_5_enable" LOC = P32 | IOSTANDARD = LVTTL;
+NET "mot_5_step" LOC = P29 | IOSTANDARD = LVTTL;
+NET "mot_5_dir" LOC = P26 | IOSTANDARD = LVTTL;
+
+NET "mot_3_enable" LOC = P24 | IOSTANDARD = LVTTL;
+NET "mot_3_step" LOC = P22 | IOSTANDARD = LVTTL;
+NET "mot_3_dir" LOC = P17 | IOSTANDARD = LVTTL;
+
+NET "mot_4_enable" LOC = P23 | IOSTANDARD = LVTTL;
+NET "mot_4_step" LOC = P21 | IOSTANDARD = LVTTL;
+NET "mot_4_dir" LOC = P16 | IOSTANDARD = LVTTL;
 

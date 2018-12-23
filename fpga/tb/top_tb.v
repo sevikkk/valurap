@@ -12,6 +12,7 @@
 `include "../src/acc_step_gen.v"
 `include "../src/motor_step_gen.v"
 `include "../src/acc_profile_gen.v"
+`include "../src/motor_mux.v"
 `include "../src/buf_cmds.v"
 
 module top_tb;

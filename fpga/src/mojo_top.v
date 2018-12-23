@@ -27,17 +27,29 @@ module mojo_top #(
     output ext_rx, // Ext Rx => FPGA Tx
     input ext_rx_busy, // Ext Rx buffer full
 
-    output mot_x_step,
-    output mot_x_dir,
-    output mot_x_enable,
+    output mot_1_step,
+    output mot_1_dir,
+    output mot_1_enable,
 
-    output mot_y_step,
-    output mot_y_dir,
-    output mot_y_enable,
+    output mot_2_step,
+    output mot_2_dir,
+    output mot_2_enable,
 
-    output mot_z_step,
-    output mot_z_dir,
-    output mot_z_enable
+    output mot_3_step,
+    output mot_3_dir,
+    output mot_3_enable,
+
+    output mot_4_step,
+    output mot_4_dir,
+    output mot_4_enable,
+
+    output mot_5_step,
+    output mot_5_dir,
+    output mot_5_enable,
+
+    output mot_6_step,
+    output mot_6_dir,
+    output mot_6_enable
     );
 
 wire rst = ~rst_n; // make reset active high
@@ -253,9 +265,112 @@ wire [31:0] msg_all_post_n;
 assign msg_all_pre_n = out_reg4;
 assign msg_all_pulse_n = out_reg5;
 assign msg_all_post_n = out_reg6;
-assign mot_x_enable = ~out_reg7[0];
-assign mot_y_enable = ~out_reg7[1];
-assign mot_z_enable = ~out_reg7[2];
+
+wire mot_x_step;
+wire mot_x_dir;
+
+wire mot_y_step;
+wire mot_y_dir;
+
+wire mot_z_step;
+wire mot_z_dir;
+
+assign mot_1_enable = ~out_reg7[0];
+
+motor_mux mmux_1(
+    .clk(clk),
+    .step_x(mot_x_step),
+    .dir_x(mot_x_dir),
+    .step_y(mot_y_step),
+    .dir_y(mot_y_dir),
+    .step_z(mot_z_step),
+    .dir_z(mot_z_dir),
+    .mux_select(out_reg7[2:1]),
+    .invert_dir(out_reg7[3]),
+    .step(mot_1_step),
+    .dir(mot_1_dir)
+);
+
+assign mot_2_enable = ~out_reg7[4];
+
+motor_mux mmux_2(
+    .clk(clk),
+    .step_x(mot_x_step),
+    .dir_x(mot_x_dir),
+    .step_y(mot_y_step),
+    .dir_y(mot_y_dir),
+    .step_z(mot_z_step),
+    .dir_z(mot_z_dir),
+    .mux_select(out_reg7[6:5]),
+    .invert_dir(out_reg7[7]),
+    .step(mot_2_step),
+    .dir(mot_2_dir)
+);
+
+assign mot_3_enable = ~out_reg7[8];
+
+motor_mux mmux_3(
+    .clk(clk),
+    .step_x(mot_x_step),
+    .dir_x(mot_x_dir),
+    .step_y(mot_y_step),
+    .dir_y(mot_y_dir),
+    .step_z(mot_z_step),
+    .dir_z(mot_z_dir),
+    .mux_select(out_reg7[10:9]),
+    .invert_dir(out_reg7[11]),
+    .step(mot_3_step),
+    .dir(mot_3_dir)
+);
+
+assign mot_4_enable = ~out_reg7[12];
+
+motor_mux mmux_4(
+    .clk(clk),
+    .step_x(mot_x_step),
+    .dir_x(mot_x_dir),
+    .step_y(mot_y_step),
+    .dir_y(mot_y_dir),
+    .step_z(mot_z_step),
+    .dir_z(mot_z_dir),
+    .mux_select(out_reg7[14:13]),
+    .invert_dir(out_reg7[15]),
+    .step(mot_4_step),
+    .dir(mot_4_dir)
+);
+
+assign mot_5_enable = ~out_reg7[16];
+
+motor_mux mmux_5(
+    .clk(clk),
+    .step_x(mot_x_step),
+    .dir_x(mot_x_dir),
+    .step_y(mot_y_step),
+    .dir_y(mot_y_dir),
+    .step_z(mot_z_step),
+    .dir_z(mot_z_dir),
+    .mux_select(out_reg7[18:17]),
+    .invert_dir(out_reg7[19]),
+    .step(mot_5_step),
+    .dir(mot_5_dir)
+);
+
+assign mot_6_enable = ~out_reg7[20];
+
+motor_mux mmux_6(
+    .clk(clk),
+    .step_x(mot_x_step),
+    .dir_x(mot_x_dir),
+    .step_y(mot_y_step),
+    .dir_y(mot_y_dir),
+    .step_z(mot_z_step),
+    .dir_z(mot_z_dir),
+    .mux_select(out_reg7[22:21]),
+    .invert_dir(out_reg7[23]),
+    .step(mot_6_step),
+    .dir(mot_6_dir)
+);
+
 
 wire apg_x_set_x;
 wire apg_x_set_v;
