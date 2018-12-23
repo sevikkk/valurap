@@ -33,7 +33,11 @@ module mojo_top #(
 
     output mot_y_step,
     output mot_y_dir,
-    output mot_y_enable
+    output mot_y_enable,
+
+    output mot_z_step,
+    output mot_z_dir,
+    output mot_z_enable
     );
 
 wire rst = ~rst_n; // make reset active high
@@ -185,6 +189,16 @@ wire [31:0] out_reg26;
 wire [31:0] out_reg27;
 wire [31:0] out_reg28;
 wire [31:0] out_reg29;
+wire [31:0] out_reg30;
+wire [31:0] out_reg31;
+wire [31:0] out_reg32;
+wire [31:0] out_reg33;
+wire [31:0] out_reg34;
+wire [31:0] out_reg35;
+wire [31:0] out_reg36;
+wire [31:0] out_reg37;
+wire [31:0] out_reg38;
+wire [31:0] out_reg39;
 
 wire [31:0] stbs;
 
@@ -241,6 +255,7 @@ assign msg_all_pulse_n = out_reg5;
 assign msg_all_post_n = out_reg6;
 assign mot_x_enable = ~out_reg7[0];
 assign mot_y_enable = ~out_reg7[1];
+assign mot_z_enable = ~out_reg7[2];
 
 wire apg_x_set_x;
 wire apg_x_set_v;
@@ -311,6 +326,41 @@ assign apg_y_abort_a = out_reg23;
 wire apg_y_step;
 wire apg_y_dir;
 wire apg_y_stopped;
+
+wire apg_z_set_x;
+wire apg_z_set_v;
+wire apg_z_set_a;
+wire apg_z_set_j;
+wire apg_z_set_jj;
+wire apg_z_set_target_v;
+
+assign apg_z_set_x = out_reg3[24];
+assign apg_z_set_v = out_reg3[25];
+assign apg_z_set_a = out_reg3[26];
+assign apg_z_set_j = out_reg3[27];
+assign apg_z_set_jj = out_reg3[28];
+assign apg_z_set_target_v = out_reg3[29];
+
+wire signed [63:0] apg_z_x_val;
+wire signed [31:0] apg_z_v_val;
+wire signed [31:0] apg_z_a_val;
+wire signed [31:0] apg_z_j_val;
+wire signed [31:0] apg_z_jj_val;
+wire signed [31:0] apg_z_target_v_val;
+wire signed [31:0] apg_z_abort_a;
+
+assign apg_z_x_val[31:0] = out_reg24;
+assign apg_z_x_val[63:32] = out_reg25;
+assign apg_z_v_val = out_reg26;
+assign apg_z_a_val = out_reg27;
+assign apg_z_j_val = out_reg28;
+assign apg_z_jj_val = out_reg29;
+assign apg_z_target_v_val = out_reg30;
+assign apg_z_abort_a = out_reg31;
+
+wire apg_z_step;
+wire apg_z_dir;
+wire apg_z_stopped;
 
 s3g_rx s3g_rx(
     .clk(clk),
@@ -424,6 +474,16 @@ s3g_executor #(.INTS_TIMER(INTS_TIMER)) s3g_executor(
     .out_reg27(out_reg27),
     .out_reg28(out_reg28),
     .out_reg29(out_reg29),
+    .out_reg30(out_reg30),
+    .out_reg31(out_reg31),
+    .out_reg32(out_reg32),
+    .out_reg33(out_reg33),
+    .out_reg34(out_reg34),
+    .out_reg35(out_reg35),
+    .out_reg36(out_reg36),
+    .out_reg37(out_reg37),
+    .out_reg38(out_reg38),
+    .out_reg39(out_reg39),
 
     .out_reg62(be_start_addr),
     .out_reg63(se_reg_lb),
@@ -645,6 +705,51 @@ motor_step_gen msg_y(
            .step_dir(apg_y_dir),
            .step(mot_y_step),
            .dir(mot_y_dir),
+           .missed()
+);
+
+acc_profile_gen apg_z(
+           .clk(clk),
+           .reset(n_rdy),
+           .acc_step(asg_step),
+           .load(asg_load),
+           .set_x(apg_z_set_x),
+           .set_v(apg_z_set_v),
+           .set_a(apg_z_set_a),
+           .set_j(apg_z_set_j),
+           .set_jj(apg_z_set_jj),
+           .set_target_v(apg_z_set_target_v),
+           .x_val(apg_z_x_val),
+           .v_val(apg_z_v_val),
+           .a_val(apg_z_a_val),
+           .j_val(apg_z_j_val),
+           .jj_val(apg_z_jj_val),
+           .target_v_val(apg_z_target_v_val),
+           .abort_a_val(apg_z_abort_a),
+           .step_bit(32),
+           .abort(asg_abort),
+           .x(),
+           .v(),
+           .a(),
+           .j(),
+           .jj(),
+           .step_start_x(),
+           .step_start_v(),
+           .step(apg_z_step),
+           .dir(apg_z_dir),
+           .stopped(apg_z_stopped)
+);
+
+motor_step_gen msg_z(
+           .clk(clk),
+           .reset(n_rdy),
+           .pre_n(msg_all_pre_n),
+           .pulse_n(msg_all_pulse_n),
+           .post_n(msg_all_post_n),
+           .step_stb(apg_z_step),
+           .step_dir(apg_z_dir),
+           .step(mot_z_step),
+           .dir(mot_z_dir),
            .missed()
 );
 
