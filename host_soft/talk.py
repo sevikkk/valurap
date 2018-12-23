@@ -25,6 +25,7 @@ class S3GFormatter(object):
     OUT_MSG_ALL_PULSE_N = 5
     OUT_MSG_ALL_POST_N = 6
     OUT_MSG_CONTROL = 7
+
     OUT_APG_X_X_VAL_LO = 8
     OUT_APG_X_X_VAL_HI = 9
     OUT_APG_X_V_VAL = 10
@@ -33,6 +34,16 @@ class S3GFormatter(object):
     OUT_APG_X_JJ_VAL = 13
     OUT_APG_X_TARGET_V_VAL = 14
     OUT_APG_X_ABORT_A_VAL = 15
+
+    OUT_APG_Y_X_VAL_LO = 16
+    OUT_APG_Y_X_VAL_HI = 17
+    OUT_APG_Y_V_VAL = 18
+    OUT_APG_Y_A_VAL = 19
+    OUT_APG_Y_J_VAL = 20
+    OUT_APG_Y_JJ_VAL = 21
+    OUT_APG_Y_TARGET_V_VAL = 22
+    OUT_APG_Y_ABORT_A_VAL = 23
+
     OUT_BE_START_ADDR = 62
     OUT_SE_REG_LB = 63
 
@@ -46,12 +57,13 @@ class S3GFormatter(object):
     OUT_ASG_CONTROL_APG_X_SET_J =           0x00000800
     OUT_ASG_CONTROL_APG_X_SET_JJ =          0x00001000
     OUT_ASG_CONTROL_APG_X_SET_TARGET_V =    0x00002000
-    OUT_ASG_CONTROL_APG_Y_SET_X =           0x00004000
-    OUT_ASG_CONTROL_APG_Y_SET_V =           0x00008000
-    OUT_ASG_CONTROL_APG_Y_SET_A =           0x00010000
-    OUT_ASG_CONTROL_APG_Y_SET_J =           0x00020000
-    OUT_ASG_CONTROL_APG_Y_SET_JJ =          0x00040000
-    OUT_ASG_CONTROL_APG_Y_SET_TARGET_V =    0x00080000
+
+    OUT_ASG_CONTROL_APG_Y_SET_X =           0x00010000
+    OUT_ASG_CONTROL_APG_Y_SET_V =           0x00020000
+    OUT_ASG_CONTROL_APG_Y_SET_A =           0x00040000
+    OUT_ASG_CONTROL_APG_Y_SET_J =           0x00080000
+    OUT_ASG_CONTROL_APG_Y_SET_JJ =          0x00100000
+    OUT_ASG_CONTROL_APG_Y_SET_TARGET_V =    0x00200000
 
     OUT_MSG_CONTROL_ENABLE_X = 0x00000001
     OUT_MSG_CONTROL_ENABLE_Y = 0x00000002
@@ -271,9 +283,9 @@ def test_LEDS():
 def test_executor():
     dev = spidev.SpiDev()
     dev.open(1,0)
-    dev.xfer2([0x80,0,0,0,1])
-    dev.xfer2([0x90,0,0,16,16])
-    dev.xfer2([0x6c+0x80,0x04,0x00,0x80,0x08])
+    dev.xfer2([0x80, 0, 0, 0, 1] * 6)
+    dev.xfer2([0x90, 0, 0, 16, 16] * 6)
+    dev.xfer2([0x6c + 0x80, 0x04, 0x00, 0x80, 0x08] * 6)
 
     serial = i2c(port=0, address=0x3C)
     device = ssd1306(serial)
@@ -296,9 +308,11 @@ def test_executor():
 
         bot.BUF_OUTPUT(bot.OUT_ASG_DT_VAL, 50000), # 1 kHz acceleration steps
         bot.BUF_OUTPUT(bot.OUT_APG_X_ABORT_A_VAL, 100),
+        bot.BUF_OUTPUT(bot.OUT_APG_Y_ABORT_A_VAL, 100),
 
         bot.BUF_OUTPUT(bot.OUT_MSG_CONTROL,
-                       bot.OUT_MSG_CONTROL_ENABLE_X
+                       bot.OUT_MSG_CONTROL_ENABLE_X,
+                       bot.OUT_MSG_CONTROL_ENABLE_Y
                        ),
 
         bot.BUF_OUTPUT(bot.OUT_ASG_STEPS_VAL, 10000), # 0.5 seconds
@@ -307,12 +321,20 @@ def test_executor():
                         bot.OUT_ASG_CONTROL_SET_DT_LIMIT,
                         bot.OUT_ASG_CONTROL_RESET_STEPS,
                         bot.OUT_ASG_CONTROL_RESET_DT,
+
                         bot.OUT_ASG_CONTROL_APG_X_SET_JJ,
                         bot.OUT_ASG_CONTROL_APG_X_SET_J,
                         bot.OUT_ASG_CONTROL_APG_X_SET_A,
                         bot.OUT_ASG_CONTROL_APG_X_SET_V,
                         bot.OUT_ASG_CONTROL_APG_X_SET_X,
-                        bot.OUT_ASG_CONTROL_APG_X_SET_TARGET_V
+                        bot.OUT_ASG_CONTROL_APG_X_SET_TARGET_V,
+
+                        bot.OUT_ASG_CONTROL_APG_Y_SET_JJ,
+                        bot.OUT_ASG_CONTROL_APG_Y_SET_J,
+                        bot.OUT_ASG_CONTROL_APG_Y_SET_A,
+                        bot.OUT_ASG_CONTROL_APG_Y_SET_V,
+                        bot.OUT_ASG_CONTROL_APG_Y_SET_X,
+                        bot.OUT_ASG_CONTROL_APG_Y_SET_TARGET_V
                        ),
         bot.BUF_OUTPUT(bot.OUT_APG_X_X_VAL_LO, 0),
         bot.BUF_OUTPUT(bot.OUT_APG_X_X_VAL_HI, 0),
@@ -322,14 +344,24 @@ def test_executor():
         bot.BUF_OUTPUT(bot.OUT_APG_X_JJ_VAL, 0),
         bot.BUF_OUTPUT(bot.OUT_APG_X_TARGET_V_VAL,2000000),
 
+        bot.BUF_OUTPUT(bot.OUT_APG_Y_X_VAL_LO, 0),
+        bot.BUF_OUTPUT(bot.OUT_APG_Y_X_VAL_HI, 0),
+        bot.BUF_OUTPUT(bot.OUT_APG_Y_V_VAL, 0),
+        bot.BUF_OUTPUT(bot.OUT_APG_Y_A_VAL, 200),
+        bot.BUF_OUTPUT(bot.OUT_APG_Y_J_VAL, 0),
+        bot.BUF_OUTPUT(bot.OUT_APG_Y_JJ_VAL, 0),
+        bot.BUF_OUTPUT(bot.OUT_APG_Y_TARGET_V_VAL,1000000),
+
         bot.BUF_STB(bot.STB_ASG_LOAD),
         bot.BUF_OUTPUT(bot.OUT_ASG_CONTROL,
                          bot.OUT_ASG_CONTROL_SET_STEPS_LIMIT |
                          bot.OUT_ASG_CONTROL_RESET_STEPS |
-                         bot.OUT_ASG_CONTROL_APG_X_SET_A
+                         bot.OUT_ASG_CONTROL_APG_X_SET_A,
+                         bot.OUT_ASG_CONTROL_APG_Y_SET_A
                         ),
         bot.BUF_OUTPUT(bot.OUT_ASG_STEPS_VAL, 3000),
         bot.BUF_OUTPUT(bot.OUT_APG_X_A_VAL, 0),
+        bot.BUF_OUTPUT(bot.OUT_APG_Y_A_VAL, 0),
 
         bot.BUF_WAIT_ALL(bot.INT_ASG_DONE),
         bot.BUF_CLEAR(bot.INT_ASG_DONE),
@@ -340,11 +372,15 @@ def test_executor():
                        bot.OUT_ASG_CONTROL_SET_STEPS_LIMIT |
                        bot.OUT_ASG_CONTROL_RESET_STEPS |
                        bot.OUT_ASG_CONTROL_APG_X_SET_A |
-                       bot.OUT_ASG_CONTROL_APG_X_SET_TARGET_V
+                       bot.OUT_ASG_CONTROL_APG_X_SET_TARGET_V |
+                       bot.OUT_ASG_CONTROL_APG_Y_SET_A |
+                       bot.OUT_ASG_CONTROL_APG_Y_SET_TARGET_V
                        ),
         bot.BUF_OUTPUT(bot.OUT_ASG_STEPS_VAL, 10000),
         bot.BUF_OUTPUT(bot.OUT_APG_X_A_VAL, -300),
         bot.BUF_OUTPUT(bot.OUT_APG_X_TARGET_V_VAL, 0),
+        bot.BUF_OUTPUT(bot.OUT_APG_Y_A_VAL, -300),
+        bot.BUF_OUTPUT(bot.OUT_APG_Y_TARGET_V_VAL, 0),
 
         bot.BUF_WAIT_ALL(bot.INT_ASG_DONE),
         bot.BUF_CLEAR(bot.INT_ASG_DONE),
