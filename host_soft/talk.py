@@ -377,15 +377,34 @@ def test_executor():
                        bot.OUT_ASG_CONTROL_APG_Y_SET_TARGET_V
                        ),
         bot.BUF_OUTPUT(bot.OUT_ASG_STEPS_VAL, 10000),
-        bot.BUF_OUTPUT(bot.OUT_APG_X_A_VAL, -300),
-        bot.BUF_OUTPUT(bot.OUT_APG_X_TARGET_V_VAL, 0),
-        bot.BUF_OUTPUT(bot.OUT_APG_Y_A_VAL, -300),
-        bot.BUF_OUTPUT(bot.OUT_APG_Y_TARGET_V_VAL, 0),
+        bot.BUF_OUTPUT(bot.OUT_APG_X_A_VAL, -600),
+        bot.BUF_OUTPUT(bot.OUT_APG_X_TARGET_V_VAL, -1000000),
+        bot.BUF_OUTPUT(bot.OUT_APG_Y_A_VAL, -600),
+        bot.BUF_OUTPUT(bot.OUT_APG_Y_TARGET_V_VAL, -2000000),
 
         bot.BUF_WAIT_ALL(bot.INT_ASG_DONE),
         bot.BUF_CLEAR(bot.INT_ASG_DONE),
         bot.BUF_STB(bot.STB_ASG_LOAD),
         bot.BUF_OUTPUT(bot.OUT_LEDS, 0x7),
+
+        bot.BUF_OUTPUT(bot.OUT_ASG_CONTROL,
+                       bot.OUT_ASG_CONTROL_SET_STEPS_LIMIT |
+                       bot.OUT_ASG_CONTROL_RESET_STEPS |
+                       bot.OUT_ASG_CONTROL_APG_X_SET_A |
+                       bot.OUT_ASG_CONTROL_APG_X_SET_TARGET_V |
+                       bot.OUT_ASG_CONTROL_APG_Y_SET_A |
+                       bot.OUT_ASG_CONTROL_APG_Y_SET_TARGET_V
+                       ),
+        bot.BUF_OUTPUT(bot.OUT_ASG_STEPS_VAL, 10000),
+        bot.BUF_OUTPUT(bot.OUT_APG_X_A_VAL, 300),
+        bot.BUF_OUTPUT(bot.OUT_APG_X_TARGET_V_VAL, 0),
+        bot.BUF_OUTPUT(bot.OUT_APG_Y_A_VAL, 300),
+        bot.BUF_OUTPUT(bot.OUT_APG_Y_TARGET_V_VAL, 0),
+
+        bot.BUF_WAIT_ALL(bot.INT_ASG_DONE),
+        bot.BUF_CLEAR(bot.INT_ASG_DONE),
+        bot.BUF_STB(bot.STB_ASG_LOAD),
+        bot.BUF_OUTPUT(bot.OUT_LEDS, 0xF),
 
         bot.BUF_OUTPUT(bot.OUT_ASG_CONTROL,
                         bot.OUT_ASG_CONTROL_SET_DT_LIMIT
@@ -395,7 +414,7 @@ def test_executor():
         bot.BUF_WAIT_ALL(bot.INT_ASG_DONE),
         bot.BUF_CLEAR(bot.INT_ASG_DONE),
         bot.BUF_STB(bot.STB_ASG_LOAD),
-        bot.BUF_OUTPUT(bot.OUT_LEDS, 0xf),
+        bot.BUF_OUTPUT(bot.OUT_LEDS, 0x3F),
         bot.BUF_OUTPUT(bot.OUT_MSG_CONTROL, 0),
         bot.BUF_DONE()
     )
