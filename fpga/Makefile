@@ -47,7 +47,7 @@ clean-build:
 cleanall:	clean
 		rm -rf build $(DESIGN).bit
 
-bits:		$(DESIGN).bit
+bits:		$(DESIGN).bin
 
 download: bits
 		cd build && impact -batch ../${IMPACT}
