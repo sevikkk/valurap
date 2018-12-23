@@ -110,7 +110,7 @@ always @(state, load, dt_val, steps_val, steps, dt, reset, steps_limit, dt_limit
                         else
                             begin
                                 abort <= 1;
-                                if (dt + 1 >= dt_val)
+                                if (dt + 1 >= dt_limit)
                                     begin
                                         next_steps <= steps + 1;
                                         next_dt <= 0;
