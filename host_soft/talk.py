@@ -371,8 +371,14 @@ def test_executor():
                        bot.OUT_MSG_CONTROL_MUX_1_X,
                        bot.OUT_MSG_CONTROL_ENABLE_2,
                        bot.OUT_MSG_CONTROL_MUX_2_Y,
+                       bot.OUT_MSG_CONTROL_ENABLE_3,
+                       bot.OUT_MSG_CONTROL_MUX_3_Z,
                        bot.OUT_MSG_CONTROL_ENABLE_6,
-                       bot.OUT_MSG_CONTROL_MUX_6_Z
+                       bot.OUT_MSG_CONTROL_MUX_6_X,
+                       bot.OUT_MSG_CONTROL_ENABLE_5,
+                       bot.OUT_MSG_CONTROL_MUX_5_Y,
+                       bot.OUT_MSG_CONTROL_ENABLE_4,
+                       bot.OUT_MSG_CONTROL_MUX_4_Z,
                        ),
 
         bot.BUF_OUTPUT(bot.OUT_ASG_STEPS_VAL, 10000), # 0.5 seconds
