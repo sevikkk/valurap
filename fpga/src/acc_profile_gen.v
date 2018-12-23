@@ -168,9 +168,13 @@ reg next_step;
 reg signed [63:0] next_x;
 wire signed [63:0] x_acc;
 wire signed [32:0] v_effective;
+wire signed [63:0] delta_x;
 
 assign v_effective = v + step_start_v;
-assign x_acc = x + v_effective[32:1];
+assign delta_x[31:0] = v_effective[32:1];
+assign delta_x[63:32] = v_effective[32]?32'hFFFFFFFF:32'h0;
+
+assign x_acc = x + delta_x;
 
 always @(reset, load, set_x, x_val, x, v, dir, step_bit, stopped, x_acc, v_effective)
     begin
