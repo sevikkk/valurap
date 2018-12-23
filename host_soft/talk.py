@@ -514,15 +514,20 @@ def test_executor():
     bot.S3G_STB(bot.STB_BE_START)
     while 1:
         status = bot.S3G_INPUT(62)
+        busy = (status & 0x80000000) >> 31
+        waiting = (status & 0x40000000) >> 30
+        error = (status & 0x00FF0000)>>16
+        pc = status & 0x0000FFFF
         print("%8X" % status)
         with canvas(device) as draw:
             draw.rectangle(device.bounding_box, outline="white", fill="black")
-            draw.text((10, 10), "Status: {:x}".format(status), fill="white")
+            draw.multiline_text((10, 10), "Busy: {} Wait: {}\nError: {} \nPC: {}".format(busy, waiting, error, pc), fill="white")
         time.sleep(0.1)
         if status > 0:
             break
 
     bot.S3G_CLEAR(-1)
+    time.sleep(1)
     with canvas(device) as draw:
         draw.rectangle(device.bounding_box, outline="white", fill="black")
         draw.text((10, 10), "Done", fill="white")
