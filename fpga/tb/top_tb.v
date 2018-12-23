@@ -609,7 +609,102 @@ initial
                             // Execution started, leds -> 01
                             `assert_rx(128'hd503765481a0)
                         end
-                    1000000:
+
+                    900000:
+                        begin
+                            packet = {
+                                buf_cmds.S3G_WRITE_BUFFER_HDR(0, 14),
+
+                                // LEDS 0x1
+                                buf_cmds.OUTPUT(buf_cmds.LEDS, 1),
+                                // Step 1 - constant acceleration speed up to V = 5050
+                                buf_cmds.OUTPUT(buf_cmds.ASG_STEPS_VAL, 70),
+                                buf_cmds.OUTPUT(buf_cmds.ASG_DT_VAL, 1000),
+                                buf_cmds.OUTPUT(buf_cmds.ASG_CONTROL,
+                                                    buf_cmds.ASG_CONTROL_SET_STEPS_LIMIT |
+                                                    buf_cmds.ASG_CONTROL_SET_DT_LIMIT |
+                                                    buf_cmds.ASG_CONTROL_RESET_STEPS |
+                                                    buf_cmds.ASG_CONTROL_RESET_DT |
+                                                    buf_cmds.ASG_CONTROL_APG_X_SET_A |
+                                                    buf_cmds.ASG_CONTROL_APG_X_SET_TARGET_V
+                                               ),
+                                buf_cmds.OUTPUT(buf_cmds.MSG_ALL_PRE_N, 10),
+                                buf_cmds.OUTPUT(buf_cmds.MSG_ALL_PULSE_N, 20),
+                                buf_cmds.OUTPUT(buf_cmds.MSG_ALL_POST_N, 30),
+                                buf_cmds.OUTPUT(buf_cmds.MSG_CONTROL,
+                                                    buf_cmds.MSG_CONTROL_ENABLE_X
+                                               ),
+                                buf_cmds.OUTPUT(buf_cmds.APG_X_A_VAL, -100),
+                                buf_cmds.OUTPUT(buf_cmds.APG_X_ABORT_A_VAL, 200),
+                                buf_cmds.OUTPUT(buf_cmds.APG_X_TARGET_V_VAL, -5050),
+                                buf_cmds.OUTPUT(buf_cmds.BE_START_ADDR, 0),
+                                // Load params
+                                buf_cmds.STB(buf_cmds.STB_ASG_LOAD),
+                                // Step 2 - constant acceleration speed down and reverse to V = -5050
+                                buf_cmds.DONE(0)
+                            };
+                            send_packet = 1;
+                        end
+                    955000:
+                        begin
+                            `assert_rx(128'hd5087654810000002300a7)
+                            // Send be_start stb
+                            packet = buf_cmds.S3G_STB(buf_cmds.STB_BE_START);
+                            send_packet = 1;
+                        end
+                    970000:
+                        begin
+                            // Execution started, leds -> 01
+                            `assert_rx(128'hd503765481a0d507ffff500000004083)
+                            packet = buf_cmds.S3G_CLEAR(32'h40000000);
+                            send_packet = 1;
+                        end
+                    979000:
+                        begin
+                            `assert_rx(128'hd503765481a0)
+                            // Send be_start stb
+                        end
+                    1036000:
+                        begin
+                            `assert_rx(128'hd507ffff50010000004a)
+                            // Send be_start stb
+                            packet = buf_cmds.S3G_CLEAR(1);
+                            send_packet = 1;
+                        end
+                    1050000:
+                        begin
+                            `assert_rx(128'hd503765481a0d507ffff5002000000c2)
+                            // Send be_start stb
+                            packet = buf_cmds.S3G_OUTPUT(buf_cmds.ASG_CONTROL,
+                                buf_cmds.ASG_CONTROL_SET_DT_LIMIT | buf_cmds.ASG_CONTROL_RESET_DT | buf_cmds.ASG_CONTROL_RESET_STEPS);
+                            send_packet = 1;
+                        end
+                    1066000:
+                        begin
+                            `assert_rx(128'hdd503765481a0d507ffff5002000000c2)
+                            // Send be_start stb
+                            packet = buf_cmds.S3G_OUTPUT(buf_cmds.ASG_DT_VAL, 0);
+                            send_packet = 1;
+                        end
+                    1082000:
+                        begin
+                            `assert_rx(128'hd503765481a0d507ffff5002000000c2)
+                            // Send be_start stb
+                            packet = buf_cmds.S3G_STB(buf_cmds.STB_ASG_LOAD);
+                            send_packet = 1;
+                        end
+                    1097000:
+                        begin
+                            `assert_rx(128'hd503765481a0d507ffff5002000000c2)
+                            packet = buf_cmds.S3G_CLEAR(2);
+                            send_packet = 1;
+                        end
+                    1111000:
+                        begin
+                            `assert_rx(128'hd503765481a0)
+                            // Send be_start stb
+                        end
+                    1400000:
                         begin
                             `assert_rx(128'h0)
                             if (assertions_failed)
