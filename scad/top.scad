@@ -13,7 +13,7 @@ include <vitamins/vitamins.scad>
 Y_belt = GT2x6;
 Y_pulley = GT2x20_metal_pulley;
 Y_idler = GT2x20_metal_idler;
-Y_wheel = wheel_23mm;
+Y_wheel = wheel_34mm;
 Y_motors_offset = 4; // Adjust to put lower belt inside of extrusion cavity
 
 X_belt = GT2x6;
