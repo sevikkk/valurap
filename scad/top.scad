@@ -88,7 +88,11 @@ module x_idler(X_size, X) {
  };
 }
 
-module x_end(X_size, X, X_other, vslot_offset, is_left=true) {
+module x_end_plate(vslot_offset, belt_offset, wheel_x_offset, wheel_z_offset) {
+    translate([-60,-50,12.5]) cube([100, 100, 6]);
+}
+
+module x_end(X_size, X, X_other, vslot_offset, belt_offset, is_left=true) {
  wheel_x_offset = wheel_v_slot_offset(Y_wheel);
  wheel_z_offset = wheel_bearing_heoght(Y_wheel)/2;
     
@@ -98,72 +102,19 @@ module x_end(X_size, X, X_other, vslot_offset, is_left=true) {
  
  translate([0, 20 + X_motors_offset, vslot_offset]) x_motor(X_size, X);
  translate([0, -20 - X_motors_offset, vslot_offset]) x_idler(X_size, X_other);
-
+ x_end_plate(vslot_offset, belt_offset, wheel_x_offset, wheel_z_offset);
 }
 
 module x_assembly(X_size, X1, X2, belt_offset) {
- vslot_offset = 20;
+ vslot_offset = 25;
  translate([X_size/2, 0, vslot_offset]) rotate([-90, 0, 90]) v_slot("20x40", X_size);
- translate([-X_size/2, 0, 0]) x_end(X_size, X1, -X2, vslot_offset, true);
- translate([X_size/2, 0, 0]) rotate([0, 0, 180]) x_end(X_size, -X2, X1, vslot_offset, false);
+ translate([-X_size/2, 0, 0]) x_end(X_size, X1, -X2, vslot_offset, belt_offset, true);
+ translate([X_size/2, 0, 0]) rotate([0, 0, 180])
+    x_end(X_size, -X2, X1, vslot_offset, belt_offset, false);
  translate([X1, 10, vslot_offset+10]) x_carriage(X_motors_offset+10);
  translate([X2, -10, vslot_offset+10]) rotate([0, 0, 180]) x_carriage(X_motors_offset+10);
     
 }
-
-module y_motor_corner(is_left) {
-    k = is_left?1:0;
-    mirror([k,0,0])
-    difference() {
-        union() {
-            difference() {
-                union() {
-                    translate([-25,-25,0]) cube([50,50,5]);
-                    translate([22,-25,-45]) cube([3,50,50]);
-                    translate([-25,-25,-45]) cube([50,3,50]);
-                    translate([-25,22,-45]) cube([50,3,50]);
-                    translate([-25,-25,-65]) cube([3,65,70]);
-                };
-                translate([-50,-30,-130]) rotate([0,0,0]) #cube([100,100,100]);
-                translate([0,0, -50]) rotate([0,0,0]) cylinder(d=25, h=100);
-            };
-            translate([-25,8,-66]) cube([3,32,89]);
-
-        };
-        translate([-30,14,-55]) rotate([0,90,0]) cylinder(r=3, h=10);
-        translate([-30,34,-55]) rotate([0,90,0]) cylinder(r=3, h=10);
-        translate([-30,34,-20]) rotate([0,90,0]) cylinder(r=3, h=10);
-        translate([-30,34, 15]) rotate([0,90,0]) cylinder(r=3, h=10);
-        translate([-30, 14, 15]) rotate([0,90,0]) cylinder(r=3, h=10);
-        translate([15.5, 15.5, -5]) rotate([0,0,0]) cylinder(d=3, h=12);
-        translate([15.5, -15.5, -5]) rotate([0,0,0]) cylinder(d=3, h=12);
-        translate([-15.5, 15.5, -5]) rotate([0,0,0]) cylinder(d=3, h=12);
-        translate([-15.5, -15.5, -5]) rotate([0,0,0]) cylinder(d=3, h=12);
-
-    }
-}
-
-
-module y_idler_corner(is_left) {
-    k = is_left?1:0;
-    mirror([k,0,0])
-    difference() {
-        union() {
-            translate([10,  8,-16])  cube([5,32,42]);
-            translate([10,-10,-16]) cube([5,48,25]);
-            translate([10,-10,25])  cube([5,50,10]);
-            translate([-5,-10,25])  cube([20,50,5]);
-            translate([-5,-10,4])  cube([20,50,5]);
-
-        };
-        translate([10, 34, 15]) rotate([0,90,0]) cylinder(r=3, h=10);
-        translate([10, 14, 15]) rotate([0,90,0]) cylinder(r=3, h=10);
-        translate([10, 34, -5]) rotate([0,90,0]) cylinder(r=3, h=10);
-        translate([10, 14, -5]) rotate([0,90,0]) cylinder(r=3, h=10);
-        translate([-5]) cylinder(d=4, h=40);
-    }
-}
-
 
 module y_motor(Y_size, Y, is_left=true) {
  k = is_left? 1 : -1;
@@ -191,6 +142,9 @@ module y_idler(Y_size, Y, is_left=true) {
         y_idler_corner(is_left);
  };
 }
+
+include <y-idler-corner.scad>
+include <y-motor-corner.scad>
 
 
 module top(X_size, Y_size, X1, X2, Y) {
