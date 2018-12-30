@@ -102,7 +102,7 @@ module x_end(X_size, X, X_other, vslot_offset, is_left=true) {
 }
 
 module x_assembly(X_size, X1, X2, belt_offset) {
- vslot_offset = 30;
+ vslot_offset = 20;
  translate([X_size/2, 0, vslot_offset]) rotate([-90, 0, 90]) v_slot("20x40", X_size);
  translate([-X_size/2, 0, 0]) x_end(X_size, X1, -X2, vslot_offset, true);
  translate([X_size/2, 0, 0]) rotate([0, 0, 180]) x_end(X_size, -X2, X1, vslot_offset, false);
@@ -143,4 +143,4 @@ module top(X_size, Y_size, X1, X2, Y) {
 }
 
 
-top(X_size=500, Y_size=950, X1=20, X2=-20, Y=-20);
+top(X_size=200, Y_size=350, X1=20, X2=-20, Y=-20);
