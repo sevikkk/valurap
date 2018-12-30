@@ -92,8 +92,8 @@ module x_end(X_size, X, X_other, vslot_offset, is_left=true) {
  wheel_x_offset = wheel_v_slot_offset(Y_wheel);
  wheel_z_offset = wheel_bearing_heoght(Y_wheel)/2;
     
- translate([-wheel_x_offset-10, -20, 0]) nylon_wheel(Y_wheel);
- translate([-wheel_x_offset-10, 20, 0]) nylon_wheel(Y_wheel);
+ translate([-wheel_x_offset-10, -25, 0]) nylon_wheel(Y_wheel);
+ translate([-wheel_x_offset-10, 25, 0]) nylon_wheel(Y_wheel);
  translate([wheel_x_offset-10, 0, 0]) nylon_wheel(Y_wheel);
  
  translate([0, 20 + X_motors_offset, vslot_offset]) x_motor(X_size, X);
@@ -143,4 +143,4 @@ module top(X_size, Y_size, X1, X2, Y) {
 }
 
 
-top(X_size=250, Y_size=300, X1=20, X2=-20, Y=-20);
+top(X_size=500, Y_size=950, X1=20, X2=-20, Y=-20);
