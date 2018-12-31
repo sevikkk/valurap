@@ -17,7 +17,7 @@ module x_end_plate(vslot_offset, belt_offset, wheel_x_offset, wheel_z_offset) {
         translate([wheel_x_offset-10, -40, -10]) #cylinder(d=6, h=51.5);
         translate([wheel_x_offset-10, 40, -10]) #cylinder(d=6, h=51.5);
         translate([-wheel_x_offset-10, 0, -10]) #cylinder(d=6, h=51.5);
-	translate([0,-20,15]) cube([100,40,20]);
+	translate([-3,-20,15]) #cube([100,40,20]);
         translate([30, -10, 0]) cylinder(d=5, h=20);
         translate([10, -10, 0]) cylinder(d=5, h=20);
         translate([30, 10, 0]) cylinder(d=5, h=20);
@@ -36,13 +36,13 @@ module x_end_top(vslot_offset, belt_offset, wheel_x_offset, wheel_z_offset) {
         translate([wheel_x_offset-10, -40, -10]) #cylinder(d=6, h=51.5);
         translate([wheel_x_offset-10, 40, -10]) #cylinder(d=6, h=51.5);
         translate([-wheel_x_offset-10, 0, -10]) #cylinder(d=6, h=51.5);
-        translate([wheel_x_offset-10, -40, 38]) cylinder(d=12, h=10, $fn=6);
-        translate([wheel_x_offset-10, 40,  38]) cylinder(d=12, h=10, $fn=6);
+        translate([wheel_x_offset-10, -40, 38]) rotate([0,0,30]) cylinder(d=12, h=10, $fn=6);
+        translate([wheel_x_offset-10, 40,  38]) rotate([0,0,30]) cylinder(d=12, h=10, $fn=6);
         translate([-wheel_x_offset-10, 0,  38]) cylinder(d=12, h=10, $fn=6);
-        translate([35, -10, 30]) cylinder(d=5, h=20);
-        translate([15, -10, 30]) cylinder(d=5, h=20);
-        translate([35, 10, 30]) cylinder(d=5, h=20);
-        translate([15, 10, 30]) cylinder(d=5, h=20);
+        translate([37, -10, 30]) cylinder(d=5, h=20);
+        translate([17, -10, 30]) cylinder(d=5, h=20);
+        translate([37, 10, 30]) cylinder(d=5, h=20);
+        translate([17, 10, 30]) cylinder(d=5, h=20);
         translate([-10, -24, 0]) cylinder(d=3, h=100);
         translate([-10, 24, 0]) cylinder(d=25, h=100);
         translate([-10-15.5, 24-15.5, 0]) cylinder(d=3, h=100);
