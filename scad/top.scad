@@ -70,7 +70,7 @@ module x_carriage(belt_offset) {
 }
 
 module x_motor(X_size, X) {
- translate([-12, 0, 17]) rotate([180, 0, 0]) {
+ translate([-10, 0, 17]) rotate([180, 0, 0]) {
      NEMA(NEMA17);
      translate([0, 0, 5]) metal_pulley(X_pulley);
      translate([-pulley_od(X_pulley)/2, 0, 17])
@@ -80,7 +80,7 @@ module x_motor(X_size, X) {
 
 
 module x_idler(X_size, X) {
- translate([ -12, 0, 17]) rotate([180, 0, 0]) {
+ translate([ -10, 0, 17]) rotate([180, 0, 0]) {
         translate([0, 0, 5]) metal_pulley(X_idler);
         translate([-pulley_od(X_pulley)/2, 0, 17])  rotate([180,0,0]) belt_loop(
             loop_straight=X_size/2 - X, belt_end=40,
@@ -88,21 +88,18 @@ module x_idler(X_size, X) {
  };
 }
 
-module x_end_plate(vslot_offset, belt_offset, wheel_x_offset, wheel_z_offset) {
-    translate([-60,-50,12.5]) cube([100, 100, 6]);
-}
-
 module x_end(X_size, X, X_other, vslot_offset, belt_offset, is_left=true) {
  wheel_x_offset = wheel_v_slot_offset(Y_wheel);
  wheel_z_offset = wheel_bearing_heoght(Y_wheel)/2;
     
- translate([-wheel_x_offset-10, -25, 0]) nylon_wheel(Y_wheel);
- translate([-wheel_x_offset-10, 25, 0]) nylon_wheel(Y_wheel);
- translate([wheel_x_offset-10, 0, 0]) nylon_wheel(Y_wheel);
+ translate([wheel_x_offset-10, -40, 0]) nylon_wheel(Y_wheel);
+ translate([wheel_x_offset-10, 40, 0]) nylon_wheel(Y_wheel);
+ translate([-wheel_x_offset-10, 0, 0]) nylon_wheel(Y_wheel);
  
  translate([0, 20 + X_motors_offset, vslot_offset]) x_motor(X_size, X);
  translate([0, -20 - X_motors_offset, vslot_offset]) x_idler(X_size, X_other);
  x_end_plate(vslot_offset, belt_offset, wheel_x_offset, wheel_z_offset);
+ color("blue", alpha=0.5) x_end_top(vslot_offset, belt_offset, wheel_x_offset, wheel_z_offset);
 }
 
 module x_assembly(X_size, X1, X2, belt_offset) {
@@ -119,12 +116,12 @@ module x_assembly(X_size, X1, X2, belt_offset) {
 module y_motor(Y_size, Y, is_left=true) {
  k = is_left? 1 : -1;
  a = is_left? 0 : 180;
- translate([5 * k, -25, 0]) rotate([-90, 0, 90 * k]) {
+ translate([7 * k, -25, 0]) rotate([-90, 0, 90 * k]) {
         NEMA(NEMA17);
         translate([0, 0, 5]) metal_pulley(Y_pulley);
         translate([-pulley_od(Y_pulley)/2 * k, 0, 17]) rotate([a,0,a]) 
             belt_loop(
-                loop_straight=Y_size/2 + Y, belt_end=40,
+                loop_straight=Y_size/2 + Y -10, belt_end=40,
                 loop_dia=pulley_od(Y_pulley), belt=Y_belt
             );
         y_motor_corner(is_left);
@@ -136,15 +133,16 @@ module y_motor(Y_size, Y, is_left=true) {
 module y_idler(Y_size, Y, is_left=true) {
  k = is_left? 1 : -1;
  a = is_left? 180 : 0;
- translate([ 5* k, 15, 0]) rotate([-90, 0, 90 * k]) {
+ translate([ 7 * k, 15, 0]) rotate([-90, 0, 90 * k]) {
         translate([0, 0, 5]) metal_pulley(Y_idler);
-        translate([pulley_od(Y_pulley)/2 * k, 0, 17]) rotate([a,0,a]) belt_loop(loop_straight=Y_size/2 - Y - 10, belt_end=40, loop_dia=pulley_od(Y_pulley), belt=Y_belt);
+        translate([pulley_od(Y_pulley)/2 * k, 0, 17]) rotate([a,0,a]) belt_loop(loop_straight=Y_size/2 - Y - 20, belt_end=40, loop_dia=pulley_od(Y_pulley), belt=Y_belt);
         y_idler_corner(is_left);
  };
 }
 
 include <y-idler-corner.scad>
 include <y-motor-corner.scad>
+include <x-end-plate.scad>
 
 
 module top(X_size, Y_size, X1, X2, Y) {

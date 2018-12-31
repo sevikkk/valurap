@@ -10,8 +10,8 @@ module y_idler_corner(is_left) {
             translate([-5,-10,4])  cube([20,50,5]);
 
         };
-        translate([9, 34, 15]) rotate([0,90,0]) cylinder(r=3, h=12);
-        translate([9, 14, 15]) rotate([0,90,0]) cylinder(r=3, h=12);
+        translate([9, 34, 17]) rotate([0,90,0]) cylinder(r=3, h=12);
+        translate([9, 14, 17]) rotate([0,90,0]) cylinder(r=3, h=12);
         translate([9, 34, -5]) rotate([0,90,0]) cylinder(r=3, h=12);
         translate([9, 14, -5]) rotate([0,90,0]) cylinder(r=3, h=12);
         translate([-5]) cylinder(d=4, h=40);
