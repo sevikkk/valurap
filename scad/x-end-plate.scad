@@ -28,6 +28,7 @@ module x_end_plate(vslot_offset, belt_offset, wheel_x_offset, wheel_z_offset) {
 }
 
 module x_end_top(vslot_offset, belt_offset, wheel_x_offset, wheel_z_offset) {
+    echo("x_end offsets",vslot_offset, belt_offset, wheel_x_offset, wheel_z_offset);
     difference() {
         union() {
             translate([-45,-50, 35]) cube([85, 100, 7]);
