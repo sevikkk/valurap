@@ -90,7 +90,7 @@ module x_idler(X_size, X) {
 
 module x_end(X_size, X, X_other, vslot_offset, belt_offset, is_left=true) {
  wheel_x_offset = wheel_v_slot_offset(Y_wheel);
- wheel_z_offset = wheel_bearing_heoght(Y_wheel)/2;
+ wheel_z_offset = wheel_bearing_height(Y_wheel)/2;
     
  translate([wheel_x_offset-10, -40, 0]) nylon_wheel(Y_wheel);
  translate([wheel_x_offset-10, 40, 0]) nylon_wheel(Y_wheel);
@@ -99,7 +99,7 @@ module x_end(X_size, X, X_other, vslot_offset, belt_offset, is_left=true) {
  translate([0, 20 + X_motors_offset, vslot_offset]) x_motor(X_size, X);
  translate([0, -20 - X_motors_offset, vslot_offset]) x_idler(X_size, X_other);
  x_end_plate(vslot_offset, belt_offset, wheel_x_offset, wheel_z_offset);
- color("blue", alpha=0.5) x_end_top(vslot_offset, belt_offset, wheel_x_offset, wheel_z_offset);
+ color("blue") x_end_top(vslot_offset, belt_offset, wheel_x_offset, wheel_z_offset);
 }
 
 module x_assembly(X_size, X1, X2, belt_offset) {

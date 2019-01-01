@@ -17,7 +17,7 @@ module x_end_plate(vslot_offset, belt_offset, wheel_x_offset, wheel_z_offset) {
         translate([wheel_x_offset-10, -40, -10]) #cylinder(d=6, h=51.5);
         translate([wheel_x_offset-10, 40, -10]) #cylinder(d=6, h=51.5);
         translate([-wheel_x_offset-10, 0, -10]) #cylinder(d=6, h=51.5);
-	translate([-3,-20,15]) #cube([100,40,20]);
+	translate([-3,-20,15]) cube([100,40,20]);
         translate([30, -10, 0]) cylinder(d=5, h=20);
         translate([10, -10, 0]) cylinder(d=5, h=20);
         translate([30, 10, 0]) cylinder(d=5, h=20);
