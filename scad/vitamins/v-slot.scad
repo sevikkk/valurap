@@ -62,7 +62,7 @@ module vslot_inner_corner() {
 
 
 module v_slot(shape,lenght) {
-scale([1,1,lenght]) {
+color([0.7,0.7,0.7]) scale([1,1,lenght]) {
     if (shape=="20x20") {
             vslot_center();
             for(i=[0:90:270]) rotate([0,0,i]) vslot_corner();
