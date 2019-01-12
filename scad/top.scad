@@ -61,12 +61,15 @@ module frame(X_size, Y_size) {
 
 module x_carriage(belt_offset) {
  wheel_z_offset = wheel_v_slot_offset(X_wheel);
- wheel_y_offset = wheel_bearing_heoght(X_wheel)/2;
+ wheel_y_offset = wheel_bearing_height(X_wheel)/2;
     
- translate([-20, 0, wheel_z_offset-10]) rotate([90,0,0]) nylon_wheel(X_wheel);
- translate([20, 0, wheel_z_offset-10]) rotate([90,0,0]) nylon_wheel(X_wheel);
- translate([0, 0, -wheel_z_offset-10]) rotate([90,0,0]) nylon_wheel(X_wheel);
-
+ rotate([-90,0,0]) {
+     translate([0, -wheel_z_offset+10, 0]) nylon_wheel(X_wheel);
+     translate([20, wheel_z_offset+10, 0]) nylon_wheel(X_wheel);
+     translate([-20, wheel_z_offset+10, 0]) nylon_wheel(X_wheel);
+    
+     x_carriage_plate(belt_offset, wheel_z_offset, wheel_y_offset);
+ };
 }
 
 module x_motor(X_size, X) {
@@ -143,6 +146,7 @@ module y_idler(Y_size, Y, is_left=true) {
 include <y-idler-corner.scad>
 include <y-motor-corner.scad>
 include <x-end-plate.scad>
+include <x-carriage-plate.scad>
 
 
 module top(X_size, Y_size, X1, X2, Y) {
@@ -156,4 +160,4 @@ module top(X_size, Y_size, X1, X2, Y) {
 }
 
 
-top(X_size=200, Y_size=350, X1=20, X2=-20, Y=-20);
+top(X_size=300, Y_size=350, X1=20, X2=-20, Y=-20);
