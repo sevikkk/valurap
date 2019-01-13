@@ -49,7 +49,11 @@ module mojo_top #(
 
     output mot_6_step,
     output mot_6_dir,
-    output mot_6_enable
+    output mot_6_enable,
+
+    input endstop_x1,
+    input endstop_x2,
+    input endstop_y
     );
 
 wire rst = ~rst_n; // make reset active high
@@ -713,7 +717,20 @@ buf_executor buf_exec(
            .ext_out_stbs(ext_out_stbs)
 );
 
-assign led[6:0] = out_reg0[6:0];
+reg endstop_x1_buf;
+reg endstop_x2_buf;
+reg endstop_y_buf;
+
+always @(posedge clk) begin
+	endstop_x1_buf <= endstop_x1;
+	endstop_x2_buf <= endstop_x2;
+	endstop_y_buf <= endstop_y;
+end;
+
+assign led[3:0] = out_reg0[3:0];
+assign led[4] = endstop_x1_buf;
+assign led[5] = endstop_x2_buf;
+assign led[6] = endstop_y_buf;
 assign led[7] = blink_cnt[23];
 
 acc_step_gen asg(

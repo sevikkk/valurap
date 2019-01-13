@@ -58,3 +58,7 @@ NET "mot_4_enable" LOC = P23 | IOSTANDARD = LVTTL;
 NET "mot_4_step" LOC = P21 | IOSTANDARD = LVTTL;
 NET "mot_4_dir" LOC = P16 | IOSTANDARD = LVTTL;
 
+NET "endstop_x1" LOC = P2 | IOSTANDARD = LVTTL;
+NET "endstop_x2" LOC = P6 | IOSTANDARD = LVTTL;
+NET "endstop_y" LOC = P8 | IOSTANDARD = LVTTL;
+
