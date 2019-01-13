@@ -41,8 +41,8 @@ module x_carriage_plate(belt_offset, wheel_x_offset, wheel_z_offset) {
         translate([a, 10-b, 10]) rotate([0,0,30]) #cylinder(d=8, h=5, $fn=6);
         translate([a, b+10, 10]) rotate([0,0,30]) #cylinder(d=8, h=5, $fn=6);
 
-        translate([34, -12, 11.5+10-4]) #cylinder(d=16, h=50);
-        translate([24, -35, 10]) #cube([40,20,40]);
+        translate([33, -12, 11.5+10-4]) #cylinder(d=18, h=50);
+        translate([24, -32, 10]) #cube([40,20,40]);
 
     };
 }

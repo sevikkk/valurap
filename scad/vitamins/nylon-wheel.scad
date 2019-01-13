@@ -1,4 +1,4 @@
-wheel_23mm   = ["Nylon Wheel 23 mm", 7.8, 7.4, 14, 5, 7, 5, 18.5];
+wheel_23mm   = ["Nylon Wheel 23 mm", 7.8, 7.4, 14, 5, 7, 5, 17.5];
 wheel_34mm   = ["Nylon Wheel 34.5 mm", 12.25, 12, 19, 6, 11, 6, 25];
 
 function wheel_type(type) = type[0];
