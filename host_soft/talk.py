@@ -2,19 +2,16 @@
 
 import time
 
-from luma.core.interface.serial import i2c
-from luma.core.render import canvas
-from luma.oled.device import ssd1306
 
-import spidev
-
-from .valurap.commands import S3GFormatter
+from .valurap.oled import OLED
+from .valurap.spi import SPIPort
+from .valurap.commands import S3GPort
 
 
 def test_leds():
-    bot = S3GFormatter()
-    serial = i2c(port=0, address=0x3C)
-    device = ssd1306(serial)
+    bot = S3GPort()
+    oled = OLED()
+
     bot.S3G_CLEAR(-1)
 
     i = 0
@@ -25,26 +22,22 @@ def test_leds():
         if i != r:
             print(i, r)
         i = (i + 1) % 256
-        with canvas(device) as draw:
-            draw.rectangle(device.bounding_box, outline="white", fill="black")
+        with oled.draw() as draw:
+            draw.rectangle(oled.bounding_box, outline="white", fill="black")
             draw.text((10, 10), "i: {:3d}".format(i), fill="white")
 
 
 def test_executor():
-    dev = spidev.SpiDev()
-    dev.open(1,0)
-    dev.xfer2([0x80, 0, 0, 0, 1] * 6)
-    dev.xfer2([0x90, 0, 0, 16, 16] * 6)
-    dev.xfer2([0x6c + 0x80, 0x04, 0x00, 0x80, 0x08] * 6)
+    spi = SPIPort()
+    spi.setup_tmc2130()
 
-    serial = i2c(port=0, address=0x3C)
-    device = ssd1306(serial)
+    oled = OLED()
 
-    with canvas(device) as draw:
-        draw.rectangle(device.bounding_box, outline="white", fill="black")
+    with oled.draw() as draw:
+        draw.rectangle(oled.bounding_box, outline="white", fill="black")
         draw.text((10, 10), "Start", fill="white")
 
-    bot = S3GFormatter()
+    bot = S3GPort()
     bot.S3G_CLEAR(-1)
     bot.S3G_CLEAR(-1)
     bot.S3G_OUTPUT(bot.OUT_LEDS, 0x55)
@@ -214,8 +207,8 @@ def test_executor():
         error = (status & 0x00FF0000)>>16
         pc = status & 0x0000FFFF
         print("%8X" % status)
-        with canvas(device) as draw:
-            draw.rectangle(device.bounding_box, outline="white", fill="black")
+        with oled.draw() as draw:
+            draw.rectangle(oled.bounding_box, outline="white", fill="black")
             draw.multiline_text((10, 10), "Busy: {} Wait: {}\nError: {} \nPC: {}".format(busy, waiting, error, pc), fill="white")
         time.sleep(0.1)
         if status > 0:
@@ -223,35 +216,30 @@ def test_executor():
 
     bot.S3G_CLEAR(-1)
     time.sleep(1)
-    with canvas(device) as draw:
-        draw.rectangle(device.bounding_box, outline="white", fill="black")
+    with oled.draw() as draw:
+        draw.rectangle(oled.bounding_box, outline="white", fill="black")
         draw.text((10, 10), "Done", fill="white")
 
 
 def test_spi():
-    dev = spidev.SpiDev()
-    dev.open(1,0)
-    a = dev.xfer2([0x0,0,0,0,0]*6)
+    spi = SPIPort()
+    a = spi.dev.xfer2([0x0,0,0,0,0]*6)
     print(a)
-    a = dev.xfer2([0x0,0,0,0,0]*6)
+    a = spi.dev.xfer2([0x0,0,0,0,0]*6)
     print(a)
 
 
 def test_real_y():
-    dev = spidev.SpiDev()
-    dev.open(1,0)
-    dev.xfer2([0x80, 0, 0, 0, 1] * 6)
-    dev.xfer2([0x90, 0, 0, 16, 16] * 6)
-    dev.xfer2([0x6c + 0x80, 0x04, 0x00, 0x80, 0x08] * 6)
+    spi = SPIPort()
+    spi.setup_tmc2130()
 
-    serial = i2c(port=0, address=0x3C)
-    device = ssd1306(serial)
+    oled = OLED()
 
-    with canvas(device) as draw:
-        draw.rectangle(device.bounding_box, outline="white", fill="black")
+    with oled.draw() as draw:
+        draw.rectangle(oled.bounding_box, outline="white", fill="black")
         draw.text((10, 10), "Start", fill="white")
 
-    bot = S3GFormatter()
+    bot = S3GPort()
     bot.S3G_CLEAR(-1)
     bot.S3G_CLEAR(-1)
     bot.S3G_OUTPUT(bot.OUT_LEDS, 0x55)
@@ -342,10 +330,10 @@ def test_real_y():
     bot.S3G_OUTPUT(bot.OUT_BE_START_ADDR, 0)
     bot.S3G_MASK(0)
     bot.S3G_STB(bot.STB_BE_START)
-    res = dev.xfer2([0x6f, 0x0, 0x0, 0x0, 0x0] * 6)
+    spi.dev.xfer2([0x6f, 0x0, 0x0, 0x0, 0x0] * 6)
     idx = 0
     while 1:
-        res = dev.xfer2([0x6f, 0x0, 0x0, 0x0, 0x0] * 6)
+        res = spi.dev.xfer2([0x6f, 0x0, 0x0, 0x0, 0x0] * 6)
         stats = (res[25:30], res[20:25])
         ss = ["%3d" % idx]
         idx += 1
@@ -368,8 +356,8 @@ def test_real_y():
         pc = status & 0x0000FFFF
         if 0:
             print("%8X" % status)
-            with canvas(device) as draw:
-                draw.rectangle(device.bounding_box, outline="white", fill="black")
+            with oled.draw() as draw:
+                draw.rectangle(oled.bounding_box, outline="white", fill="black")
                 draw.multiline_text((10, 10), "Busy: {} Wait: {}\nError: {} \nPC: {}".format(busy, waiting, error, pc), fill="white")
             time.sleep(0.1)
         if status > 0:
@@ -377,26 +365,22 @@ def test_real_y():
 
     bot.S3G_CLEAR(-1)
     time.sleep(1)
-    with canvas(device) as draw:
-        draw.rectangle(device.bounding_box, outline="white", fill="black")
+    with oled.draw() as draw:
+        draw.rectangle(oled.bounding_box, outline="white", fill="black")
         draw.text((10, 10), "Done", fill="white")
 
 
 def test_real_x():
-    dev = spidev.SpiDev()
-    dev.open(1,0)
-    dev.xfer2([0x80, 0, 0, 0, 1] * 6)
-    dev.xfer2([0x90, 0, 0, 16, 16] * 6)
-    dev.xfer2([0x6c + 0x80, 0x04, 0x00, 0x80, 0x08] * 6)
+    spi = SPIPort()
+    spi.setup_tmc2130()
 
-    serial = i2c(port=0, address=0x3C)
-    device = ssd1306(serial)
+    oled = OLED()
 
-    with canvas(device) as draw:
-        draw.rectangle(device.bounding_box, outline="white", fill="black")
+    with oled.draw() as draw:
+        draw.rectangle(oled.bounding_box, outline="white", fill="black")
         draw.text((10, 10), "Start", fill="white")
 
-    bot = S3GFormatter()
+    bot = S3GPort()
     bot.S3G_CLEAR(-1)
     bot.S3G_CLEAR(-1)
     bot.S3G_OUTPUT(bot.OUT_LEDS, 0x55)
@@ -488,10 +472,10 @@ def test_real_x():
     bot.S3G_OUTPUT(bot.OUT_BE_START_ADDR, 0)
     bot.S3G_MASK(0)
     bot.S3G_STB(bot.STB_BE_START)
-    res = dev.xfer2([0x6f, 0x0, 0x0, 0x0, 0x0] * 6)
+    spi.dev.xfer2([0x6f, 0x0, 0x0, 0x0, 0x0] * 6)
     idx = 0
     while 1:
-        res = dev.xfer2([0x6f, 0x0, 0x0, 0x0, 0x0] * 6)
+        res = spi.dev.xfer2([0x6f, 0x0, 0x0, 0x0, 0x0] * 6)
         stats = (res[25:30], res[20:25])
         ss = ["%3d" % idx]
         idx += 1
@@ -514,8 +498,8 @@ def test_real_x():
         pc = status & 0x0000FFFF
         if 0:
             print("%8X" % status)
-            with canvas(device) as draw:
-                draw.rectangle(device.bounding_box, outline="white", fill="black")
+            with oled.draw() as draw:
+                draw.rectangle(oled.bounding_box, outline="white", fill="black")
                 draw.multiline_text((10, 10), "Busy: {} Wait: {}\nError: {} \nPC: {}".format(busy, waiting, error, pc), fill="white")
             time.sleep(0.1)
         if status > 0:
@@ -523,8 +507,8 @@ def test_real_x():
 
     bot.S3G_CLEAR(-1)
     time.sleep(1)
-    with canvas(device) as draw:
-        draw.rectangle(device.bounding_box, outline="white", fill="black")
+    with oled.draw() as draw:
+        draw.rectangle(oled.bounding_box, outline="white", fill="black")
         draw.text((10, 10), "Done", fill="white")
 
 

@@ -6,7 +6,7 @@ import serial
 from .. import s3g_pkt
 
 
-class S3GFormatter(object):
+class S3GPort(object):
     OUT_LEDS = 0
     OUT_ASG_STEPS_VAL = 1
     OUT_ASG_DT_VAL = 2
