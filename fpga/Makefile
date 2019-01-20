@@ -33,6 +33,8 @@ SRC = \
 	src/acc_profile_gen.v \
 	src/motor_step_gen.v \
 	src/motor_mux.v \
+	src/debounce.v \
+	src/endstop_with_mux.v \
 	src/$(TOP).v
 
 all:		bits
