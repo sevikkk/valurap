@@ -3,7 +3,7 @@ import struct
 
 import serial
 
-from .. import s3g_pkt
+from .packet import encode_payload, decode_packet
 
 
 class S3GPort(object):
@@ -43,6 +43,9 @@ class S3GPort(object):
     OUT_APG_Z_JJ_VAL = 29
     OUT_APG_Z_TARGET_V_VAL = 30
     OUT_APG_Z_ABORT_A_VAL = 31
+
+    OUT_ENDSTOPS_TIMEOUT = 32
+    OUT_ENDSTOPS_OPTIONS = 33
 
     OUT_BE_START_ADDR = 62
     OUT_SE_REG_LB = 63
@@ -114,15 +117,59 @@ class S3GPort(object):
     OUT_MSG_CONTROL_MUX_6_Z =       0x00600000
     OUT_MSG_CONTROL_INVERT_DIR_6 =  0x00800000
 
+    OUT_ENDSTOPS_OPTIONS_MUX_1_NONE =       0x00000000
+    OUT_ENDSTOPS_OPTIONS_MUX_1_X =          0x00000001
+    OUT_ENDSTOPS_OPTIONS_MUX_1_Y =          0x00000002
+    OUT_ENDSTOPS_OPTIONS_MUX_1_Z =          0x00000003
+    OUT_ENDSTOPS_OPTIONS_ABORT_POLARITY_1 = 0x00000004
+    OUT_ENDSTOPS_OPTIONS_ABORT_ENABLED_1 =  0x00000008
+
+    OUT_ENDSTOPS_OPTIONS_MUX_2_NONE =       0x00000000
+    OUT_ENDSTOPS_OPTIONS_MUX_2_X =          0x00000010
+    OUT_ENDSTOPS_OPTIONS_MUX_2_Y =          0x00000020
+    OUT_ENDSTOPS_OPTIONS_MUX_2_Z =          0x00000030
+    OUT_ENDSTOPS_OPTIONS_ABORT_POLARITY_2 = 0x00000040
+    OUT_ENDSTOPS_OPTIONS_ABORT_ENABLED_2 =  0x00000080
+
+    OUT_ENDSTOPS_OPTIONS_MUX_3_NONE =       0x00000000
+    OUT_ENDSTOPS_OPTIONS_MUX_3_X =          0x00000100
+    OUT_ENDSTOPS_OPTIONS_MUX_3_Y =          0x00000200
+    OUT_ENDSTOPS_OPTIONS_MUX_3_Z =          0x00000300
+    OUT_ENDSTOPS_OPTIONS_ABORT_POLARITY_3 = 0x00000400
+    OUT_ENDSTOPS_OPTIONS_ABORT_ENABLED_3 =  0x00000800
+
+    IN_ASG_DT = 0
+    IN_ASG_STEPS = 1
+
+    IN_ENDSTOPS_STATUS_1 = 2
+    IN_ENDSTOPS_POS_LO_1 = 3
+    IN_ENDSTOPS_POS_HI_1 = 4
+    IN_ENDSTOPS_MAX_BOUNCE_1 = 5
+
+    IN_ENDSTOPS_STATUS_2 = 6
+    IN_ENDSTOPS_POS_LO_2 = 7
+    IN_ENDSTOPS_POS_HI_2 = 8
+    IN_ENDSTOPS_MAX_BOUNCE_2 = 9
+
+    IN_ENDSTOPS_STATUS_3 = 10
+    IN_ENDSTOPS_POS_LO_3 = 11
+    IN_ENDSTOPS_POS_HI_3 = 12
+    IN_ENDSTOPS_MAX_BOUNCE_3 = 13
+
+    IN_BE_STATUS = 62
     IN_SE_REG_LB = 63
 
     STB_ASG_LOAD =  0x00000001
+    STB_ENDSTOPS_UNLOCK =  0x00000002
     STB_BE_START =  0x20000000
     STB_BE_ABORT =  0x40000000
     STB_SE_INT_LB = 0x80000000
 
     INT_ASG_DONE =      0x00000001
     INT_ASG_ABORT =     0x00000002
+    INT_ENDSTOP_CHANGED_1 =     0x00000004
+    INT_ENDSTOP_CHANGED_2 =     0x00000008
+    INT_ENDSTOP_CHANGED_3 =     0x00000010
     INT_BE_COMPLETE =   0x40000000
     INT_SE_INT_LB =     0x80000000
 
@@ -136,14 +183,14 @@ class S3GPort(object):
     def send_and_wait_reply(self, payload, cmd_id=None):
         if cmd_id is None:
             cmd_id = random.randint(1000, 65000)
-        buf = s3g_pkt.encode_payload(struct.pack("H", cmd_id) + payload)
+        buf = encode_payload(struct.pack("H", cmd_id) + payload)
         self.port.write(buf)
         self.port.flush()
         while True:
             reply = self.port.read()
             self.data += reply
             try:
-                packet, rest = s3g_pkt.decode_packet(self.data)
+                packet, rest = decode_packet(self.data)
             except ValueError as e:
                 pass
             else:

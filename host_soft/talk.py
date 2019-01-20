@@ -3,9 +3,9 @@
 import time
 
 
-from .valurap.oled import OLED
-from .valurap.spi import SPIPort
-from .valurap.commands import S3GPort
+from valurap.oled import OLED
+from valurap.spi import SPIPort
+from valurap.commands import S3GPort
 
 
 def test_leds():
