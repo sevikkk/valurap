@@ -489,6 +489,8 @@ wire apg_z_step;
 wire apg_z_dir;
 wire apg_z_stopped;
 
+wire endstops_unlock;
+
 wire [63:0] es_1_pos;
 wire [31:0] es_1_mb;
 wire[7:0] es_1_cycles;
@@ -699,6 +701,7 @@ s3g_executor #(.INTS_TIMER(INTS_TIMER)) s3g_executor(
 );
 
 assign asg_load = stbs[0];
+assign endstops_unlock = stbs[1];
 
 assign be_start = stbs[29];
 assign be_abort = stbs[30];
@@ -931,8 +934,6 @@ wire [31:0] endstops_timeout;
 wire [31:0] endstops_options;
 assign endstops_timeout = out_reg32;
 assign endstops_options = out_reg33;
-wire endstops_unlock;
-assign endstops_unlock = stbs[1];
 
 endstop_with_mux es_1(
     .clk(clk),
