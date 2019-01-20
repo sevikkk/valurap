@@ -766,7 +766,7 @@ always @(posedge clk) begin
 	endstop_x1_buf <= endstop_x1;
 	endstop_x2_buf <= endstop_x2;
 	endstop_y_buf <= endstop_y;
-end;
+end
 
 assign led[3:0] = out_reg0[3:0];
 assign led[4] = endstop_x1_buf;

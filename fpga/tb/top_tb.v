@@ -13,6 +13,8 @@
 `include "../src/motor_step_gen.v"
 `include "../src/acc_profile_gen.v"
 `include "../src/motor_mux.v"
+`include "../src/debounce.v"
+`include "../src/endstop_with_mux.v"
 `include "../src/buf_cmds.v"
 
 module top_tb;
@@ -75,7 +77,10 @@ mojo_top #(
            .rst_n(rst_n),
            .cclk(cclk),
            .avr_tx(avr_tx),
-           .avr_rx(avr_rx)
+           .avr_rx(avr_rx),
+           .endstop_x1(1'b0),
+           .endstop_x2(1'b0),
+           .endstop_y(1'b0)
        );
 
 `define assert_rx(value) \
@@ -203,7 +208,7 @@ initial
                     44500:
                         begin
                             `assert_rx(128'hd503234581c6)
-                            `assert_signal("LEDS", dut.led, 8'h12)
+                            `assert_signal("LEDS", dut.out_reg0[7:0], 8'h12)
                         end
 
                     45000:
@@ -351,7 +356,7 @@ initial
                         begin
                             // Complete interrupt, check leds are changed
                             `assert_rx(128'hd507ffff500000004083)
-                            `assert_signal("LEDS", dut.led, 8'h55)
+                            `assert_signal("LEDS", dut.out_reg0[7:0], 8'h55)
                         end
                     245000:
                         begin
@@ -410,13 +415,13 @@ initial
                         begin
                             // Execution started, leds -> 01
                             `assert_rx(128'hd503765481a0)
-                            `assert_signal("LEDS", dut.led, 8'h01)
+                            `assert_signal("LEDS", dut.out_reg0[7:0], 8'h01)
                         end
                     365000:
                         begin
                             // Execution done, leds -> 02
                             `assert_rx(128'hd507ffff50010000004a)
-                            `assert_signal("LEDS", dut.led, 8'h02)
+                            `assert_signal("LEDS", dut.out_reg0[7:0], 8'h02)
                         end
                     380000:
                         begin
@@ -435,7 +440,7 @@ initial
                         begin
                             // Second execution started, leds -> 01
                             `assert_rx(128'hd503765481a0)
-                            `assert_signal("LEDS", dut.led, 8'h01)
+                            `assert_signal("LEDS", dut.out_reg0[7:0], 8'h01)
                         end
                     410000:
                         begin
@@ -445,7 +450,7 @@ initial
                     413000:
                         begin
                             // Execution done, leds -> 02
-                            `assert_signal("LEDS", dut.led, 8'h02)
+                            `assert_signal("LEDS", dut.out_reg0[7:0], 8'h02)
                         end
                     425000:
                         begin
@@ -560,7 +565,7 @@ initial
                         begin
                             // Execution started, leds -> 01
                             `assert_rx(128'hd503765481a0)
-                            `assert_signal("LEDS", dut.led, 8'h01)
+                            `assert_signal("LEDS", dut.out_reg0[7:0], 8'h01)
                         end
                     620000:
                         begin
@@ -575,7 +580,7 @@ initial
                         begin
                             // Step 2 started, leds -> 03
                             `assert_rx(128'hd507ffff50010000004a)
-                            `assert_signal("LEDS", dut.led, 8'h03)
+                            `assert_signal("LEDS", dut.out_reg0[7:0], 8'h03)
                             `assert_signal("A", dut.apg_x.a, -100)
                         end
                     770000:
@@ -587,7 +592,7 @@ initial
                         begin
                             // Step 2 started, leds -> 03
                             `assert_rx(128'hd507ffff50010000004a)
-                            `assert_signal("LEDS", dut.led, 8'h07)
+                            `assert_signal("LEDS", dut.out_reg0[7:0], 8'h07)
                             `assert_signal("A", dut.apg_x.a, 100)
                         end
                     860000:
@@ -598,7 +603,7 @@ initial
                     875000:
                         begin
                             // Execution done, leds -> 02
-                            `assert_signal("LEDS", dut.led, 8'h0f)
+                            `assert_signal("LEDS", dut.out_reg0[7:0], 8'h0f)
                             // Interrupt retriggered
                             `assert_rx(128'hd507ffff50010000004a)
                             // Clear interrupts

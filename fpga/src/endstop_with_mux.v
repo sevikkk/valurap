@@ -26,7 +26,7 @@ module endstop_with_mux
     output reg abort_out
 );
 
-always @(signal, abort_polarity, abort_enabled)
+always @(signal, abort_polarity, abort_enabled, abort_in)
     begin
         abort_out <= abort_in;
         if (abort_enabled && (signal == abort_polarity))
