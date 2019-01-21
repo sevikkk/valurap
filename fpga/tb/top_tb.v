@@ -41,6 +41,10 @@ reg [8*256:0] rx_buffer = 0;
 
 reg assertions_failed = 0;
 
+reg stop_x1 = 0;
+reg stop_x2 = 0;
+reg stop_y = 0;
+
 localparam BR=1000000;
 
 dds_uart_clock uclock1(
@@ -78,9 +82,9 @@ mojo_top #(
            .cclk(cclk),
            .avr_tx(avr_tx),
            .avr_rx(avr_rx),
-           .endstop_x1(1'b0),
-           .endstop_x2(1'b0),
-           .endstop_y(1'b0)
+           .endstop_x1(stop_x1),
+           .endstop_x2(stop_x2),
+           .endstop_y(stop_y)
        );
 
 `define assert_rx(value) \
@@ -709,6 +713,15 @@ initial
                         begin
                             `assert_rx(128'hd503765481a0)
                             // Send be_start stb
+                        end
+                    1200000:
+                        begin
+                            dut.s3g_executor.out_reg32 = 32'd1000;
+                            dut.s3g_executor.out_reg33 = 32'h00000010;
+                        end
+                    1201000:
+                        begin
+                            stop_x2 = 1;
                         end
                     1400000:
                         begin

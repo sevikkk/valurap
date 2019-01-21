@@ -3,11 +3,11 @@ module debounce(
     input reset,
     input sig_in,
     input unlock,
-    input [63:0] pos_in,
+    input [31:0] pos_in,
     input [31:0] timeout,
     output reg sig_out,
     output reg sig_changed,
-    output reg [63:0] pos_out,
+    output reg [31:0] pos_out,
     output reg [31:0] max_bounce,
     output reg [7:0] cycles
 );
@@ -31,14 +31,14 @@ reg [31:0] timer;
 reg [2:0] dstate;
 reg value;
 reg value_changed;
-reg [63:0] start_pos;
+reg [31:0] start_pos;
 
 reg [31:0] next_timer;
 reg [31:0] next_max_bounce;
 reg [2:0] next_dstate;
 reg next_value;
 reg next_value_changed;
-reg [63:0] next_start_pos;
+reg [31:0] next_start_pos;
 
 always @(reset or timeout or sig or timer or dstate or value or max_bounce or unlock or start_pos or pos_in)
 	begin
@@ -137,7 +137,7 @@ localparam
 reg [1:0] state;
 
 reg [1:0] next_state;
-reg [31:0] next_pos_out;	
+reg [31:0] next_pos_out;
 reg [7:0] next_cycles;
 reg next_sig_out;
 reg next_sig_changed;

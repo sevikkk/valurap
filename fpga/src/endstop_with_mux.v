@@ -3,9 +3,9 @@ module endstop_with_mux
     input clk,
     input reset,
 
-    input [63:0] x,
-    input [63:0] y,
-    input [63:0] z,
+    input [31:0] x,
+    input [31:0] y,
+    input [31:0] z,
 
     input signal_in,
     input abort_in,
@@ -17,7 +17,7 @@ module endstop_with_mux
     input abort_enabled,
     input [31:0] timeout,
 
-    output [63:0] pos_out,
+    output [31:0] pos_out,
     output [31:0] max_bounce,
     output [7:0] cycles,
     output signal,
@@ -33,7 +33,7 @@ always @(signal, abort_polarity, abort_enabled, abort_in)
             abort_out <= 1'b1;
     end
 
-reg [63:0] pos_in;
+reg [31:0] pos_in;
 
 always @(mux_select, x, y, z)
     begin

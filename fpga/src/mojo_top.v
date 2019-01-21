@@ -491,19 +491,19 @@ wire apg_z_stopped;
 
 wire endstops_unlock;
 
-wire [63:0] es_1_pos;
+wire [31:0] es_1_pos;
 wire [31:0] es_1_mb;
 wire[7:0] es_1_cycles;
 wire es_1_signal;
 wire es_1_signal_changed;
 
-wire [63:0] es_2_pos;
+wire [31:0] es_2_pos;
 wire [31:0] es_2_mb;
 wire[7:0] es_2_cycles;
 wire es_2_signal;
 wire es_2_signal_changed;
 
-wire [63:0] es_3_pos;
+wire [31:0] es_3_pos;
 wire [31:0] es_3_mb;
 wire[7:0] es_3_cycles;
 wire es_3_signal;
@@ -590,17 +590,17 @@ s3g_executor #(.INTS_TIMER(INTS_TIMER)) s3g_executor(
 
     .in_reg2({16'h0, es_1_cycles, 7'h0, es_1_signal}),
     //.in_reg3(es_1_pos[31:0]),
-    .in_reg4(es_1_pos[63:32]),
+    .in_reg4(es_1_pos),
     .in_reg5(es_1_mb),
 
     .in_reg6({16'h0, es_2_cycles, 7'h0, es_2_signal}),
     //.in_reg7(es_2_pos[31:0]),
-    .in_reg8(es_2_pos[63:32]),
+    .in_reg8(es_2_pos),
     .in_reg9(es_2_mb),
 
     .in_reg10({16'h0, es_3_cycles, 7'h0, es_3_signal}),
     //.in_reg11(es_3_pos[31:0]),
-    .in_reg12(es_3_pos[63:32]),
+    .in_reg12(es_3_pos),
     .in_reg13(es_3_mb),
 
     .in_reg62({be_busy, be_waiting, 6'b0, ext_buffer_error, ext_buffer_pc}),
@@ -937,10 +937,10 @@ assign endstops_options = out_reg33;
 
 endstop_with_mux es_1(
     .clk(clk),
-    .reset(n_rdy),
-    .x(apg_x_x),
-    .y(apg_y_x),
-    .z(apg_z_x),
+    .reset(1'b1),
+    .x(apg_x_x[63:32]),
+    .y(apg_y_x[63:32]),
+    .z(apg_z_x[63:32]),
     .signal_in(endstop_x1),
     .abort_in(asg_abort_chain_1),
     .unlock(endstops_unlock),
@@ -959,9 +959,9 @@ endstop_with_mux es_1(
 endstop_with_mux es_2(
     .clk(clk),
     .reset(n_rdy),
-    .x(apg_x_x),
-    .y(apg_y_x),
-    .z(apg_z_x),
+    .x(apg_x_x[63:32]),
+    .y(apg_y_x[63:32]),
+    .z(apg_z_x[63:32]),
     .signal_in(endstop_x2),
     .abort_in(asg_abort_chain_2),
     .unlock(endstops_unlock),
@@ -979,10 +979,10 @@ endstop_with_mux es_2(
 
 endstop_with_mux es_3(
     .clk(clk),
-    .reset(n_rdy),
-    .x(apg_x_x),
-    .y(apg_y_x),
-    .z(apg_z_x),
+    .reset(1'b1),
+    .x(apg_x_x[63:32]),
+    .y(apg_y_x[63:32]),
+    .z(apg_z_x[63:32]),
     .signal_in(endstop_y),
     .abort_in(asg_abort_chain_3),
     .unlock(endstops_unlock),
