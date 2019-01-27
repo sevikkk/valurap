@@ -78,7 +78,7 @@ build/top.out: $(SRC) tb/$(TB).v
 	cd build && iverilog -I ../src -c iverilog.src -o top.out
 
 isim:    build/top.out
-	cd build && ./top.out
+	cd build && ./top.out 2>&1 | tee isim.log
 
 isim-run: build/top.out
 	cd build && gtkwave -a ../tb/$(TB).sav &
@@ -110,7 +110,7 @@ build/project.ngd: build/project.ngc $(PINS)
 		cd build && ngdbuild -p $(DEVICE) project.ngc -uc ../$(PINS)
 
 build/project.ncd: build/project.ngd
-		cd build && map -pr b -p $(DEVICE) -w project $(MAPFLAGS)
+		cd build && map -detail -pr b -p $(DEVICE) -w project $(MAPFLAGS)
 
 build/project_r.ncd: build/project.ncd
 		cd build && par -w project project_r.ncd $(PARFLAGS)
