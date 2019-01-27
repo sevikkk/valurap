@@ -27,14 +27,14 @@ localparam
     DSTATE_BOUNCE1 = 1,
     DSTATE_BOUNCE2 = 2;
 
-reg [31:0] timer;
+reg [15:0] timer;
 reg [2:0] dstate;
 reg value;
 reg value_changed;
 reg [31:0] start_pos;
 
-reg [31:0] next_timer;
-reg [31:0] next_max_bounce;
+reg [15:0] next_timer;
+reg [15:0] next_max_bounce;
 reg [2:0] next_dstate;
 reg next_value;
 reg next_value_changed;
@@ -79,7 +79,7 @@ always @(reset or timeout or sig or timer or dstate or value or max_bounce or un
 						if (sig != value)
 							begin
 								next_timer <= timer + 1;
-								if (timer > timeout)
+								if (timer > timeout[15:0])
 									begin
 										next_value <= sig;
 										next_dstate <= DSTATE_STABLE;
@@ -101,7 +101,7 @@ always @(reset or timeout or sig or timer or dstate or value or max_bounce or un
 						if (sig == value)
 							begin
 								next_timer <= timer + 1;
-								if (timer > timeout)
+								if (timer > timeout[15:0])
 									begin
 										next_dstate <= DSTATE_STABLE;
 									end

@@ -937,7 +937,7 @@ assign endstops_options = out_reg33;
 
 endstop_with_mux es_1(
     .clk(clk),
-    .reset(1'b1),
+    .reset(n_rdy),
     .x(apg_x_x[63:32]),
     .y(apg_y_x[63:32]),
     .z(apg_z_x[63:32]),
@@ -979,7 +979,7 @@ endstop_with_mux es_2(
 
 endstop_with_mux es_3(
     .clk(clk),
-    .reset(1'b1),
+    .reset(n_rdy),
     .x(apg_x_x[63:32]),
     .y(apg_y_x[63:32]),
     .z(apg_z_x[63:32]),

@@ -11,8 +11,8 @@ module motor_step_gen(
     output reg missed
     );
 	 
-reg [31:0] cnt;
-reg [31:0] next_cnt;
+reg [15:0] cnt;
+reg [15:0] next_cnt;
 reg next_dir;
 reg next_step;
 reg next_missed;
@@ -41,11 +41,11 @@ always @(reset, pre_n, pulse_n, post_n, step_stb, step_dir, cnt, dir)
 				if (step_stb)
 					next_missed <= 1;
 				next_cnt <= cnt + 1;
-				if (cnt < pre_n)
+				if (cnt < pre_n[15:0])
 					next_step <= 0;
-				else if (cnt < pulse_n)
+				else if (cnt < pulse_n[15:0])
 					next_step <= 1;
-				else if (cnt < post_n)
+				else if (cnt < post_n[15:0])
 					next_step <= 0;
 				else
 					next_cnt <= 0;

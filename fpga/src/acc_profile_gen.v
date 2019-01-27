@@ -33,20 +33,20 @@ module acc_profile_gen(
            output reg stopped
        );
 
-reg signed [31:0] next_v;
-reg signed [31:0] next_a;
-reg signed [31:0] next_j;
-reg signed [31:0] next_jj;
+reg signed [23:0] next_v;
+reg signed [23:0] next_a;
+reg signed [23:0] next_j;
+reg signed [23:0] next_jj;
 reg next_stopped;
 
 reg target_set;
 reg next_target_set;
 
-reg signed [31:0] target_v;
-reg signed [31:0] next_target_v;
+reg signed [23:0] target_v;
+reg signed [23:0] next_target_v;
 
 reg signed [63:0] next_step_start_x;
-reg signed [31:0] next_step_start_v;
+reg signed [23:0] next_step_start_v;
 
 always @(reset, acc_step, load,
 		set_v, set_a, set_j, set_jj, set_x,
@@ -167,12 +167,12 @@ reg next_dir;
 reg next_step;
 reg signed [63:0] next_x;
 wire signed [63:0] x_acc;
-wire signed [32:0] v_effective;
+wire signed [24:0] v_effective;
 wire signed [63:0] delta_x;
 
 assign v_effective = v + step_start_v;
-assign delta_x[31:0] = v_effective[32:1];
-assign delta_x[63:32] = v_effective[32]?32'hFFFFFFFF:32'h0;
+assign delta_x[23:0] = v_effective[24:1];
+assign delta_x[63:24] = v_effective[24]?40'hFFFFFFFFFF:40'h0;
 
 assign x_acc = x + delta_x;
 
