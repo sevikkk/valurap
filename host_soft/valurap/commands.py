@@ -292,7 +292,7 @@ class S3GPort(object):
             ) + packet_data
 
             addr += packet_cmds
-            print(`payload`)
+            #print(`payload`)
             reply = self.send_and_wait_reply(payload, kw.get("cmd_id", None))
             if reply[0] != 0x81:
                 raise RuntimeError("Unexpected reply code")
