@@ -282,7 +282,7 @@ def home_y():
     bot.S3G_OUTPUT(bot.OUT_BE_START_ADDR, 0)
     bot.S3G_MASK(0)
     bot.S3G_STB(bot.STB_BE_START)
-    prev_cycles = [0, 0, 0]
+    prev_cycles = None
     try:
         while 1:
             new_cycles = []
@@ -303,6 +303,8 @@ def home_y():
             if new_cycles != prev_cycles:
                 print("Send Unlock")
                 bot.S3G_STB(bot.STB_ENDSTOPS_UNLOCK)
+                if prev_cycles is not None:
+                    break
                 prev_cycles = new_cycles
 
     except KeyboardInterrupt:
