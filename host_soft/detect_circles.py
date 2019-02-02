@@ -3,27 +3,28 @@ import numpy as np
 import os
 
 param1 = np.zeros((6 * 6, 3), np.float32)
-param2 = np.mgrid[0:6,0:6].T.reshape(-1,2)
+param2 = (np.mgrid[-3:3,-3:3] + 0.5).T.reshape(-1,2)
 params = [param1, param2]
 
 objp = params[0]
 objp[:, :2] = params[1]
 
 objp = 2.469438 * objp 
+
 print(objp)
 
 objpoints = []  # 3d point in real world space
 imgpoints = []  # 2d points in image plane.
 window = False
 
-for fn in os.listdir('.'):
+for fn in os.listdir('images'):
     if not fn.startswith("snap-"):
         continue
     if not fn.endswith(".jpg"):
         continue
     print(fn)
 
-    img = cv2.imread(fn)
+    img = cv2.imread("images/" + fn)
     ret, circles = cv2.findCirclesGrid(img, (6,6))
     if not ret:
         continue
@@ -35,7 +36,7 @@ for fn in os.listdir('.'):
         window = True
 
     cv2.imshow("bubu", img)
-    cv2.waitKey(100)
+    #cv2.waitKey(100)
 
     print(circles)
 

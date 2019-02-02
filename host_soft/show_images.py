@@ -4,7 +4,7 @@ import os
 import time
 
 param1 = np.zeros((6 * 6, 3), np.float32)
-param2 = np.mgrid[0:6,0:6].T.reshape(-1,2)
+param2 = (np.mgrid[-3:3,-3:3] + 0.5).T.reshape(-1,2)
 params = [param1, param2]
 
 objp = params[0]
