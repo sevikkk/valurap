@@ -1,0 +1,55 @@
+%!PS−Adobe−2.0
+%%BoundingBox: 0 0 595.28 841.89 % A4 %
+%%EndComments
+
+/circle
+{
+gsave
+	newpath 0 360 arc
+	closepath
+	gsave
+		1 setlinewidth
+		stroke
+	grestore
+	fill
+grestore
+}
+def
+
+/circles
+{
+7 dict begin
+/n exch def
+/d exch def
+/r exch def
+/y exch def
+/x exch def
+1 1 n {
+	/i exch def
+	1 1 n {
+		/j exch def
+		x i d mul add
+		y j d mul add
+		r
+		circle
+	} for
+} for 
+end
+}
+def
+
+2 dict begin
+	35 250 535 {
+		/x exch def
+		10 240 730 {
+			/y exch def
+			x y 1 7 6 circles
+		} for
+	} for
+end
+
+%%EndPage
+%%Trailer
+showpage
+%%EOF
+
