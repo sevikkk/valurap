@@ -283,7 +283,7 @@ class S3GPort(object):
                 packet_data = data[:40*5]
                 data = data[40*5:]
 
-            packet_cmds = len(packet_data)/5
+            packet_cmds = int(len(packet_data)/5)
             payload = struct.pack(
                 '<BBH',
                 65,
