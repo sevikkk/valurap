@@ -118,8 +118,11 @@ class Asg(object):
                     control.append(apg.control_set_target_v)
                     regs[apg.val_target_v] = seg.target_v
 
-            control = reduce(operator.or_, control)
-            regs[s3g.OUT_ASG_CONTROL] = control
+            control_value = 0
+            for c in control:
+                control_value |= c
+
+            regs[s3g.OUT_ASG_CONTROL] = control_value
             for k, v in regs.items():
                 if prev_regs.get(k, None) != v:
                     code.append(s3g.BUF_OUTPUT(k, v))

@@ -152,7 +152,7 @@ class Valurap(object):
             #]],
         ])
 
-        print(`path_code`)
+        print(repr(path_code))
         self.exec_code(path_code)
 
         self.axe_x1.enabled = False
