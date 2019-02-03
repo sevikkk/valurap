@@ -1,6 +1,3 @@
-import operator
-
-
 class ProfileSegment(object):
     def __init__(self, apg, x=None, v=None, a=0, j=0, jj=0, target_v=None):
         self.apg = apg
@@ -140,7 +137,6 @@ class Asg(object):
                     s3g.BUF_STB(s3g.STB_ASG_LOAD),
                 ]
 
-
         code += [
             s3g.BUF_OUTPUT(s3g.OUT_ASG_CONTROL,
                            s3g.OUT_ASG_CONTROL_SET_DT_LIMIT
@@ -154,4 +150,3 @@ class Asg(object):
         ]
 
         return code
-

@@ -71,7 +71,7 @@ class Valurap(object):
             status = s3g.S3G_INPUT(s3g.IN_BE_STATUS)
             busy = (status & 0x80000000) >> 31
             waiting = (status & 0x40000000) >> 30
-            error = (status & 0x00FF0000)>>16
+            error = (status & 0x00FF0000) >> 16
             pc = status & 0x0000FFFF
             print("Busy: {} Wait: {} Error: {} PC: {}".format(busy, waiting, error, pc))
             if not busy:
@@ -105,7 +105,7 @@ class Valurap(object):
             target_v = -target_v
 
         seg = ProfileSegment(self.apg_x, target_v=target_v, a=a, x=0, v=0)
-        path_code = self.asg.generate_path_code([
+        path_code = self.asg.gen_path_code([
             [30000, [seg]]
         ])
 
@@ -143,13 +143,13 @@ class Valurap(object):
             [15000, [
                 ProfileSegment(self.apg_x, target_v=100000, a=5000, x=0, v=0),
                 ProfileSegment(self.apg_y, target_v=-100000, a=-5000, x=0, v=0),
-                ProfileSegment(self.apg_z, target_v= 100000, a=5000, x=0, v=0),
+                ProfileSegment(self.apg_z, target_v=100000, a=5000, x=0, v=0),
             ]],
-            #[1000, [
+            # [1000, [
             #    ProfileSegment(self.apg_x, target_v=0, a=-5000),
             #    ProfileSegment(self.apg_y, target_v=0, a=5000),
             #    ProfileSegment(self.apg_z, target_v=0, a=-5000),
-            #]],
+            # ]],
         ])
 
         print(repr(path_code))
@@ -161,15 +161,17 @@ class Valurap(object):
 
         self.update_axes_config()
 
+
 def main():
+    p = None
     try:
         p = Valurap()
         p.setup()
         p.test()
     except KeyboardInterrupt:
-        p.setup()
+        if p:
+            p.setup()
 
 
 if __name__ == "__main__":
     main()
-

@@ -31,6 +31,7 @@ def calculate_crc(data):
         val = crctab[val ^ x]
     return val
 
+
 def encode_payload(payload):
     """
     Encode passed payload into a packet.
@@ -72,10 +73,9 @@ def decode_packet(packet):
 
         payload = packet[junk_bytes + 2:junk_bytes + 2 + payload_len]
         crc = calculate_crc(payload)
-        packet_crc = packet[junk_bytes + payload_len + 2 ]
+        packet_crc = packet[junk_bytes + payload_len + 2]
         if packet_crc != crc:
             raise ValueError("CRC mismatch: %x != %x" % (packet_crc, crc))
         else:
             return payload, packet[junk_bytes + payload_len + 3:]
     raise ValueError("Start byte not found")
-
