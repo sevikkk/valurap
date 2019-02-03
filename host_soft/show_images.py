@@ -23,24 +23,17 @@ mtx = np.array([[1.85583369e+03, 0.00000000e+00, 7.96781205e+02],
 dist = np.array([[ 4.38909294e-02, -3.72379589e-01,  5.96935378e-03,
         -1.39161992e-04, -1.18364075e+00]])
 
-prev_fn = None
+prev_inode = None
 while 1:
-    flist = []
-    for fn in os.listdir('images'):
-        if not fn.startswith("snap-"):
-            continue
-        if not fn.endswith(".jpg"):
-            continue
-        flist.append(fn)
-    flist.sort()
-    fn = flist[-1]
-    if fn == prev_fn:
+    inode = os.stat('images/snap0.jpg').st_ino
+
+    if inode == prev_inode:
         time.sleep(0.1)
         continue
 
-    prev_fn = fn
+    prev_inode = inode
 
-    img = cv2.imread('images/' + fn)
+    img = cv2.imread('images/snap0.jpg')
     ret, circles = cv2.findCirclesGrid(img, (6,6))
     if ret:
         cv2.drawChessboardCorners(img, (6, 6), circles, ret)
@@ -53,4 +46,3 @@ while 1:
 
     cv2.imshow("bubu", img)
     cv2.waitKey(100)
-
