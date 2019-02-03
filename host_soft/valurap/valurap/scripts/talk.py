@@ -487,7 +487,7 @@ def test_real_x():
             if a & 0x1: status.append("sg")
             if c & 0x80: status.append("fs")
             n = (c & 0x3) * 256 + d
-            status.append("*" * (n/5))
+            status.append("*" * int(n/5))
  
             ss.append("%40s" % " ".join(status))
         print(" | ".join(ss))
