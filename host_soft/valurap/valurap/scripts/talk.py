@@ -512,9 +512,12 @@ def test_real_x():
         draw.text((10, 10), "Done", fill="white")
 
 
-if __name__ == "__main__":
+def main():
     #test_leds()
     #test_executor()
     #test_spi()
     #test_real_y()
     test_real_x()
+
+if __name__ == "__main__":
+    main()

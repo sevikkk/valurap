@@ -17,4 +17,11 @@ setup(
         'smbus2==0.2.3',
         'spidev==3.2',
     ],
+    entry_points = {
+        'console_scripts': [
+            'home=valurap.scripts.home:main',
+            'talk=valurap.scripts.talk:main',
+            'printer=valurap.printer:main',
+        ]
+    }
 )

@@ -314,6 +314,8 @@ def home_y():
     bot.S3G_CLEAR(-1)
     bot.S3G_OUTPUT(bot.OUT_MSG_CONTROL, 0)
 
+def main():
+    home_y()
 
 if __name__ == "__main__":
-    home_y()
+    main()

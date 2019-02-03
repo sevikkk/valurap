@@ -161,12 +161,15 @@ class Valurap(object):
 
         self.update_axes_config()
 
-
-if __name__ == "__main__":
+def main():
     try:
         p = Valurap()
         p.setup()
         p.test()
     except KeyboardInterrupt:
         p.setup()
+
+
+if __name__ == "__main__":
+    main()
 
