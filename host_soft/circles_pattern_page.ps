@@ -34,14 +34,30 @@ def
 		circle
 	} for
 } for 
+gsave
+	0.5 0.5 scale
+	x 2 mul n 1 add d mul add
+	y 2 mul n 1 add d mul add
+	newpath
+	moveto
+	d 0 rlineto
+	d -2 mul 0 rlineto
+	d 0 rlineto
+
+	0 d rlineto
+	0 d -2 mul rlineto
+	0 d rlineto
+	1 setlinewidth
+	stroke
+grestore
 end
 }
 def
 
 2 dict begin
-	35 250 535 {
+	40 240 535 {
 		/x exch def
-		10 240 730 {
+		10 240 760 {
 			/y exch def
 			x y 1 7 6 circles
 		} for
