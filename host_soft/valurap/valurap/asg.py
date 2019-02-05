@@ -34,6 +34,9 @@ class Asg(object):
 
         code = [
             s3g.BUF_OUTPUT(s3g.OUT_LEDS, 0x1),
+            s3g.BUF_OUTPUT(s3g.OUT_MSG_ALL_PRE_N, 100), # 10 ms on step cycle - 2-6-2 ms
+            s3g.BUF_OUTPUT(s3g.OUT_MSG_ALL_PULSE_N, 400),
+            s3g.BUF_OUTPUT(s3g.OUT_MSG_ALL_POST_N, 500),
             s3g.BUF_OUTPUT(s3g.OUT_ASG_CONTROL, *control),
             s3g.BUF_OUTPUT(s3g.OUT_ASG_DT_VAL, 50000),
             s3g.BUF_OUTPUT(s3g.OUT_ASG_STEPS_VAL, 1),
