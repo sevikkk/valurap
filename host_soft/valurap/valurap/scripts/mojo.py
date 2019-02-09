@@ -151,9 +151,21 @@ def install_mojo(ser, bitstream, verbose, no_verify, ram):
             sys.exit(1)
         if verbose:
             print('Flash and local bitstream match file size.')
-        ret = ser.read(length)
+        ret = bytearray()
+        while len(ret) < length:
+            ret += ser.read(length - len(ret))
+            if verbose and (len(ret) < length):
+                print("Partial read, retry")
         if ret != bits:
             print('Flash and local bitstream do not match.')
+            limit = 50
+            for i, v in enumerate(bits):
+                v2 = ret[i]
+                if v != v2:
+                    print("  {:8X}: {:02X} != {:02X}".format(i, v, v2))
+                    limit -= 1
+                    if limit == 0:
+                        break
             sys.exit(1)
         if verbose:
             print('Flash and local bitstream are a match.')
