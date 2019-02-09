@@ -403,6 +403,7 @@ wire signed [31:0] apg_x_jj_val;
 wire signed [31:0] apg_x_target_v_val;
 wire signed [31:0] apg_x_abort_a;
 wire signed [63:0] apg_x_x;
+wire signed [31:0] apg_x_v;
 
 assign apg_x_x_val[31:0] = out_reg8;
 assign apg_x_x_val[63:32] = out_reg9;
@@ -439,6 +440,7 @@ wire signed [31:0] apg_y_jj_val;
 wire signed [31:0] apg_y_target_v_val;
 wire signed [31:0] apg_y_abort_a;
 wire signed [63:0] apg_y_x;
+wire signed [31:0] apg_y_v;
 
 assign apg_y_x_val[31:0] = out_reg16;
 assign apg_y_x_val[63:32] = out_reg17;
@@ -475,6 +477,7 @@ wire signed [31:0] apg_z_jj_val;
 wire signed [31:0] apg_z_target_v_val;
 wire signed [31:0] apg_z_abort_a;
 wire signed [63:0] apg_z_x;
+wire signed [31:0] apg_z_v;
 
 assign apg_z_x_val[31:0] = out_reg24;
 assign apg_z_x_val[63:32] = out_reg25;
@@ -602,6 +605,13 @@ s3g_executor #(.INTS_TIMER(INTS_TIMER)) s3g_executor(
     //.in_reg11(es_3_pos[31:0]),
     .in_reg12(es_3_pos),
     .in_reg13(es_3_mb),
+
+    .in_reg14(apg_x_x[63:32]),
+    .in_reg15(apg_x_v),
+    .in_reg16(apg_y_x[63:32]),
+    .in_reg17(apg_y_v),
+    .in_reg18(apg_z_x[63:32]),
+    .in_reg19(apg_z_v),
 
     .in_reg62({be_busy, be_waiting, 6'b0, ext_buffer_error, ext_buffer_pc}),
     .in_reg63(se_reg_lb),
@@ -815,7 +825,7 @@ acc_profile_gen apg_x(
            .step_bit(32),
            .abort(asg_abort),
            .x(apg_x_x),
-           .v(),
+           .v(apg_x_v),
            .a(),
            .j(),
            .jj(),
@@ -860,7 +870,7 @@ acc_profile_gen apg_y(
            .step_bit(32),
            .abort(asg_abort),
            .x(apg_y_x),
-           .v(),
+           .v(apg_y_v),
            .a(),
            .j(),
            .jj(),
@@ -905,7 +915,7 @@ acc_profile_gen apg_z(
            .step_bit(32),
            .abort(asg_abort),
            .x(apg_z_x),
-           .v(),
+           .v(apg_z_v),
            .a(),
            .j(),
            .jj(),
