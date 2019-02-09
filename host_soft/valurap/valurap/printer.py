@@ -59,6 +59,9 @@ class Valurap(object):
         reset_code = self.asg.gen_reset_code(self.apgs.values())
         print("Executing reset code")
         self.exec_code(reset_code)
+        with self.oled.draw() as draw:
+            draw.rectangle(self.oled.bounding_box, outline="white", fill="black")
+            draw.text((10, 10), "Ready", fill="white")
 
     def exec_code(self, code, addr=0, wait=True):
         s3g = self.s3g
@@ -73,10 +76,24 @@ class Valurap(object):
             waiting = (status & 0x40000000) >> 30
             error = (status & 0x00FF0000) >> 16
             pc = status & 0x0000FFFF
+            x_x = s3g.S3G_INPUT(s3g.IN_APG_X_X)
+            x_v = s3g.S3G_INPUT(s3g.IN_APG_X_V)
+            y_x = s3g.S3G_INPUT(s3g.IN_APG_Y_X)
+            y_v = s3g.S3G_INPUT(s3g.IN_APG_Y_V)
+            z_x = s3g.S3G_INPUT(s3g.IN_APG_Z_X)
+            z_v = s3g.S3G_INPUT(s3g.IN_APG_Z_V)
             print("Busy: {} Wait: {} Error: {} PC: {}".format(busy, waiting, error, pc))
+            with self.oled.draw() as draw:
+                draw.rectangle(self.oled.bounding_box, outline="white", fill="black")
+                draw.multiline_text((5, 3), "B {} W {} E {} P {}\nX{:8d} {:10d}\nY{:8d} {:10d}\nZ{:8d} {:10d}".format(
+                    busy, waiting, error, pc, x_x, x_v, y_x, y_v, z_x, z_v), fill="white")
             if not busy:
                 break
             time.sleep(0.3)
+        with self.oled.draw() as draw:
+            draw.rectangle(self.oled.bounding_box, outline="white", fill="black")
+            draw.multiline_text((5, 3), "Idle\nX{:8d} {:10d}\nY{:8d} {:10d}\nZ{:8d} {:10d}".format(
+                x_x, x_v, y_x, y_v, z_x, z_v), fill="white")
 
     def update_axes_config(self):
         s3g = self.s3g

@@ -156,6 +156,13 @@ class S3GPort(object):
     IN_ENDSTOPS_POS_HI_3 = 12
     IN_ENDSTOPS_MAX_BOUNCE_3 = 13
 
+    IN_APG_X_X = 14
+    IN_APG_X_V = 15
+    IN_APG_Y_X = 16
+    IN_APG_Y_V = 17
+    IN_APG_Z_X = 18
+    IN_APG_Z_V = 19
+
     IN_BE_STATUS = 62
     IN_SE_REG_LB = 63
 
