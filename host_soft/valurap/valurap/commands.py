@@ -1,3 +1,5 @@
+import time
+
 import random
 import struct
 
@@ -156,6 +158,11 @@ class S3GPort(object):
     IN_ENDSTOPS_POS_HI_3 = 12
     IN_ENDSTOPS_MAX_BOUNCE_3 = 13
 
+    IN_ENDSTOPS_STATUS_MASK_STATUS = 0x1
+    IN_ENDSTOPS_STATUS_SHIFT_STATUS = 0
+    IN_ENDSTOPS_STATUS_MASK_CYCLES = 0xFF00
+    IN_ENDSTOPS_STATUS_SHIFT_CYCLES = 8
+
     IN_APG_X_X = 14
     IN_APG_X_V = 15
     IN_APG_Y_X = 16
@@ -163,6 +170,7 @@ class S3GPort(object):
     IN_APG_Z_X = 18
     IN_APG_Z_V = 19
 
+    IN_PENDING_INTS = 61
     IN_BE_STATUS = 62
     IN_SE_REG_LB = 63
 
@@ -183,31 +191,54 @@ class S3GPort(object):
     def __init__(self, port='/dev/ttyS1', baudrate=115200):
         self.port = serial.Serial(port, baudrate=baudrate, timeout=0.1)
         self.data = bytearray()
+        self.unexpected_packets = []
 
     def unexpected_packet(self, packet):
         print("Unexpected packet: {}".format(repr(packet)))
+        self.unexpected_packets.append(packet)
 
-    def send_and_wait_reply(self, payload, cmd_id=None):
+    def send_and_wait_reply(self, payload, cmd_id=None, timeout=1, retries=3):
         if cmd_id is None:
             cmd_id = random.randint(1000, 65000)
         buf = encode_payload(struct.pack("H", cmd_id) + payload)
-        self.port.write(buf)
-        self.port.flush()
-        while True:
+
+        while retries:
+            self.port.write(buf)
+            self.port.flush()
+
+            try:
+                packet = self.wait_reply(cmd_id, timeout)
+            except TimeoutError:
+                retries -= 1
+                if not retries:
+                    raise
+            else:
+                break
+
+        return packet[2:]
+
+    def wait_reply(self, cmd_id=None, timeout=1):
+        packet = bytearray()
+        got_packet = False
+        start_time = time.time()
+        while not got_packet:
+            if time.time() - start_time > timeout:
+                raise TimeoutError
+
             reply = self.port.read()
             self.data += reply
             try:
                 packet, rest = decode_packet(self.data)
             except ValueError:
-                pass
-            else:
-                self.data = rest
-                reply_cmd_id = struct.unpack("H", packet[:2])[0]
-                if cmd_id == reply_cmd_id:
-                    return packet[2:]
-                else:
-                    self.unexpected_packet(packet)
+                continue
 
+            self.data = rest
+            reply_cmd_id = struct.unpack("H", packet[:2])[0]
+            if (cmd_id is None) or (cmd_id == reply_cmd_id):
+                got_packet = True
+            else:
+                self.unexpected_packet(packet)
+        return packet
 
     def S3G_OUTPUT(self, reg, value, cmd_id=None):
         """
@@ -239,7 +270,7 @@ class S3GPort(object):
         """
         Send strobe
         """
-        payload = struct.pack('<Bi', 62, value)
+        payload = struct.pack('<BI', 62, value)
 
         reply = self.send_and_wait_reply(payload, cmd_id)
         if reply[0] != 0x81:
@@ -251,7 +282,7 @@ class S3GPort(object):
         """
         Clear pending interrupt
         """
-        payload = struct.pack('<Bi', 63, value)
+        payload = struct.pack('<BI', 63, value)
 
         reply = self.send_and_wait_reply(payload, cmd_id)
         if reply[0] != 0x81:
@@ -263,7 +294,7 @@ class S3GPort(object):
         """
         Mask interrupts
         """
-        payload = struct.pack('<Bi', 64, value)
+        payload = struct.pack('<BI', 64, value)
 
         reply = self.send_and_wait_reply(payload, cmd_id)
         if reply[0] != 0x81:
