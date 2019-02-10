@@ -2,7 +2,7 @@ module mojo_top #(
     parameter CLK_RATE = 50000000,
     parameter AVR_BAUD_RATE = 500000,
     parameter EXT_BAUD_RATE = 115200,
-    parameter INTS_TIMER = 1000000
+    parameter INTS_TIMER = 10000000
 )(
     // 50MHz clock input
     input clk,
@@ -613,6 +613,7 @@ s3g_executor #(.INTS_TIMER(INTS_TIMER)) s3g_executor(
     .in_reg18(apg_z_x[63:32]),
     .in_reg19(apg_z_v),
 
+    .in_reg61(ext_pending_ints),
     .in_reg62({be_busy, be_waiting, 6'b0, ext_buffer_error, ext_buffer_pc}),
     .in_reg63(se_reg_lb),
 
