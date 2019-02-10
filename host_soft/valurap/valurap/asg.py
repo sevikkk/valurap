@@ -8,6 +8,21 @@ class ProfileSegment(object):
         self.jj = jj
         self.target_v = target_v
 
+    def __repr__(self):
+        s = ['<ProfileSegment apg={}'.format(self.apg.name)]
+        for a in "x v a j jj target_v".split():
+            v = getattr(self, a)
+            if v is not None:
+                s.append('{}={}'.format(a, v))
+        return " ".join(s) + '>'
+
+
+class PathSegment(object):
+    def __init__(self, axis, dx, base_v):
+        self.axis = axis
+        self.dx = dx
+        self.base_v = base_v
+
 
 class Asg(object):
     def __init__(self, bot):

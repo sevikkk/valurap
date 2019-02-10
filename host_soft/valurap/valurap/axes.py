@@ -24,6 +24,10 @@ class Axe(object):
     home_a = 15000
     home_v = 500000
 
+    max_v = 1000000
+    max_a = 15000
+    max_j = 5000
+
     def __init__(self, bot):
         self.bot = bot
         self.enabled = False

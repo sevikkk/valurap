@@ -4,10 +4,11 @@ Run:
 """
 
 import time
+from math import sqrt
 
 import struct
 
-from .asg import Asg, ProfileSegment
+from .asg import Asg, ProfileSegment, PathSegment
 from .apgs import ApgX, ApgY, ApgZ
 from .axes import AxeX1, AxeX2, AxeY, AxeY2
 from .commands import S3GPort
@@ -198,43 +199,72 @@ class Valurap(object):
         while not ret:
             ret = self.home_axes([self.axe_x1, self.axe_x2, self.axe_y])
 
-    def test(self):
-        self.axe_x1.enabled = True
-        self.axe_x2.enabled = True
-        self.axe_y.enabled = True
-        self.axe_x1.endstop_abort = True
-        self.axe_x2.endstop_abort = True
-        self.axe_y.endstop_abort = True
-
         self.axe_x1.apg = self.apg_x
         self.axe_x2.apg = self.apg_y
         self.axe_y.apg = self.apg_z
-
         self.update_axes_config()
-        time.sleep(0.5)
+        self.move(X1=-10000, X2=15000, Y=-10000)
 
-        path_code = self.asg.gen_path_code([
-            [15000, [
-                ProfileSegment(self.apg_x, target_v=100000, a=5000, x=0, v=0),
-                ProfileSegment(self.apg_y, target_v=-100000, a=-5000, x=0, v=0),
-                ProfileSegment(self.apg_z, target_v=100000, a=5000, x=0, v=0),
-            ]],
-            # [1000, [
-            #    ProfileSegment(self.apg_x, target_v=0, a=-5000),
-            #    ProfileSegment(self.apg_y, target_v=0, a=5000),
-            #    ProfileSegment(self.apg_z, target_v=0, a=-5000),
-            # ]],
-        ])
+
+    def move(self, **deltas):
+        dts = []
+
+        for axe_name, orig_delta in deltas.items():
+            axis = self.axes[axe_name]
+
+            delta = 1.0 * orig_delta * 2**32
+            delta = abs(delta)
+            max_v = axis.max_v * 50000000.0
+            max_a = axis.max_a * 50000000.0 * 1000.0
+
+            print("max speed dt:", max_v/max_a)
+            dt = sqrt(delta / max_a)
+            print("dt:", dt)
+            accel_dt = int(dt/2 * 1000)/1000.0
+            top_speed = dt * max_a
+            plato_dt = 0
+            if top_speed > max_v:
+                accel_dt = max_v / max_a
+                accel_dt = int(accel_dt * 1000)/1000.0
+                accel_delta = top_speed * accel_dt # / 2 * 2 - for average and two ends
+                plato_delta = delta - accel_delta
+                plato_dt = plato_delta / max_v
+                dt = plato_dt + 2 * accel_dt
+            dts.append((dt, accel_dt, plato_dt))
+
+        dts.sort()
+        dt, accel_dt, plato_dt = dts[-1]
+        segs = [[],[],[]]
+
+        for axe_name, orig_delta in deltas.items():
+            axis = self.axes[axe_name]
+
+            delta = 1.0 * orig_delta * 2**32
+            max_v = axis.max_v * 50000000.0
+            max_a = axis.max_a * 50000000.0 * 1000.0
+
+            v = delta / (accel_dt + plato_dt)
+            a = v / accel_dt
+
+            v = int(v/50000000)
+            a = int(a/50000000000)
+
+            segs[0].append(ProfileSegment(axis.apg, target_v=v, a=a))
+            segs[1].append(ProfileSegment(axis.apg, a=0))
+            segs[2].append(ProfileSegment(axis.apg, target_v=0, a=-a))
+
+        profile = []
+        profile.append([int(1000 * accel_dt), segs[0]])
+        if plato_dt:
+            profile.append([int(1000 * plato_dt), segs[1]])
+        profile.append([int(1000 * accel_dt), segs[2]])
+
+        print(profile)
+
+        path_code = self.asg.gen_path_code(profile)
 
         print(repr(path_code))
         self.exec_code(path_code)
-
-        self.axe_x1.enabled = False
-        self.axe_x2.enabled = False
-        self.axe_y.enabled = False
-
-        self.update_axes_config()
-
 
 def main():
     p = None
