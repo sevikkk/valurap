@@ -217,47 +217,38 @@ class Valurap(object):
             max_v = axis.max_v * 50000000.0
             max_a = axis.max_a * 50000000.0 * 1000.0
 
-            print("max speed dt:", max_v/max_a)
-            dt = sqrt(delta / max_a)
-            print("dt:", dt)
-            accel_dt = int(dt/2 * 1000)/1000.0
-            top_speed = dt * max_a
+            accel_dt = sqrt(delta / max_a)
+            top_speed = accel_dt * max_a
             plato_dt = 0
             if top_speed > max_v:
                 accel_dt = max_v / max_a
-                accel_dt = int(accel_dt * 1000)/1000.0
-                accel_delta = top_speed * accel_dt # / 2 * 2 - for average and two ends
+                accel_delta = max_v * accel_dt # / 2 * 2 - for average and two ends
                 plato_delta = delta - accel_delta
                 plato_dt = plato_delta / max_v
-                dt = plato_dt + 2 * accel_dt
+            dt = plato_dt + 2 * accel_dt
             dts.append((dt, accel_dt, plato_dt))
 
         dts.sort()
         dt, accel_dt, plato_dt = dts[-1]
-        segs = [[],[],[]]
+        segs = [[],[]]
+
+        accel_dt = int(accel_dt * 1000)
+        plato_dt = int(plato_dt * 1000)
 
         for axe_name, orig_delta in deltas.items():
             axis = self.axes[axe_name]
 
-            delta = 1.0 * orig_delta * 2**32
-            max_v = axis.max_v * 50000000.0
-            max_a = axis.max_a * 50000000.0 * 1000.0
+            delta = orig_delta * 2**32
 
-            v = delta / (accel_dt + plato_dt)
-            a = v / accel_dt
+            v = int(delta / ((accel_dt + plato_dt) * 50000))
+            a = int(v / (accel_dt - 1))
 
-            v = int(v/50000000)
-            a = int(a/50000000000)
-
-            segs[0].append(ProfileSegment(axis.apg, target_v=v, a=a))
-            segs[1].append(ProfileSegment(axis.apg, a=0))
-            segs[2].append(ProfileSegment(axis.apg, target_v=0, a=-a))
+            segs[0].append(ProfileSegment(axis.apg, target_v=v, a=a, x=0, v=0))
+            segs[1].append(ProfileSegment(axis.apg, target_v=0, a=-a))
 
         profile = []
-        profile.append([int(1000 * accel_dt), segs[0]])
-        if plato_dt:
-            profile.append([int(1000 * plato_dt), segs[1]])
-        profile.append([int(1000 * accel_dt), segs[2]])
+        profile.append([accel_dt + plato_dt, segs[0]])
+        profile.append([accel_dt, segs[1]])
 
         print(profile)
 
@@ -272,6 +263,7 @@ def main():
         p = Valurap()
         p.setup()
         p.home()
+        time.sleep(10)
         p.setup()
     except (KeyboardInterrupt, TimeoutError):
         if p:
