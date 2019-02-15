@@ -94,20 +94,18 @@ class Valurap(object):
         error = (status & 0x00FF0000) >> 16
         pc = status & 0x0000FFFF
         print("Busy: {} Wait: {} Error: {} PC: {}".format(busy, waiting, error, pc))
-        x_x = s3g.S3G_INPUT(s3g.IN_APG_X_X)
-        x_v = s3g.S3G_INPUT(s3g.IN_APG_X_V)
-        y_x = s3g.S3G_INPUT(s3g.IN_APG_Y_X)
-        y_v = s3g.S3G_INPUT(s3g.IN_APG_Y_V)
-        z_x = s3g.S3G_INPUT(s3g.IN_APG_Z_X)
-        z_v = s3g.S3G_INPUT(s3g.IN_APG_Z_V)
+        lines = []
         if busy:
-            line1 = "B {} W {} E {} P {}".format(busy, waiting, error, pc)
+            lines.append("B {} W {} E {} P {}".format(busy, waiting, error, pc))
         else:
-            line1 = "Idle"
-        line2 = "X{:8d} {:10d}\nY{:8d} {:10d}\nZ{:8d} {:10d}".format(x_x, x_v, y_x, y_v, z_x, z_v)
+            lines.append("Idle")
+
+        for sl in self.get_state():
+            lines.append("{:2s}{:9.1f} {:8d}".format(sl["name"], sl["x"], sl["v"]))
+
         with self.oled.draw() as draw:
             draw.rectangle(self.oled.bounding_box, outline="white", fill="black")
-            draw.multiline_text((5, 3), "{}\n{}".format(line1, line2), fill="white")
+            draw.multiline_text((5, 3), "\n".join(lines), fill="white")
         return busy
 
     def update_axes_config(self):
@@ -203,7 +201,8 @@ class Valurap(object):
         self.axe_x2.apg = self.apg_y
         self.axe_y.apg = self.apg_z
         self.update_axes_config()
-        self.move(X1=-10000, X2=15000, Y=-10000)
+        self.set_positions(X1=13000, X2=-13000, Y=13000)
+        self.move(X1=-25000, X2=13000-9600, Y=-13000+800)
 
 
     def move(self, **deltas):
@@ -243,7 +242,7 @@ class Valurap(object):
             v = int(delta / ((accel_dt + plato_dt) * 50000))
             a = int(v / (accel_dt - 1))
 
-            segs[0].append(ProfileSegment(axis.apg, target_v=v, a=a, x=0, v=0))
+            segs[0].append(ProfileSegment(axis.apg, target_v=v, a=a, v=0))
             segs[1].append(ProfileSegment(axis.apg, target_v=0, a=-a))
 
         profile = []
@@ -256,6 +255,28 @@ class Valurap(object):
 
         print(repr(path_code))
         self.exec_code(path_code)
+
+    def set_positions(self, **kw):
+        set_code = self.asg.gen_set_apg_positions(**kw)
+        self.exec_code(set_code)
+
+    def get_state(self):
+        s3g = self.s3g
+        result = []
+        axes_list = sorted(self.axes.keys())
+        for k in axes_list:
+            axe = self.axes[k]
+            if axe.apg:
+                cur_x_hi = s3g.S3G_INPUT(axe.apg.cur_x_hi)
+                cur_x_lo = s3g.S3G_INPUT(axe.apg.cur_x_lo)
+                cur_v = s3g.S3G_INPUT(axe.apg.cur_v)
+                result.append({
+                    "name": axe.name,
+                    "x": cur_x_hi + (1.0 * cur_x_lo)/2**32,
+                    "v": cur_v
+                })
+        return result
+
 
 def main():
     p = None

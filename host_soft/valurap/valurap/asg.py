@@ -168,3 +168,55 @@ class Asg(object):
         ]
 
         return code
+
+    def gen_set_apg_positions(self, **kw):
+        s3g = self.bot.s3g
+
+        control = [
+            s3g.OUT_ASG_CONTROL_SET_STEPS_LIMIT,
+            s3g.OUT_ASG_CONTROL_SET_DT_LIMIT,
+            s3g.OUT_ASG_CONTROL_RESET_STEPS,
+            s3g.OUT_ASG_CONTROL_RESET_DT,
+        ]
+
+        code = []
+
+        for k, v in kw.items():
+            axis = self.bot.axes[k]
+            apg = axis.apg
+            assert apg
+
+            control += [
+                apg.control_set_x,
+                apg.control_set_v,
+                apg.control_set_a,
+                apg.control_set_j,
+                apg.control_set_jj,
+            ]
+            x_hi = int(v)
+            x_lo = int((v - x_hi) * 2**32)
+            code += [
+                s3g.BUF_OUTPUT(apg.val_x_lo, x_lo),
+                s3g.BUF_OUTPUT(apg.val_x_hi, x_hi),
+                s3g.BUF_OUTPUT(apg.val_v, 0),
+                s3g.BUF_OUTPUT(apg.val_a, 0),
+                s3g.BUF_OUTPUT(apg.val_j, 0),
+                s3g.BUF_OUTPUT(apg.val_jj, 0),
+            ]
+
+        code += [
+            s3g.BUF_OUTPUT(s3g.OUT_ASG_CONTROL, *control),
+            s3g.BUF_OUTPUT(s3g.OUT_ASG_DT_VAL, 50000),
+            s3g.BUF_OUTPUT(s3g.OUT_ASG_STEPS_VAL, 1),
+            s3g.BUF_STB(s3g.STB_ASG_LOAD),
+            s3g.BUF_OUTPUT(s3g.OUT_ASG_CONTROL,
+                           s3g.OUT_ASG_CONTROL_SET_DT_LIMIT
+                           ),
+            s3g.BUF_OUTPUT(s3g.OUT_ASG_DT_VAL, 0),
+            s3g.BUF_WAIT_ALL(s3g.INT_ASG_DONE),
+            s3g.BUF_CLEAR(s3g.INT_ASG_DONE),
+            s3g.BUF_STB(s3g.STB_ASG_LOAD),
+            s3g.BUF_OUTPUT(s3g.OUT_LEDS, 0x3),
+            s3g.BUF_DONE()
+        ]
+        return code

@@ -163,12 +163,15 @@ class S3GPort(object):
     IN_ENDSTOPS_STATUS_MASK_CYCLES = 0xFF00
     IN_ENDSTOPS_STATUS_SHIFT_CYCLES = 8
 
-    IN_APG_X_X = 14
-    IN_APG_X_V = 15
-    IN_APG_Y_X = 16
-    IN_APG_Y_V = 17
-    IN_APG_Z_X = 18
-    IN_APG_Z_V = 19
+    IN_APG_X_X_LO = 14
+    IN_APG_X_X_HI = 15
+    IN_APG_X_V = 16
+    IN_APG_Y_X_LO = 17
+    IN_APG_Y_X_HI = 18
+    IN_APG_Y_V = 19
+    IN_APG_Z_X_LO = 20
+    IN_APG_Z_X_HI = 21
+    IN_APG_Z_V = 22
 
     IN_PENDING_INTS = 61
     IN_BE_STATUS = 62

@@ -28,6 +28,8 @@ class Axe(object):
     max_a = 15000
     max_j = 5000
 
+    name = None
+
     def __init__(self, bot):
         self.bot = bot
         self.enabled = False
@@ -67,6 +69,7 @@ class Axe(object):
 
 
 class AxeX1(Axe):
+    name = "X1"
     endstop_at_max = True
     _control_enable = S3GPort.OUT_MSG_CONTROL_ENABLE_3
     _control_mux = {
@@ -86,6 +89,7 @@ class AxeX1(Axe):
 
 
 class AxeX2(Axe):
+    name = "X2"
     endstop_at_max = False
     _control_enable = S3GPort.OUT_MSG_CONTROL_ENABLE_4
     _control_mux = {
@@ -106,6 +110,7 @@ class AxeX2(Axe):
 
 
 class AxeY(Axe):
+    name = "Y"
     """
     Combined Axe for both Y motors
     """
@@ -145,6 +150,7 @@ class AxeY(Axe):
     home_v = 500000
 
 class AxeY2(Axe):
+    name = "Y2"
     """
     Second Y motor alone
     """

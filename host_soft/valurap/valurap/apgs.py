@@ -20,6 +20,10 @@ class APG(object):
     val_target_v = None
     val_abort_a = None
 
+    cur_x_lo = None
+    cur_x_hi = None
+    cur_v = None
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -42,6 +46,10 @@ class ApgX(APG):
     val_target_v = S3GPort.OUT_APG_X_TARGET_V_VAL
     val_abort_a = S3GPort.OUT_APG_X_ABORT_A_VAL
 
+    cur_x_lo = S3GPort.IN_APG_X_X_LO
+    cur_x_hi = S3GPort.IN_APG_X_X_HI
+    cur_v = S3GPort.IN_APG_X_V
+
 
 class ApgY(APG):
     name = "Y"
@@ -61,6 +69,9 @@ class ApgY(APG):
     val_target_v = S3GPort.OUT_APG_Y_TARGET_V_VAL
     val_abort_a = S3GPort.OUT_APG_Y_ABORT_A_VAL
 
+    cur_x_lo = S3GPort.IN_APG_Y_X_LO
+    cur_x_hi = S3GPort.IN_APG_Y_X_HI
+    cur_v = S3GPort.IN_APG_Y_V
 
 class ApgZ(APG):
     name = "Z"
@@ -79,3 +90,7 @@ class ApgZ(APG):
     val_jj = S3GPort.OUT_APG_Z_JJ_VAL
     val_target_v = S3GPort.OUT_APG_Z_TARGET_V_VAL
     val_abort_a = S3GPort.OUT_APG_Z_ABORT_A_VAL
+
+    cur_x_lo = S3GPort.IN_APG_Z_X_LO
+    cur_x_hi = S3GPort.IN_APG_Z_X_HI
+    cur_v = S3GPort.IN_APG_Z_V
