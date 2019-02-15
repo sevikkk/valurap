@@ -202,7 +202,7 @@ class Valurap(object):
         self.axe_y.apg = self.apg_z
         self.update_axes_config()
         self.set_positions(X1=13000, X2=-13000, Y=13000)
-        self.move(X1=-25000, X2=13000-9600, Y=-13000+800)
+        self.move(X1=-25000, X2=13000-9650, Y=-13000+800)
 
 
     def move(self, **deltas):
@@ -278,12 +278,61 @@ class Valurap(object):
         return result
 
 
+import numpy as np
+import cv2
+
 def main():
     p = None
     try:
         p = Valurap()
         p.setup()
         p.home()
+
+        cap = cv2.VideoCapture(0)
+        size_x = int(640 / 3)
+        size_y = int(480 / 3)
+
+        param1 = np.zeros((6 * 6, 3), np.float32)
+        param2 = (np.mgrid[-3:3, -3:3] + 0.5).T.reshape(-1, 2)
+        params = [param1, param2]
+
+        objp = params[0]
+        objp[:, :2] = params[1]
+
+        objp = 2.469438 * objp
+
+        mtx = np.array([[1.85583369e+03, 0.00000000e+00, 7.96781205e+02],
+                        [0.00000000e+00, 1.86524428e+03, 6.48427700e+02],
+                        [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
+        dist = np.array([[4.38909294e-02, -3.72379589e-01, 5.96935378e-03,
+                          -1.39161992e-04, -1.18364075e+00]])
+
+        for i in range(10):
+            for j in range(5):
+                ret, frame = cap.read()
+                print("cap:", ret)
+                time.sleep(0.2)
+
+            small = cv2.cv2.resize(frame, (size_x, size_y))
+
+            ret, circles = cv2.findCirclesGrid(small, (6, 6))
+            if not ret:
+                print("not found")
+                continue
+
+            circles = circles * (1600.0/size_x)
+            print("find:", (circles[0] + circles[5] + circles[30] + circles[35] - np.array(
+                [[1600 * 2, 1200 * 2]])))
+
+            retval, rvec, tvec = cv2.solvePnP(objp, circles, mtx, dist)
+            print("solved:", retval, rvec.T[0], tvec.T[0])
+            dx, dy, dz = tvec.T[0]
+            #p.move(Y = 80*dy, X2 = -80*dx)
+
+            if abs(dx) + abs(dy) > 0.1:
+                p.move(X2=-80*dx, Y=80*dy)
+
+
         time.sleep(10)
         p.setup()
     except (KeyboardInterrupt, TimeoutError):
