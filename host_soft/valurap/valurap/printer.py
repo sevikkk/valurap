@@ -2,7 +2,9 @@
 Run:
    seva@orange:~/src/sevasoft/valurap/host_soft$ python -m valurap.printer
 """
+import pickle
 
+import random
 import time
 from math import sqrt
 
@@ -21,6 +23,7 @@ class Valurap(object):
         self.s3g = S3GPort()
         self.spi = SPIPort()
         self.oled = OLED()
+        self.cap = None
 
         self.asg = Asg(self)
 
@@ -288,57 +291,145 @@ def main():
         p.setup()
         p.home()
 
-        cap = cv2.VideoCapture(0)
-        size_x = int(640 / 3)
-        size_y = int(480 / 3)
+        states = []
 
-        param1 = np.zeros((6 * 6, 3), np.float32)
-        param2 = (np.mgrid[-3:3, -3:3] + 0.5).T.reshape(-1, 2)
-        params = [param1, param2]
+        for i in range(1):
+            optozero(p)
+            states.append(p.get_state())
 
-        objp = params[0]
-        objp[:, :2] = params[1]
+            p.move(X2=6700)
+            optozero(p)
+            states.append(p.get_state())
 
-        objp = 2.469438 * objp
+            p.move(X2=6700)
+            optozero(p)
+            states.append(p.get_state())
 
-        mtx = np.array([[1.85583369e+03, 0.00000000e+00, 7.96781205e+02],
-                        [0.00000000e+00, 1.86524428e+03, 6.48427700e+02],
-                        [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
-        dist = np.array([[4.38909294e-02, -3.72379589e-01, 5.96935378e-03,
-                          -1.39161992e-04, -1.18364075e+00]])
+            p.move(X2=6700)
+            optozero(p)
+            states.append(p.get_state())
 
-        for i in range(10):
-            for j in range(5):
-                ret, frame = cap.read()
-                print("cap:", ret)
-                time.sleep(0.2)
+            p.move(Y=6700)
+            optozero(p)
+            states.append(p.get_state())
 
-            small = cv2.cv2.resize(frame, (size_x, size_y))
+            p.move(X2=-6700)
+            optozero(p)
+            states.append(p.get_state())
 
-            ret, circles = cv2.findCirclesGrid(small, (6, 6))
-            if not ret:
-                print("not found")
-                continue
+            p.move(X2=-6700)
+            optozero(p)
+            states.append(p.get_state())
 
-            circles = circles * (1600.0/size_x)
-            print("find:", (circles[0] + circles[5] + circles[30] + circles[35] - np.array(
-                [[1600 * 2, 1200 * 2]])))
+            p.move(X2=-6700)
+            optozero(p)
+            states.append(p.get_state())
 
-            retval, rvec, tvec = cv2.solvePnP(objp, circles, mtx, dist)
-            print("solved:", retval, rvec.T[0], tvec.T[0])
-            dx, dy, dz = tvec.T[0]
-            #p.move(Y = 80*dy, X2 = -80*dx)
+            p.move(Y=6700)
+            optozero(p)
+            states.append(p.get_state())
 
-            if abs(dx) + abs(dy) > 0.1:
-                p.move(X2=-80*dx, Y=80*dy)
+            p.move(X2=6700)
+            optozero(p)
+            states.append(p.get_state())
 
+            p.move(X2=6700)
+            optozero(p)
+            states.append(p.get_state())
 
-        time.sleep(10)
-        p.setup()
+            p.move(X2=6700)
+            optozero(p)
+            states.append(p.get_state())
+
+            p.move(X2=-6700*3, Y = -6700*2)
+
+        places = {}
+        for state in states:
+            x = state[1]["x"]
+            y = state[2]["x"]
+
+            i = round((x + 9608.0)/6700)
+            j = round((y - 800.0)/6700)
+            print(i, j, x, y)
+            places.setdefault((i, j),[]).append((x, y))
+
+        for i in range(500):
+            pl = random.choice(list(places.keys()))
+            pl_x = sum([a[0] for a in places[pl]])/len(places[pl])
+            pl_y = sum([a[1] for a in places[pl]])/len(places[pl])
+
+            state = p.get_state()
+            x = state[1]["x"]
+            y = state[2]["x"]
+            p.move(X2=pl_x - x, Y=pl_y - y)
+            optozero(p)
+            state = p.get_state()
+            x = state[1]["x"]
+            y = state[2]["x"]
+            places[pl].append((x,y))
+
+            pickle.dump(places, open("places.pick", "wb"))
+
+        print(places)
+
     except (KeyboardInterrupt, TimeoutError):
+        raise
+    finally:
         if p:
             p.setup()
-        raise
+
+
+def optozero(p):
+    if not p.cap:
+        p.cap = cv2.VideoCapture(0)
+
+    size_x = int(640 / 1)
+    size_y = int(480 / 1)
+    param1 = np.zeros((6 * 6, 3), np.float32)
+    param2 = (np.mgrid[-3:3, -3:3] + 0.5).T.reshape(-1, 2)
+    params = [param1, param2]
+    objp = params[0]
+    objp[:, :2] = params[1]
+    objp = 2.469438 * objp
+    mtx = np.array([[1.85583369e+03, 0.00000000e+00, 7.96781205e+02],
+                    [0.00000000e+00, 1.86524428e+03, 6.48427700e+02],
+                    [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
+    dist = np.array([[4.38909294e-02, -3.72379589e-01, 5.96935378e-03,
+                      -1.39161992e-04, -1.18364075e+00]])
+    for i in range(10):
+        for j in range(5):
+            ret, frame = p.cap.read()
+            print("cap:", ret)
+            if not ret:
+                print("capture failed, reopen")
+                p.cap.release()
+                time.sleep(2)
+                p.cap = cv2.VideoCapture(0)
+            time.sleep(0.2)
+
+        small = cv2.cv2.resize(frame, (size_x, size_y))
+
+        ret, circles = cv2.findCirclesGrid(small, (6, 6))
+        if not ret:
+            print("not found")
+            continue
+
+        circles = circles * (1600.0 / size_x)
+        print("find:", (circles[0] + circles[5] + circles[30] + circles[35] - np.array(
+            [[1600 * 2, 1200 * 2]])))
+
+        retval, rvec, tvec = cv2.solvePnP(objp, circles, mtx, dist)
+        print("solved:", retval, rvec.T[0], tvec.T[0])
+        dx, dy, dz = tvec.T[0]
+        # p.move(Y = 80*dy, X2 = -80*dx)
+
+        if abs(dx) + abs(dy) > 0.03:
+            p.move(X2=-80 * dx, Y=80 * dy)
+            pos = p.get_state()
+            print(pos)
+        else:
+            break
+
 
 
 if __name__ == "__main__":

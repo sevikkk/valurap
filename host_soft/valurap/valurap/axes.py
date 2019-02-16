@@ -25,7 +25,7 @@ class Axe(object):
     home_v = 500000
 
     max_v = 1000000
-    max_a = 15000
+    max_a = 5000
     max_j = 5000
 
     name = None
