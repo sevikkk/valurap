@@ -48,6 +48,11 @@ reg signed [23:0] next_target_v;
 reg signed [63:0] next_step_start_x;
 reg signed [23:0] next_step_start_v;
 
+wire signed [23:0] next_v_comb;
+wire signed [31:0] next_v_comb1;
+assign next_v_comb1 = {v, 8'b0} + a;
+assign next_v_comb = next_v_comb1[31:8];
+
 always @(reset, acc_step, load,
 		set_v, set_a, set_j, set_jj, set_x,
 		v_val, a_val, j_val, jj_val,
@@ -118,17 +123,17 @@ always @(reset, acc_step, load,
                                 if (v > abort_a_val)
                                     begin
                                         next_v <= v - abort_a_val;
-                                        next_a <= -abort_a_val;
+                                        next_a <= 0;
                                     end
                                 else if (v >= -abort_a_val)
                                     begin
                                         next_v <= 0;
-                                        next_a <= -v;
+                                        next_a <= 0;
                                     end
                                 else
                                     begin
                                         next_v <= v + abort_a_val;
-                                        next_a <= abort_a_val;
+                                        next_a <= 0;
                                     end
                             end
                         else
@@ -139,7 +144,7 @@ always @(reset, acc_step, load,
                     end
                 else
                     begin
-                        next_v <= v + a;
+                        next_v <= next_v_comb;
                         next_a <= a + j;
                         next_j <= j + jj;
                         if (target_set)
@@ -151,12 +156,12 @@ always @(reset, acc_step, load,
                                         next_a <= 0;
                                         next_v <= target_v;
                                     end
-                                else if ((v < target_v && v + a > target_v) || (v > target_v && v + a < target_v))
+                                else if ((v < target_v && next_v_comb > target_v) || (v > target_v && next_v_comb < target_v))
                                     begin
                                         next_jj <= 0;
                                         next_j <= 0;
                                         next_v <= target_v;
-                                        next_a <= target_v - v;
+                                        next_a <= 0;
                                     end
                             end
                     end
