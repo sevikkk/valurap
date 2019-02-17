@@ -111,27 +111,27 @@ class Asg(object):
                 if seg.x is not None:
                     control.append(apg.control_set_x)
                     regs[apg.val_x_lo] = 0
-                    regs[apg.val_x_hi] = seg.x
+                    regs[apg.val_x_hi] = int(seg.x)
 
                 if seg.v is not None:
                     control.append(apg.control_set_v)
-                    regs[apg.val_v] = seg.v
+                    regs[apg.val_v] = int(seg.v)
 
                 if seg.a is not None:
                     control.append(apg.control_set_a)
-                    regs[apg.val_a] = seg.a
+                    regs[apg.val_a] = int(seg.a)
 
                 if seg.j is not None:
                     control.append(apg.control_set_j)
-                    regs[apg.val_j] = seg.j
+                    regs[apg.val_j] = int(seg.j)
 
                 if seg.jj is not None:
                     control.append(apg.control_set_jj)
-                    regs[apg.val_jj] = seg.jj
+                    regs[apg.val_jj] = int(seg.jj)
 
                 if seg.target_v is not None:
                     control.append(apg.control_set_target_v)
-                    regs[apg.val_target_v] = seg.target_v
+                    regs[apg.val_target_v] = int(seg.target_v)
 
             control_value = 0
             for c in control:

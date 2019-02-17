@@ -120,7 +120,7 @@ class Valurap(object):
             msg_control |= axe.msg_control()
             es_control |= axe.endstops_control()
             if axe.apg:
-                s3g.S3G_OUTPUT(axe.apg.val_abort_a, axe.abort_a)
+                s3g.S3G_OUTPUT(axe.apg.val_abort_a, axe.abort_a * 256)
 
         s3g.S3G_OUTPUT(s3g.OUT_MSG_CONTROL, msg_control)
         s3g.S3G_OUTPUT(s3g.OUT_ENDSTOPS_OPTIONS, es_control)
@@ -151,7 +151,7 @@ class Valurap(object):
                 a = -a
                 target_v = -target_v
 
-            segs.append(ProfileSegment(axe.apg, target_v=target_v, a=a, x=0, v=0))
+            segs.append(ProfileSegment(axe.apg, target_v=target_v, a=a * 256, x=0, v=0))
             active_ints |= axe.endstop_int
 
         if not segs:
@@ -193,6 +193,7 @@ class Valurap(object):
         self.axe_x1.apg = None
         self.axe_x2.apg = None
         self.axe_y.apg = None
+        self.axe_y2.apg = None
         self.update_axes_config()
         time.sleep(0.5)
 
@@ -205,7 +206,7 @@ class Valurap(object):
         self.axe_y.apg = self.apg_z
         self.update_axes_config()
         self.set_positions(X1=13000, X2=-13000, Y=13000)
-        self.move(X1=-25000, X2=13000-9650, Y=-13000+800)
+        self.moveto(X1=0, X2=0, Y=-0)
 
 
     def move(self, **deltas):
@@ -235,18 +236,24 @@ class Valurap(object):
         segs = [[],[]]
 
         accel_dt = int(accel_dt * 1000)
+        if accel_dt < 2:
+            accel_dt = 2
+
         plato_dt = int(plato_dt * 1000)
+        if plato_dt < 2:
+            plato_dt = 2
 
         for axe_name, orig_delta in deltas.items():
             axis = self.axes[axe_name]
 
-            delta = orig_delta * 2**32
+            delta = 1.0 * orig_delta * 2**32
 
-            v = int(delta / ((accel_dt + plato_dt) * 50000))
-            a = int(v / (accel_dt - 1))
+            v = round(delta / ((accel_dt + plato_dt) * 50000))
+            a = round(v / accel_dt * 256)
+            a2 = round(v / (accel_dt - 1) * 256)
 
             segs[0].append(ProfileSegment(axis.apg, target_v=v, a=a, v=0))
-            segs[1].append(ProfileSegment(axis.apg, target_v=0, a=-a))
+            segs[1].append(ProfileSegment(axis.apg, target_v=0, a=-a2))
 
         profile = []
         profile.append([accel_dt + plato_dt, segs[0]])
@@ -258,6 +265,16 @@ class Valurap(object):
 
         print(repr(path_code))
         self.exec_code(path_code)
+
+    def moveto(self, **point):
+        args = {}
+        state = self.get_state()
+        for s in state:
+            pos = point.get(s["name"], None)
+            if pos is not None:
+                args[s["name"]] = pos - s["x"]
+
+        self.move(**args)
 
     def set_positions(self, **kw):
         set_code = self.asg.gen_set_apg_positions(**kw)
@@ -281,8 +298,8 @@ class Valurap(object):
         return result
 
 
-import numpy as np
 import cv2
+import numpy as np
 
 def main():
     p = None
@@ -291,92 +308,175 @@ def main():
         p.setup()
         p.home()
 
-        states = []
-
-        for i in range(1):
-            optozero(p)
-            states.append(p.get_state())
-
-            p.move(X2=6700)
-            optozero(p)
-            states.append(p.get_state())
-
-            p.move(X2=6700)
-            optozero(p)
-            states.append(p.get_state())
-
-            p.move(X2=6700)
-            optozero(p)
-            states.append(p.get_state())
-
-            p.move(Y=6700)
-            optozero(p)
-            states.append(p.get_state())
-
-            p.move(X2=-6700)
-            optozero(p)
-            states.append(p.get_state())
-
-            p.move(X2=-6700)
-            optozero(p)
-            states.append(p.get_state())
-
-            p.move(X2=-6700)
-            optozero(p)
-            states.append(p.get_state())
-
-            p.move(Y=6700)
-            optozero(p)
-            states.append(p.get_state())
-
-            p.move(X2=6700)
-            optozero(p)
-            states.append(p.get_state())
-
-            p.move(X2=6700)
-            optozero(p)
-            states.append(p.get_state())
-
-            p.move(X2=6700)
-            optozero(p)
-            states.append(p.get_state())
-
-            p.move(X2=-6700*3, Y = -6700*2)
-
-        places = {}
-        for state in states:
-            x = state[1]["x"]
-            y = state[2]["x"]
-
-            i = round((x + 9608.0)/6700)
-            j = round((y - 800.0)/6700)
-            print(i, j, x, y)
-            places.setdefault((i, j),[]).append((x, y))
-
-        for i in range(500):
-            pl = random.choice(list(places.keys()))
-            pl_x = sum([a[0] for a in places[pl]])/len(places[pl])
-            pl_y = sum([a[1] for a in places[pl]])/len(places[pl])
-
-            state = p.get_state()
-            x = state[1]["x"]
-            y = state[2]["x"]
-            p.move(X2=pl_x - x, Y=pl_y - y)
-            optozero(p)
-            state = p.get_state()
-            x = state[1]["x"]
-            y = state[2]["x"]
-            places[pl].append((x,y))
-
-            pickle.dump(places, open("places.pick", "wb"))
-
-        print(places)
+        optozero_calibrate_fast(p, True)
 
     except (KeyboardInterrupt, TimeoutError):
         raise
     finally:
         if p:
             p.setup()
+
+
+def optozero_calibrate_fast(p, super_fast=False):
+    from numpy.linalg import norm
+
+    places = {}
+    corners = [
+        None,
+        [0, 0],
+        [3, 0],
+        [3, 2],
+        [0, 2]
+    ]
+
+    i,j = corners[3]
+    pl_x, pl_y = place_coords(i, j, places)
+    p.moveto(X2=pl_x, Y=pl_y)
+
+    path = [1,2,3,4,1,3,2,1,4,2,4,3]
+    random_cycles = 10
+    if super_fast:
+        path = [1,2,3,4]
+        random_cycles = 1
+
+    for k in range(2):
+        for n in path:
+            i,j = corners[n]
+
+            pl_x, pl_y = place_coords(i, j, places)
+
+            p.moveto(X2=pl_x, Y=pl_y)
+            optozero(p)
+
+            state = p.get_state()
+            x = state[1]["x"]
+            y = state[2]["x"]
+
+            places.setdefault((i, j), []).append((x, y))
+
+    for i in range(random_cycles):
+        pl = random.choice(list(places.keys()))
+        pl_x = sum([a[0] for a in places[pl]]) / len(places[pl])
+        pl_y = sum([a[1] for a in places[pl]]) / len(places[pl])
+
+        p.moveto(X2=pl_x, Y=pl_y)
+        optozero(p)
+        state = p.get_state()
+        x = state[1]["x"]
+        y = state[2]["x"]
+        places[pl].append((x, y))
+
+        pickle.dump(places, open("places2.pick", "wb"))
+
+    corners = {}
+
+    for k, v in places.items():
+        v = np.mean(np.array(v), 0)
+        print(k, v)
+        corners[k] = v
+
+    p00 = corners[(0, 0)]
+    p01 = corners[(0, 2)]
+    p10 = corners[(3, 0)]
+    p11 = corners[(3, 2)]
+
+    middle = np.mean(list(corners.values()), 0)
+
+    for k, v in corners.items():
+        print(k, v - middle)
+
+    x_ma_low = p00[0] - p01[0]
+    x_ma_high = p10[0] - p11[0]
+    x_base_low = p00[1] - p01[1]
+    x_base_high = p10[1] - p11[1]
+
+    y_ma_low = p00[1] - p10[1]
+    y_ma_high = p01[1] - p11[1]
+    y_base_low = p00[0] - p10[0]
+    y_base_high = p01[0] - p11[0]
+
+    print("x_ma", x_ma_low, x_ma_high)
+    print("x_base", x_base_low, x_base_high)
+    print("y_ma", y_ma_low, y_ma_high)
+    print("y_base", y_base_low, y_base_high)
+
+    x_ma = (x_ma_low + x_ma_high) / 2
+    x_base = (x_base_low + x_base_high) / 2
+    x_hyp = norm([x_ma, x_base])
+    x_cos = (x_base / x_hyp)
+    x_sin = (x_ma / x_hyp)
+
+    fi_matrix = np.array([[x_cos, -x_sin], [x_sin, -x_cos]])
+
+    rcorners = {}
+    for k, v in corners.items():
+        v = (np.matmul(fi_matrix, (v - middle).T + middle.T)).T
+        print(k, v)
+        rcorners[k] = v
+
+    rp00 = rcorners[(0, 0)]
+    rp01 = rcorners[(0, 2)]
+    rp10 = rcorners[(3, 0)]
+    rp11 = rcorners[(3, 2)]
+
+    rdiag1 = rp11 - rp00
+    rdiag2 = rp10 - rp01
+
+    print("rdiag1", rdiag1, norm(rdiag1))
+    print("rdiag2", rdiag2, norm(rdiag2))
+
+    ry_ma_low = rp00[1] - rp10[1]
+    ry_ma_high = rp01[1] - rp11[1]
+    ry_base_low = rp00[0] - rp10[0]
+    ry_base_high = rp01[0] - rp11[0]
+
+    print("ry_ma", ry_ma_low, ry_ma_low)
+    print("ry_base", ry_base_low, ry_base_high)
+
+    ry_ma = (ry_ma_low + ry_ma_low) / 2
+    real_delta = ry_ma / ry_base_low * 41600
+    print("real_delta", real_delta)
+
+
+def place_coords(i, j, places):
+    if (i, j) in places:
+        pl_x = sum([a[0] for a in places[(i, j)]]) / len(places[(i, j)])
+        pl_y = sum([a[1] for a in places[(i, j)]]) / len(places[(i, j)])
+    else:
+        pl_x = -9600 + i * 6700
+        pl_y = 800 + j * 6700
+    return pl_x, pl_y
+
+
+def optozero_calibrate_long(p):
+    places = {}
+    for k in range(2):
+        for i in range(4):
+            for j in range(3):
+                p.moveto(X2=-9600 + i * 6700, Y=800 + j * 6700)
+                optozero(p)
+
+                state = p.get_state()
+                x = state[1]["x"]
+                y = state[2]["x"]
+
+                places.setdefault((i, j), []).append((x, y))
+
+    for i in range(500):
+        pl = random.choice(list(places.keys()))
+        pl_x = sum([a[0] for a in places[pl]]) / len(places[pl])
+        pl_y = sum([a[1] for a in places[pl]]) / len(places[pl])
+
+        p.moveto(X2=pl_x, Y=pl_y)
+        optozero(p)
+        state = p.get_state()
+        x = state[1]["x"]
+        y = state[2]["x"]
+        places[pl].append((x, y))
+
+        pickle.dump(places, open("places2.pick", "wb"))
+
+    print(places)
 
 
 def optozero(p):
@@ -407,6 +507,9 @@ def optozero(p):
                 p.cap = cv2.VideoCapture(0)
             time.sleep(0.2)
 
+        if not ret:
+            continue
+
         small = cv2.cv2.resize(frame, (size_x, size_y))
 
         ret, circles = cv2.findCirclesGrid(small, (6, 6))
@@ -423,8 +526,11 @@ def optozero(p):
         dx, dy, dz = tvec.T[0]
         # p.move(Y = 80*dy, X2 = -80*dx)
 
-        if abs(dx) + abs(dy) > 0.03:
-            p.move(X2=-80 * dx, Y=80 * dy)
+        x_steps = round(80 * dx)
+        y_steps = round(80 * dy)
+
+        if abs(x_steps) + abs(y_steps) > 8: # 0.1mm
+            p.move(X2=-x_steps, Y=y_steps)
             pos = p.get_state()
             print(pos)
         else:
