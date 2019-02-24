@@ -255,7 +255,7 @@ class Valurap(object):
         self.moveto(X1=0, X2=0, Y=-0)
 
 
-    def plan_move(self, **deltas):
+    def plan_move(self, min_dt = None, **deltas):
         dts = []
 
         for axe_name, orig_delta in deltas.items():
@@ -288,6 +288,13 @@ class Valurap(object):
         plato_dt = int(plato_dt * 1000)
         if plato_dt < 2:
             plato_dt = 2
+
+        if min_dt is not None:
+            if plato_dt + 2 * accel_dt < min_dt:
+                k = min_dt / (plato_dt + 2 * accel_dt)
+
+                plato_dt = round(plato_dt * k)
+                accel_dt = round(accel_dt * k)
 
         for axe_name, orig_delta in deltas.items():
             axis = self.axes[axe_name]
