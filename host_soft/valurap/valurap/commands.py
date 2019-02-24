@@ -192,9 +192,12 @@ class S3GPort(object):
     INT_SE_INT_LB = 0x80000000
 
     def __init__(self, port='/dev/ttyS1', baudrate=115200):
-        self.port = serial.Serial(port, baudrate=baudrate, timeout=0.1)
+        self.port = self.open_port(port, baudrate)
         self.data = bytearray()
         self.unexpected_packets = []
+
+    def open_port(self, port, baudrate):
+        return serial.Serial(port, baudrate=baudrate, timeout=0.1)
 
     def unexpected_packet(self, packet):
         print("Unexpected packet: {}".format(repr(packet)))
