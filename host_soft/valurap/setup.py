@@ -11,12 +11,16 @@ setup(
     install_requires = [
         'aiohttp==3.5.4',
         'aiomonitor==0.4.3',
-        'luma.oled==3.1.0',
-        'pyserial==3.4',
-        'pyserial-asyncio==0.4',
-        'smbus2==0.2.3',
-        'spidev==3.2',
     ],
+    extras_require = {
+        "hw": [
+            'luma.oled==3.1.0',
+            'pyserial==3.4',
+            'pyserial-asyncio==0.4',
+            'smbus2==0.2.3',
+            'spidev==3.2',
+        ]
+    } ,
     entry_points = {
         'console_scripts': [
             'home=valurap.scripts.home:main',
