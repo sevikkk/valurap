@@ -14,9 +14,55 @@ from .asg import Asg, ProfileSegment, PathSegment
 from .apgs import ApgX, ApgY, ApgZ
 from .axes import AxeX1, AxeX2, AxeY, AxeY2
 from .commands import S3GPort
-from .oled import OLED
-from .spi import SPIPort
 
+try:
+    from .spi import SPIPort
+    from .oled import OLED
+except ImportError:
+    class SPIPort(object):
+        pass
+
+    class FakeDraw(object):
+        def __enter__(self, *args, **kw):
+            return self
+        def __exit__(self, *args, **kw):
+            return
+        def rectangle(self, *args, **kw):
+            return
+        def text(self, *args, **kw):
+            return
+        def multiline_text(self, *args, **kw):
+            return
+
+    class OLED(object):
+        def draw(self, *args, **kw):
+            return FakeDraw()
+
+        def bounding_box(self, *args, **kw):
+            return (64, 96)
+
+    S3GPortOrig = S3GPort
+    class FakeSerial:
+        def write(self, *args):
+            pass
+
+        def flush(self):
+            pass
+
+        def read(self):
+            return None
+
+    class S3GPort(S3GPortOrig):
+        def open_port(self, port, baudrate):
+            return FakeSerial()
+
+        def send_and_wait_reply(self, payload, cmd_id, timeout=1, retries=3):
+            cmd = payload[0]
+            print("cmd: {}".format(cmd))
+            if cmd == 61:
+                return b'\x81\0\0\0\0'
+
+            return b'\x81'
 
 class Valurap(object):
     def __init__(self):
@@ -209,7 +255,7 @@ class Valurap(object):
         self.moveto(X1=0, X2=0, Y=-0)
 
 
-    def move(self, **deltas):
+    def plan_move(self, **deltas):
         dts = []
 
         for axe_name, orig_delta in deltas.items():
@@ -252,15 +298,31 @@ class Valurap(object):
             a = round(v / accel_dt * 256)
             a2 = round(v / (accel_dt - 1) * 256)
 
-            segs[0].append(ProfileSegment(axis.apg, target_v=v, a=a, v=0))
-            segs[1].append(ProfileSegment(axis.apg, target_v=0, a=-a2))
+            a_top = a2 * 1.5
+            j_avg = a_top / (accel_dt / 2)
+            j = round(j_avg * 2)
+            jj = round(-j / (accel_dt / 2))
+
+            if abs(j) < 2**23 and abs(jj) < 2**23:
+                # S-profile
+                segs[0].append(ProfileSegment(axis.apg, target_v=v, a=0, v=0, j=j, jj=jj))
+                segs[1].append(ProfileSegment(axis.apg, target_v=0, a=0, j=-j, jj=-jj))
+            else:
+                # fallback to constant accel
+                print("J or JJ out of bounds")
+                segs[0].append(ProfileSegment(axis.apg, target_v=v, a=a, v=0))
+                segs[1].append(ProfileSegment(axis.apg, target_v=0, a=-a2))
 
         profile = []
         profile.append([accel_dt + plato_dt, segs[0]])
         profile.append([accel_dt, segs[1]])
 
-        print(profile)
+        return profile
 
+    def move(self, **deltas):
+        profile = self.plan_move(**deltas)
+
+        print(profile)
         path_code = self.asg.gen_path_code(profile)
 
         print(repr(path_code))
@@ -334,10 +396,10 @@ def optozero_calibrate_fast(p, super_fast=False):
     p.moveto(X2=pl_x, Y=pl_y)
 
     path = [1,2,3,4,1,3,2,1,4,2,4,3]
-    random_cycles = 10
+    random_cycles = 500
     if super_fast:
         path = [1,2,3,4]
-        random_cycles = 1
+        random_cycles = 500
 
     for k in range(2):
         for n in path:
@@ -354,19 +416,25 @@ def optozero_calibrate_fast(p, super_fast=False):
 
             places.setdefault((i, j), []).append((x, y))
 
+    all_places = []
+    for i in range(4):
+        for j in range(3):
+            all_places.append((i, j))
+
     for i in range(random_cycles):
-        pl = random.choice(list(places.keys()))
-        pl_x = sum([a[0] for a in places[pl]]) / len(places[pl])
-        pl_y = sum([a[1] for a in places[pl]]) / len(places[pl])
+        i, j = random.choice(all_places)
+        pl_x, pl_y = place_coords(i, j, places)
 
         p.moveto(X2=pl_x, Y=pl_y)
-        optozero(p)
+        ret = optozero(p)
         state = p.get_state()
         x = state[1]["x"]
         y = state[2]["x"]
-        places[pl].append((x, y))
+        places.setdefault((i, j), []).append((x, y, ret))
 
         pickle.dump(places, open("places2.pick", "wb"))
+
+    print(places)
 
     corners = {}
 
@@ -496,6 +564,13 @@ def optozero(p):
                     [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
     dist = np.array([[4.38909294e-02, -3.72379589e-01, 5.96935378e-03,
                       -1.39161992e-04, -1.18364075e+00]])
+
+    initial_delta = None
+    final_delta = None
+    initial_state = None
+    final_state = None
+    corrections = 0
+
     for i in range(10):
         for j in range(5):
             ret, frame = p.cap.read()
@@ -526,15 +601,23 @@ def optozero(p):
         dx, dy, dz = tvec.T[0]
         # p.move(Y = 80*dy, X2 = -80*dx)
 
+        if initial_delta is None:
+            initial_state = p.get_state()
+            initial_delta = [rvec, tvec]
+
+        final_state = p.get_state()
+        final_delta = [rvec, tvec]
+
         x_steps = round(80 * dx)
         y_steps = round(80 * dy)
 
         if abs(x_steps) + abs(y_steps) > 8: # 0.1mm
             p.move(X2=-x_steps, Y=y_steps)
-            pos = p.get_state()
-            print(pos)
+            corrections += 1
         else:
             break
+
+    return initial_delta, initial_state, final_delta, final_state, corrections
 
 
 
