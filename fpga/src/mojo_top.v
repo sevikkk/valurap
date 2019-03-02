@@ -494,20 +494,14 @@ wire apg_z_stopped;
 
 wire endstops_unlock;
 
-wire [31:0] es_1_pos;
-wire [31:0] es_1_mb;
 wire[7:0] es_1_cycles;
 wire es_1_signal;
 wire es_1_signal_changed;
 
-wire [31:0] es_2_pos;
-wire [31:0] es_2_mb;
 wire[7:0] es_2_cycles;
 wire es_2_signal;
 wire es_2_signal_changed;
 
-wire [31:0] es_3_pos;
-wire [31:0] es_3_mb;
 wire[7:0] es_3_cycles;
 wire es_3_signal;
 wire es_3_signal_changed;
@@ -543,7 +537,7 @@ s3g_rx s3g_rx(
     .buffer_data(rx_buffer_data)
 );
 
-s3g_executor #(.INTS_TIMER(INTS_TIMER)) s3g_executor(
+s3g_executor s3g_executor(
     .clk(clk),
     .rst(n_rdy),
     .rx_packet_done(rx_packet_done),
@@ -592,19 +586,10 @@ s3g_executor #(.INTS_TIMER(INTS_TIMER)) s3g_executor(
     .in_reg1(asg_steps),
 
     .in_reg2({16'h0, es_1_cycles, 7'h0, es_1_signal}),
-    //.in_reg3(es_1_pos[31:0]),
-    .in_reg4(es_1_pos),
-    .in_reg5(es_1_mb),
 
     .in_reg6({16'h0, es_2_cycles, 7'h0, es_2_signal}),
-    //.in_reg7(es_2_pos[31:0]),
-    .in_reg8(es_2_pos),
-    .in_reg9(es_2_mb),
 
     .in_reg10({16'h0, es_3_cycles, 7'h0, es_3_signal}),
-    //.in_reg11(es_3_pos[31:0]),
-    .in_reg12(es_3_pos),
-    .in_reg13(es_3_mb),
 
     .in_reg14({apg_x_x[31:24], 24'b0}),
     .in_reg15(apg_x_x[63:32]),
@@ -833,8 +818,6 @@ acc_profile_gen apg_x(
            .a(),
            .j(),
            .jj(),
-           .step_start_x(),
-           .step_start_v(),
            .step(apg_x_step),
            .dir(apg_x_dir),
            .stopped(apg_x_stopped)
@@ -878,8 +861,6 @@ acc_profile_gen apg_y(
            .a(),
            .j(),
            .jj(),
-           .step_start_x(),
-           .step_start_v(),
            .step(apg_y_step),
            .dir(apg_y_dir),
            .stopped(apg_y_stopped)
@@ -923,8 +904,6 @@ acc_profile_gen apg_z(
            .a(),
            .j(),
            .jj(),
-           .step_start_x(),
-           .step_start_v(),
            .step(apg_z_step),
            .dir(apg_z_dir),
            .stopped(apg_z_stopped)
@@ -952,9 +931,6 @@ assign endstops_options = out_reg33;
 endstop_with_mux es_1(
     .clk(clk),
     .reset(n_rdy),
-    .x(apg_x_x[63:32]),
-    .y(apg_y_x[63:32]),
-    .z(apg_z_x[63:32]),
     .signal_in(endstop_x1),
     .abort_in(asg_abort_chain_1),
     .unlock(endstops_unlock),
@@ -962,8 +938,6 @@ endstop_with_mux es_1(
     .abort_polarity(endstops_options[2]),
     .abort_enabled(endstops_options[3]),
     .timeout(endstops_timeout),
-    .pos_out(es_1_pos),
-    .max_bounce(es_1_mb),
     .cycles(es_1_cycles),
     .signal(es_1_signal),
     .signal_changed(es_1_signal_changed),
@@ -973,9 +947,6 @@ endstop_with_mux es_1(
 endstop_with_mux es_2(
     .clk(clk),
     .reset(n_rdy),
-    .x(apg_x_x[63:32]),
-    .y(apg_y_x[63:32]),
-    .z(apg_z_x[63:32]),
     .signal_in(endstop_x2),
     .abort_in(asg_abort_chain_2),
     .unlock(endstops_unlock),
@@ -983,8 +954,6 @@ endstop_with_mux es_2(
     .abort_polarity(endstops_options[6]),
     .abort_enabled(endstops_options[7]),
     .timeout(endstops_timeout),
-    .pos_out(es_2_pos),
-    .max_bounce(es_2_mb),
     .cycles(es_2_cycles),
     .signal(es_2_signal),
     .signal_changed(es_2_signal_changed),
@@ -994,9 +963,6 @@ endstop_with_mux es_2(
 endstop_with_mux es_3(
     .clk(clk),
     .reset(n_rdy),
-    .x(apg_x_x[63:32]),
-    .y(apg_y_x[63:32]),
-    .z(apg_z_x[63:32]),
     .signal_in(endstop_y),
     .abort_in(asg_abort_chain_3),
     .unlock(endstops_unlock),
@@ -1004,8 +970,6 @@ endstop_with_mux es_3(
     .abort_polarity(endstops_options[10]),
     .abort_enabled(endstops_options[11]),
     .timeout(endstops_timeout),
-    .pos_out(es_3_pos),
-    .max_bounce(es_3_mb),
     .cycles(es_3_cycles),
     .signal(es_3_signal),
     .signal_changed(es_3_signal_changed),

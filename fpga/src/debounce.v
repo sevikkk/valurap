@@ -3,12 +3,9 @@ module debounce(
     input reset,
     input sig_in,
     input unlock,
-    input [31:0] pos_in,
     input [31:0] timeout,
     output reg sig_out,
     output reg sig_changed,
-    output reg [31:0] pos_out,
-    output reg [31:0] max_bounce,
     output reg [7:0] cycles
 );
 
@@ -31,22 +28,17 @@ reg [15:0] timer;
 reg [2:0] dstate;
 reg value;
 reg value_changed;
-reg [31:0] start_pos;
 
 reg [15:0] next_timer;
-reg [15:0] next_max_bounce;
 reg [2:0] next_dstate;
 reg next_value;
 reg next_value_changed;
-reg [31:0] next_start_pos;
 
-always @(reset or timeout or sig or timer or dstate or value or max_bounce or unlock or start_pos or pos_in)
+always @(reset or timeout or sig or timer or dstate or value or unlock)
 	begin
 		next_timer <= timer;
 		next_dstate <= dstate;
 		next_value <= value;
-		next_max_bounce <= max_bounce;
-		next_start_pos <= start_pos;
 		next_value_changed <= 0;
 		
 		if (reset)
@@ -54,23 +46,15 @@ always @(reset or timeout or sig or timer or dstate or value or max_bounce or un
 				next_timer <= 0;
 				next_dstate <= DSTATE_STABLE;
 				next_value <= 0;
-				next_max_bounce <= 0;
-				next_start_pos <= 0;
 			end
 		else
 			begin
-				if (unlock)
-					begin
-						next_max_bounce <= 0;
-					end
-					
 				case (dstate)
 				DSTATE_STABLE:
 					begin
 						if (sig != value)
 							begin
 								next_timer <= 0;
-								next_start_pos <= pos_in;
 								next_dstate <= DSTATE_BOUNCE1;
 							end
 					end
@@ -90,10 +74,6 @@ always @(reset or timeout or sig or timer or dstate or value or max_bounce or un
 							begin
 								next_dstate <= DSTATE_BOUNCE2;
 								next_timer <= 0;
-								if (timer > max_bounce)
-									begin
-										next_max_bounce <= timer;
-									end
 							end
 					end
 				DSTATE_BOUNCE2:
@@ -110,10 +90,6 @@ always @(reset or timeout or sig or timer or dstate or value or max_bounce or un
 							begin
 								next_dstate <= DSTATE_BOUNCE1;
 								next_timer <= 0;
-								if (timer > max_bounce)
-									begin
-										next_max_bounce <= timer;
-									end
 							end
 					end
 				endcase
@@ -123,11 +99,9 @@ always @(reset or timeout or sig or timer or dstate or value or max_bounce or un
 always @(posedge clk)
 	begin
 		timer <= next_timer;
-		max_bounce <= next_max_bounce;
 		dstate <= next_dstate;
 		value <= next_value;
 		value_changed <= next_value_changed;
-		start_pos <= next_start_pos;
 	end
 	
 localparam
@@ -142,10 +116,9 @@ reg [7:0] next_cycles;
 reg next_sig_out;
 reg next_sig_changed;
 
-always @(reset or unlock or value or value_changed or state or start_pos or pos_out or cycles or sig_out or sig_changed)
+always @(reset or unlock or value or value_changed or state or cycles or sig_out or sig_changed)
 	begin
 		next_state <= state;
-		next_pos_out <= pos_out;	
 		next_cycles <= cycles;
 		next_sig_out <= sig_out;
 		next_sig_changed <= sig_changed;
@@ -153,7 +126,6 @@ always @(reset or unlock or value or value_changed or state or start_pos or pos_
 		if (reset)
 			begin
 				next_state <= STATE_UNLOCKED;
-				next_pos_out <= 0;	
 				next_cycles <= 0;
 				next_sig_out <= 0;
 				next_sig_changed <= 0;
@@ -166,7 +138,6 @@ always @(reset or unlock or value or value_changed or state or start_pos or pos_
 							if (value_changed)
 								begin
 									next_state <= STATE_LOCKED;
-									next_pos_out <= start_pos;	
 									next_cycles <= cycles + 1;
 									next_sig_out <= value;
 									next_sig_changed <= 1;
@@ -192,7 +163,6 @@ always @(reset or unlock or value or value_changed or state or start_pos or pos_
 always @(posedge clk)
 	begin
 		state <= next_state;
-		pos_out <= next_pos_out;	
 		cycles <= next_cycles;
 		sig_out <= next_sig_out;
 		sig_changed <= next_sig_changed;

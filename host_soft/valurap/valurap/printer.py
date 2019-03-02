@@ -166,7 +166,7 @@ class Valurap(object):
             msg_control |= axe.msg_control()
             es_control |= axe.endstops_control()
             if axe.apg:
-                s3g.S3G_OUTPUT(axe.apg.val_abort_a, axe.abort_a * 256)
+                s3g.S3G_OUTPUT(axe.apg.val_abort_a, axe.abort_a)
 
         s3g.S3G_OUTPUT(s3g.OUT_MSG_CONTROL, msg_control)
         s3g.S3G_OUTPUT(s3g.OUT_ENDSTOPS_OPTIONS, es_control)
@@ -197,7 +197,7 @@ class Valurap(object):
                 a = -a
                 target_v = -target_v
 
-            segs.append(ProfileSegment(axe.apg, target_v=target_v, a=a * 256, x=0, v=0))
+            segs.append(ProfileSegment(axe.apg, target_v=target_v, a=a * 65536, x=0, v=0))
             active_ints |= axe.endstop_int
 
         if not segs:
@@ -302,8 +302,8 @@ class Valurap(object):
             delta = 1.0 * orig_delta * 2**32
 
             v = round(delta / ((accel_dt + plato_dt) * 50000))
-            a = round(v / accel_dt * 256)
-            a2 = round(v / (accel_dt - 1) * 256)
+            a = round(v / accel_dt * 65536)
+            a2 = round(v / (accel_dt - 1) * 65536)
 
             a_top = a2 * 1.5
             j_avg = a_top / (accel_dt / 2)

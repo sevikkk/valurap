@@ -25,8 +25,6 @@ module acc_profile_gen(
            output reg signed [31:0] a,
            output reg signed [31:0] j,
            output reg signed [31:0] jj,
-           output reg signed [63:0] step_start_x,
-           output reg signed [31:0] step_start_v,
 
            output reg step,
            output reg dir,
@@ -34,9 +32,9 @@ module acc_profile_gen(
        );
 
 reg signed [23:0] next_v;
-reg signed [23:0] next_a;
-reg signed [23:0] next_j;
-reg signed [23:0] next_jj;
+reg signed [31:0] next_a;
+reg signed [31:0] next_j;
+reg signed [31:0] next_jj;
 reg next_stopped;
 
 reg target_set;
@@ -45,13 +43,10 @@ reg next_target_set;
 reg signed [23:0] target_v;
 reg signed [23:0] next_target_v;
 
-reg signed [63:0] next_step_start_x;
-reg signed [23:0] next_step_start_v;
-
 wire signed [23:0] next_v_comb;
-wire signed [31:0] next_v_comb1;
-assign next_v_comb1 = {v, 8'b0} + a;
-assign next_v_comb = next_v_comb1[31:8];
+wire signed [39:0] next_v_comb1;
+assign next_v_comb1 = {v, 16'b0} + {{8{a[31]}}, a};
+assign next_v_comb = next_v_comb1[39:16];
 
 always @(reset, acc_step, load,
 		set_v, set_a, set_j, set_jj, set_x,
@@ -60,7 +55,7 @@ always @(reset, acc_step, load,
 		abort, abort_a_val,
 		stopped,
 		target_set, set_target_v, target_v_val, target_v,
-		x, step_start_x, step_start_v)
+		x)
     begin
         next_v <= v;
         next_a <= a;
@@ -68,8 +63,6 @@ always @(reset, acc_step, load,
         next_jj <= jj;
         next_target_v <= target_v;
         next_target_set <= target_set;
-        next_step_start_x <= step_start_x;
-        next_step_start_v <= step_start_v;
         if (reset)
             begin
                 next_v <= 0;
@@ -78,19 +71,12 @@ always @(reset, acc_step, load,
                 next_jj <= 0;
                 next_target_set <= 0;
                 next_target_v <= 0;
-                next_step_start_x <= 0;
-                next_step_start_v <= 0;
             end
         else if (load)
             begin
                 if (set_v)
                     begin
                         next_v <= v_val;
-                        next_step_start_v <= v_val;
-                    end
-                if (set_v || set_x)
-                    begin
-                        next_step_start_x <= 64'h7ffffffffffffff;
                     end
                 if (set_a)
                     next_a <= a_val;
@@ -112,8 +98,6 @@ always @(reset, acc_step, load,
             end
         else if (acc_step)
             begin
-                next_step_start_x <= x;
-                next_step_start_v <= v;
                 if (abort)
                     begin
                         next_jj <= 0;
@@ -172,16 +156,14 @@ reg next_dir;
 reg next_step;
 reg signed [63:0] next_x;
 wire signed [63:0] x_acc;
-wire signed [24:0] v_effective;
 wire signed [63:0] delta_x;
 
-assign v_effective = v + step_start_v;
-assign delta_x[23:0] = v_effective[24:1];
-assign delta_x[63:24] = v_effective[24]?40'hFFFFFFFFFF:40'h0;
+assign delta_x[23:0] = v;
+assign delta_x[63:24] = v[23]?40'hFFFFFFFFFF:40'h0;
 
 assign x_acc = x + delta_x;
 
-always @(reset, load, set_x, x_val, x, v, dir, step_bit, stopped, x_acc, v_effective)
+always @(reset, load, set_x, x_val, x, v, dir, step_bit, stopped, x_acc)
     begin
         next_x <= x;
         next_dir <= dir;
@@ -202,13 +184,13 @@ always @(reset, load, set_x, x_val, x, v, dir, step_bit, stopped, x_acc, v_effec
                 next_x <= x_acc;
                 if (x[step_bit] != x_acc[step_bit])
                     begin
-                        if (v_effective > 0)
+                        if (v > 0)
                             next_dir <= 1;
                         else
                             next_dir <= 0;
                         next_step <= 1;
                     end
-                if (v_effective == 0)
+                if (v == 0)
                     begin
                         next_stopped <= 1;
                     end
@@ -231,8 +213,6 @@ always @(posedge clk)
         stopped <= next_stopped;
         target_v <= next_target_v;
         target_set <= next_target_set;
-        step_start_x <= next_step_start_x;
-        step_start_v <= next_step_start_v;
     end
 
 endmodule

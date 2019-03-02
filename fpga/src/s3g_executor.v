@@ -231,7 +231,6 @@ module s3g_executor (
            output [31:0] ext_pending_ints
        );
 
-parameter INTS_TIMER = 1000000;
 parameter EXT_VER_1 = 8'h01;
 parameter EXT_VER_2 = 8'h00;
 parameter EXT_VER_3 = 8'h01;
@@ -243,7 +242,7 @@ parameter EXT_VER_8 = 8'h00;
 
 localparam
     CMD_NONE = 0, CMD_OK = 1, CMD_ERROR = 2, CMD_UNKNOWN = 3, CMD_READ_REG = 4, 
-    CMD_VERSION = 5, CMD_EXT_VERSION = 6, CMD_INTERRUPT = 7, CMD_WR_BUF_OK = 8, CMD_WR_BUF_ERR = 9;
+    CMD_VERSION = 5, CMD_EXT_VERSION = 6, CMD_WR_BUF_OK = 8, CMD_WR_BUF_ERR = 9;
 
 localparam 
     S_INIT = 0, S_DELAY = 1, S_BUSY = 2, S_READ = 3, S_READ1 = 4, 
@@ -274,9 +273,6 @@ reg [31:0] ints_pending;
 reg [31:0] ints_mask;
 reg [31:0] next_ints_mask;
 reg [31:0] ints_to_clear;
-
-reg [31:0] next_ints_timer;
-reg [31:0] ints_timer;
 
 reg [7:0] rx_buffer_addr;
 reg [15:0] next_ext_buffer_addr;
@@ -311,7 +307,6 @@ always @(posedge clk)
                 out_stbs <= 0;
                 ints_mask <= 32'hFFFFFFFF;
                 in_mux <= 0;
-                ints_timer <= 0;
                 rx_buffer_addr <= 0;
                 word_cnt <= 0;
                 ext_buffer_addr <= 0;
@@ -324,7 +319,6 @@ always @(posedge clk)
                 out_stbs <= next_out_stbs | ext_out_stbs;
                 ints_mask <= next_ints_mask;
                 in_mux <= next_in_mux;
-                ints_timer <= next_ints_timer;
                 rx_buffer_addr <= next_rx_buffer_addr;
                 word_cnt <= next_word_cnt;
                 ext_buffer_addr <= next_ext_buffer_addr;
@@ -405,7 +399,7 @@ always @(posedge clk)
 always @(tx_busy, rx_packet_done, rx_packet_done, rx_packet_error, rx_payload_len, saved_ext_buffer_addr,
              rx_buf0, rx_buf1, rx_buf2, rx_buf3, rx_buf4, rx_buf5, rx_buf6, rx_buf7, rx_buffer_valid,
              rx_buf8, rx_buf9, rx_buf10, rx_buf11, rx_buf12, rx_buf13, rx_buf14, rx_buf15, 
-             state, in_mux, ints_pending, ints_timer, rx_buffer_addr, word_cnt, 
+             state, in_mux, ints_pending, rx_buffer_addr, word_cnt,
              ext_buffer_addr, ints_mask, ext_buffer_data, rx_buffer_data)
     begin
         next_state <= state;
@@ -420,11 +414,6 @@ always @(tx_busy, rx_packet_done, rx_packet_done, rx_packet_error, rx_payload_le
         int_out_reg_data <= 0;
 
         ints_to_clear <= 0;
-
-        next_ints_timer <= ints_timer - 1;
-
-        if (ints_timer == 0)
-            next_ints_timer <= 0;
 
         next_rx_buffer_addr <= rx_buffer_addr;
         next_word_cnt <= word_cnt;
@@ -471,13 +460,11 @@ always @(tx_busy, rx_packet_done, rx_packet_done, rx_packet_error, rx_payload_le
                                     63: // CLEAR_INTS
                                         begin
                                             ints_to_clear <= {rx_buf6, rx_buf5, rx_buf4, rx_buf3};
-                                            next_ints_timer <= 0;
                                             next_tx_cmd <= CMD_OK;
                                         end
                                     64: // MASK_INTS
                                         begin
                                             next_ints_mask <= {rx_buf6, rx_buf5, rx_buf4, rx_buf3};
-                                            next_ints_timer <= 0;
                                             next_tx_cmd <= CMD_OK;
                                         end
                                     65: // WRITE_BUF
@@ -504,16 +491,6 @@ always @(tx_busy, rx_packet_done, rx_packet_done, rx_packet_error, rx_payload_le
                         begin
                             next_tx_cmd <= CMD_ERROR;
                             next_state <= S_DELAY;
-                        end
-                    else if ((ints_pending & ints_mask) != 0)
-                        begin
-                            //$display("ints:", ints_pending & ints_mask);
-                            if (ints_timer == 0)
-                                begin
-                                    next_tx_cmd <= CMD_INTERRUPT;
-                                    next_state <= S_DELAY;
-                                    next_ints_timer <= INTS_TIMER;
-                                end
                         end
                 end
             S_DELAY:
@@ -688,18 +665,6 @@ always @(posedge clk)
                     tx_buf4 <= in_data[15:8];
                     tx_buf5 <= in_data[23:16];
                     tx_buf6 <= in_data[31:24];
-                end
-            CMD_INTERRUPT:
-                begin
-                    tx_packet_wr <= 1;
-                    tx_payload_len <= 7;
-                    tx_buf0 <= 8'hFF;
-                    tx_buf1 <= 8'hFF;
-                    tx_buf2 <= 80;
-                    tx_buf3 <= ints_pending[7:0];
-                    tx_buf4 <= ints_pending[15:8];
-                    tx_buf5 <= ints_pending[23:16];
-                    tx_buf6 <= ints_pending[31:24];
                 end
             CMD_WR_BUF_OK:
                 begin
