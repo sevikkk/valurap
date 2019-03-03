@@ -310,7 +310,7 @@ class Valurap(object):
             j = round(j_avg * 2)
             jj = round(-j / (accel_dt / 2))
 
-            if abs(j) < 2**23 and abs(jj) < 2**23:
+            if abs(j) < 2**31 and abs(jj) < 2**31:
                 # S-profile
                 segs[0].append(ProfileSegment(axis.apg, target_v=v, a=0, v=0, j=j, jj=jj))
                 segs[1].append(ProfileSegment(axis.apg, target_v=0, a=0, j=-j, jj=-jj))
