@@ -53,7 +53,6 @@ module mojo_top #(
 
     output [15:0] pin_test_1,
     output [15:0] pin_test_2,
-    output [15:0] pin_test_3,
 
     input endstop_x1,
     input endstop_x2,
@@ -781,7 +780,6 @@ assign led[6] = endstop_y_buf;
 assign led[7] = blink_cnt[23];
 assign pin_test_1 = blink_cnt[20:5];
 assign pin_test_2 = blink_cnt[20:5];
-assign pin_test_3 = blink_cnt[20:5];
 
 acc_step_gen asg(
            .clk(clk),
