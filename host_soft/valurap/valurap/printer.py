@@ -279,7 +279,7 @@ class Valurap(object):
 
         dts.sort()
         dt, accel_dt, plato_dt = dts[-1]
-        segs = [[],[]]
+        segs = [[],[],[]]
 
         accel_dt = int(accel_dt * 1000)
         if accel_dt < 2:
@@ -320,9 +320,12 @@ class Valurap(object):
                 segs[0].append(ProfileSegment(axis.apg, target_v=v, a=a, v=0))
                 segs[1].append(ProfileSegment(axis.apg, target_v=0, a=-a2))
 
+            segs[2].append(ProfileSegment(axis.apg, v=0))
+
         profile = []
         profile.append([accel_dt + plato_dt, segs[0]])
         profile.append([accel_dt, segs[1]])
+        profile.append([10, segs[2]])
 
         return profile
 
@@ -615,8 +618,16 @@ def optozero(p):
         final_state = p.get_state()
         final_delta = [rvec, tvec]
 
-        x_steps = round(80 * dx)
-        y_steps = round(80 * dy)
+        if 0:
+            rmat = cv2.Rodrigues(rvec)[0]
+            camera_position = -np.matrix(rmat).T * np.matrix(tvec)
+            print("cam_pos:", camera_position)
+            dx = camera_position[0, 0]
+            dy = camera_position[1, 0]
+            print("dx, dy:", dx, dy)
+
+        x_steps = round(-80 * dx)
+        y_steps = round(-80 * dy)
 
         if abs(x_steps) + abs(y_steps) > 8: # 0.1mm
             p.move(X2=-x_steps, Y=y_steps)
