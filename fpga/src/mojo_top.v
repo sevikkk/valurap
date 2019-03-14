@@ -51,6 +51,30 @@ module mojo_top #(
     output mot_6_dir,
     output mot_6_enable,
 
+    output mot_7_step,
+    output mot_7_dir,
+    output mot_7_enable,
+
+    output mot_8_step,
+    output mot_8_dir,
+    output mot_8_enable,
+
+    output mot_9_step,
+    output mot_9_dir,
+    output mot_9_enable,
+
+    output mot_10_step,
+    output mot_10_dir,
+    output mot_10_enable,
+
+    output mot_11_step,
+    output mot_11_dir,
+    output mot_11_enable,
+
+    output mot_12_step,
+    output mot_12_dir,
+    output mot_12_enable,
+
     input endstop_x1,
     input endstop_x2,
     input endstop_y
@@ -380,6 +404,101 @@ motor_mux mmux_6(
     .dir(mot_6_dir)
 );
 
+assign mot_7_enable = ~out_reg7[24];
+
+motor_mux mmux_7(
+    .clk(clk),
+    .step_x(mot_x_step),
+    .dir_x(mot_x_dir),
+    .step_y(mot_y_step),
+    .dir_y(mot_y_dir),
+    .step_z(mot_z_step),
+    .dir_z(mot_z_dir),
+    .mux_select(out_reg7[26:25]),
+    .invert_dir(out_reg7[27]),
+    .step(mot_7_step),
+    .dir(mot_7_dir)
+);
+
+assign mot_8_enable = ~out_reg7[28];
+
+motor_mux mmux_8(
+    .clk(clk),
+    .step_x(mot_x_step),
+    .dir_x(mot_x_dir),
+    .step_y(mot_y_step),
+    .dir_y(mot_y_dir),
+    .step_z(mot_z_step),
+    .dir_z(mot_z_dir),
+    .mux_select(out_reg7[30:29]),
+    .invert_dir(out_reg7[31]),
+    .step(mot_8_step),
+    .dir(mot_8_dir)
+);
+
+assign mot_9_enable = ~out_reg34[0];
+
+motor_mux mmux_9(
+    .clk(clk),
+    .step_x(mot_x_step),
+    .dir_x(mot_x_dir),
+    .step_y(mot_y_step),
+    .dir_y(mot_y_dir),
+    .step_z(mot_z_step),
+    .dir_z(mot_z_dir),
+    .mux_select(out_reg34[2:1]),
+    .invert_dir(out_reg34[3]),
+    .step(mot_9_step),
+    .dir(mot_9_dir)
+);
+
+assign mot_10_enable = ~out_reg34[4];
+
+motor_mux mmux_10(
+    .clk(clk),
+    .step_x(mot_x_step),
+    .dir_x(mot_x_dir),
+    .step_y(mot_y_step),
+    .dir_y(mot_y_dir),
+    .step_z(mot_z_step),
+    .dir_z(mot_z_dir),
+    .mux_select(out_reg34[6:5]),
+    .invert_dir(out_reg34[7]),
+    .step(mot_10_step),
+    .dir(mot_10_dir)
+);
+
+assign mot_11_enable = ~out_reg34[8];
+
+motor_mux mmux_11(
+    .clk(clk),
+    .step_x(mot_x_step),
+    .dir_x(mot_x_dir),
+    .step_y(mot_y_step),
+    .dir_y(mot_y_dir),
+    .step_z(mot_z_step),
+    .dir_z(mot_z_dir),
+    .mux_select(out_reg34[10:9]),
+    .invert_dir(out_reg34[11]),
+    .step(mot_11_step),
+    .dir(mot_11_dir)
+);
+
+assign mot_12_enable = ~out_reg34[12];
+
+motor_mux mmux_12(
+    .clk(clk),
+    .step_x(mot_x_step),
+    .dir_x(mot_x_dir),
+    .step_y(mot_y_step),
+    .dir_y(mot_y_dir),
+    .step_z(mot_z_step),
+    .dir_z(mot_z_dir),
+    .mux_select(out_reg34[14:13]),
+    .invert_dir(out_reg34[15]),
+    .step(mot_12_step),
+    .dir(mot_12_dir)
+);
 
 wire apg_x_set_x;
 wire apg_x_set_v;
