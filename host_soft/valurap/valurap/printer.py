@@ -12,7 +12,7 @@ import struct
 
 from .asg import Asg, ProfileSegment, PathSegment
 from .apgs import ApgX, ApgY, ApgZ
-from .axes import AxeX1, AxeX2, AxeY, AxeY2
+from .axes import AxeX1, AxeX2, AxeY, AxeY2, AxeE1, AxeE2, AxeM7, AxeM8, AxeM9, AxeM10, AxeM11, AxeM12
 from .commands import S3GPort
 
 try:
@@ -77,11 +77,27 @@ class Valurap(object):
         self.axe_x2 = AxeX2(self)
         self.axe_y = AxeY(self)
         self.axe_y2 = AxeY2(self)
+        self.axe_e1 = AxeE1(self)
+        self.axe_e2 = AxeE2(self)
+        self.axe_m7 = AxeM7(self)
+        self.axe_m8 = AxeM8(self)
+        self.axe_m9 = AxeM9(self)
+        self.axe_m10 = AxeM10(self)
+        self.axe_m11 = AxeM11(self)
+        self.axe_m12 = AxeM12(self)
         self.axes = {
             "X1": self.axe_x1,
             "X2": self.axe_x2,
             "Y": self.axe_y,
             "Y2": self.axe_y2,
+            "E1": self.axe_e1,
+            "E2": self.axe_e2,
+            "M7": self.axe_m7,
+            "M8": self.axe_m8,
+            "M9": self.axe_m9,
+            "M10": self.axe_m10,
+            "M11": self.axe_m11,
+            "M12": self.axe_m12,
         }
 
         self.apg_x = ApgX(self)
@@ -105,6 +121,7 @@ class Valurap(object):
         s3g.S3G_STB(s3g.STB_BE_ABORT)                   # Stop buf_executor
         self.s3g.S3G_CLEAR(0xFFFFFFFF)
         s3g.S3G_OUTPUT(s3g.OUT_MSG_CONTROL, 0)          # Disable all motors
+        s3g.S3G_OUTPUT(s3g.OUT_MSG_CONTROL2, 0)         # Disable all motors
         s3g.S3G_OUTPUT(s3g.OUT_ENDSTOPS_OPTIONS, 0)     # Disable all endstops
 
         reset_code = self.asg.gen_reset_code(self.apgs.values())
@@ -160,15 +177,17 @@ class Valurap(object):
     def update_axes_config(self):
         s3g = self.s3g
 
-        msg_control = 0
+        msg_controls = {}
         es_control = 0
         for axe in self.axes.values():
-            msg_control |= axe.msg_control()
+            msg_controls.setdefault(axe._msg_control, 0)
+            msg_controls[axe._msg_control] |= axe.msg_control()
             es_control |= axe.endstops_control()
             if axe.apg:
                 s3g.S3G_OUTPUT(axe.apg.val_abort_a, axe.abort_a)
 
-        s3g.S3G_OUTPUT(s3g.OUT_MSG_CONTROL, msg_control)
+        for k, v in msg_controls.items():
+            s3g.S3G_OUTPUT(k, v)
         s3g.S3G_OUTPUT(s3g.OUT_ENDSTOPS_OPTIONS, es_control)
 
     def home_axes(self, axes, speed=1.0):

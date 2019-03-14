@@ -3,6 +3,7 @@ from .commands import S3GPort
 
 class Axe(object):
     endstop_at_max = False
+    _msg_control = S3GPort.OUT_MSG_CONTROL
     _control_enable = 0
     _control_mux = {
         "X": 0,
@@ -66,6 +67,9 @@ class Axe(object):
         mask = bool(self._endstops_polarity)
         return not(status ^ mask)
 
+
+class Axe_MC2(Axe):
+    _msg_control = S3GPort.OUT_MSG_CONTROL2
 
 
 class AxeX1(Axe):
@@ -167,6 +171,222 @@ class AxeY2(Axe):
         ),
         "Z": (
                 S3GPort.OUT_MSG_CONTROL_MUX_2_Z
+        ),
+    }
+
+    abort_a = 20000
+    home_a = 5000
+    home_v = 200000
+
+
+class AxeE1(Axe):
+    name = "E1"
+    """
+    First Extruder
+    """
+
+    endstop_at_max = None
+    _control_enable = (
+        S3GPort.OUT_MSG_CONTROL_ENABLE_5
+    )
+    _control_mux = {
+        "X": (
+            S3GPort.OUT_MSG_CONTROL_MUX_5_X
+        ),
+        "Y": (
+            S3GPort.OUT_MSG_CONTROL_MUX_5_Y
+        ),
+        "Z": (
+            S3GPort.OUT_MSG_CONTROL_MUX_5_Z
+        ),
+    }
+
+    abort_a = 20000
+    home_a = 5000
+    home_v = 200000
+
+
+class AxeE2(Axe):
+    name = "E2"
+    """
+    Second Extruder
+    """
+
+    endstop_at_max = None
+    _control_enable = (
+            S3GPort.OUT_MSG_CONTROL_ENABLE_6
+    )
+    _control_mux = {
+        "X": (
+                S3GPort.OUT_MSG_CONTROL_MUX_6_X
+        ),
+        "Y": (
+                S3GPort.OUT_MSG_CONTROL_MUX_6_Y
+        ),
+        "Z": (
+                S3GPort.OUT_MSG_CONTROL_MUX_6_Z
+        ),
+    }
+
+    abort_a = 20000
+    home_a = 5000
+    home_v = 200000
+
+
+class AxeM7(Axe):
+    name = "M7"
+    """
+    Motor 7
+    """
+
+    endstop_at_max = None
+    _control_enable = (
+        S3GPort.OUT_MSG_CONTROL_ENABLE_7
+    )
+    _control_mux = {
+        "X": (
+            S3GPort.OUT_MSG_CONTROL_MUX_7_X
+        ),
+        "Y": (
+            S3GPort.OUT_MSG_CONTROL_MUX_7_Y
+        ),
+        "Z": (
+            S3GPort.OUT_MSG_CONTROL_MUX_7_Z
+        ),
+    }
+
+    abort_a = 20000
+    home_a = 5000
+    home_v = 200000
+
+
+class AxeM8(Axe):
+    name = "M8"
+    """
+    Motor 8
+    """
+
+    endstop_at_max = None
+    _control_enable = (
+        S3GPort.OUT_MSG_CONTROL_ENABLE_8
+    )
+    _control_mux = {
+        "X": (
+            S3GPort.OUT_MSG_CONTROL_MUX_8_X
+        ),
+        "Y": (
+            S3GPort.OUT_MSG_CONTROL_MUX_8_Y
+        ),
+        "Z": (
+            S3GPort.OUT_MSG_CONTROL_MUX_8_Z
+        ),
+    }
+
+    abort_a = 20000
+    home_a = 5000
+    home_v = 200000
+
+
+class AxeM9(Axe_MC2):
+    name = "M9"
+    """
+    Motor 9
+    """
+
+    endstop_at_max = None
+    _control_enable = (
+        S3GPort.OUT_MSG_CONTROL2_ENABLE_9
+    )
+    _control_mux = {
+        "X": (
+            S3GPort.OUT_MSG_CONTROL2_MUX_9_X
+        ),
+        "Y": (
+            S3GPort.OUT_MSG_CONTROL2_MUX_9_Y
+        ),
+        "Z": (
+            S3GPort.OUT_MSG_CONTROL2_MUX_9_Z
+        ),
+    }
+
+    abort_a = 20000
+    home_a = 5000
+    home_v = 200000
+
+
+class AxeM10(Axe_MC2):
+    name = "M10"
+    """
+    Motor 10
+    """
+
+    endstop_at_max = None
+    _control_enable = (
+        S3GPort.OUT_MSG_CONTROL2_ENABLE_10
+    )
+    _control_mux = {
+        "X": (
+            S3GPort.OUT_MSG_CONTROL2_MUX_10_X
+        ),
+        "Y": (
+            S3GPort.OUT_MSG_CONTROL2_MUX_10_Y
+        ),
+        "Z": (
+            S3GPort.OUT_MSG_CONTROL2_MUX_10_Z
+        ),
+    }
+
+    abort_a = 20000
+    home_a = 5000
+    home_v = 200000
+
+
+class AxeM11(Axe_MC2):
+    name = "M11"
+    """
+    Motor 11
+    """
+
+    endstop_at_max = None
+    _control_enable = (
+        S3GPort.OUT_MSG_CONTROL2_ENABLE_11
+    )
+    _control_mux = {
+        "X": (
+            S3GPort.OUT_MSG_CONTROL2_MUX_11_X
+        ),
+        "Y": (
+            S3GPort.OUT_MSG_CONTROL2_MUX_11_Y
+        ),
+        "Z": (
+            S3GPort.OUT_MSG_CONTROL2_MUX_11_Z
+        ),
+    }
+
+    abort_a = 20000
+    home_a = 5000
+    home_v = 200000
+
+
+class AxeM12(Axe_MC2):
+    name = "M12"
+    """
+    Motor 12
+    """
+
+    endstop_at_max = None
+    _control_enable = (
+        S3GPort.OUT_MSG_CONTROL2_ENABLE_12
+    )
+    _control_mux = {
+        "X": (
+            S3GPort.OUT_MSG_CONTROL2_MUX_12_X
+        ),
+        "Y": (
+            S3GPort.OUT_MSG_CONTROL2_MUX_12_Y
+        ),
+        "Z": (
+            S3GPort.OUT_MSG_CONTROL2_MUX_12_Z
         ),
     }
 
