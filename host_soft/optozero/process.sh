@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo
-nice -n 10 python get_current_pos.py | tee images/snap.txt
+#nice -n 10 python get_current_pos.py | tee images/snap.txt
 
 ln -f images/snap8.jpg images/snap9.jpg
 ln -f images/snap7.jpg images/snap8.jpg
