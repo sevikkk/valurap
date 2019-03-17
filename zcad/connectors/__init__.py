@@ -258,13 +258,13 @@ class Unit:
         raise NotImplementedError
 
     def inst(self, transform):
-        return Instance(self, transform)
+        return Part(self, transform)
 
     def get_connector(self, *args, **kw):
         raise NotImplementedError
 
 
-class Instance:
+class Part:
     def __init__(self, unit, transform):
         self.unit = unit
         self.transform = transform
