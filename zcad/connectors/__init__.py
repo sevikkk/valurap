@@ -77,6 +77,19 @@ class Connector:
         s = " ".join(s) + ">"
         return s
 
+    def replace(self, position=None, direction=None, top=None):
+        p = self.position
+        if position is not None:
+            p = position
+        d = self.direction
+        if direction is not None:
+            p = direction
+        t = self.top
+        if top is not None:
+            t = top
+
+        return Connector(p, d, t)
+
 
 class Transform:
     def __init__(self, transform):
@@ -252,8 +265,19 @@ class Unit:
     def model(self):
         raise NotImplementedError
 
-    def inst(self, transform=None, connectors=None, constraints=None):
+    def inst(self, transform=None, connectors=None, constraints=None, pose=None):
         if transform is None:
+            if pose is not None:
+                connectors = []
+                constraints = []
+                for k, v in pose.items():
+                    if isinstance(k, str):
+                        k = [k]
+                    c = self.get_connector(*k)
+                    connectors.append(c)
+                    if not isinstance(v, Connector):
+                        v = Connector(*v)
+                    constraints.append(v)
             transform = Solver(connectors, constraints).solve()
 
         part = Part(self, transform)
