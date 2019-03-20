@@ -1,5 +1,5 @@
 from zencad import box
-from connectors import Connector, np_point, Unit
+from connectors import Connector, Unit
 
 
 class VSlot20x20(Unit):

@@ -1,12 +1,8 @@
-import traceback
-
-from vitamins.vslot import VSlot20x20, VSlot20x40
-from zencad import box, display, show, Color, deg
+from vitamins.vslot import VSlot20x20
+from zencad import box, display, show, Color
 from connectors import Solver, Connector
-import numpy as np
-import numpy.linalg as la
 
-base_long = VSlot20x20(1000)
+base_long = VSlot20x20(150)
 base_short = VSlot20x20(500)
 c1 = base_long.get_connector('top, front')
 c2 = base_short.get_connector('top')
@@ -22,8 +18,7 @@ for (x,y) in [
     [ 1, -1],
 ]:
     print("=============================================")
-    top = np.array([x,y,0])
-    top = top / la.norm(top)
+    top = [x,y,0]
     p1 = Connector([0,0,0], [0, 0, -1], top)
     s = Solver([c1], [p1]).solve()
 

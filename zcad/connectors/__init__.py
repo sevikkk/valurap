@@ -1,34 +1,14 @@
 from collections.abc import Sequence
+from math import hypot, acos
 
 from zencad import point, vector, deg
 from pyservoce import translate, axrotation
-import numpy as np
-import numpy.linalg as la
-
-
-def np_point(x, y=None, z=None):
-    if y is None and z is None:
-        if x is None:
-            return None
-        elif isinstance(x, np.ndarray):
-            return x
-        elif isinstance(x, point):
-            return np.array([x.x, x.y, x.z])
-        elif isinstance(x, vector):
-            return np.array([x.x, x.y, x.z])
-        elif isinstance(x, Sequence) and len(x) == 3:
-            return np.array([x[0], x[1], x[2]])
-        else:
-            raise RuntimeError("Wrong input: {}".format(repr(x)))
-    return np.array([x, y, z])
 
 
 def oce_point(x, y=None, z=None):
     if y is None and z is None:
         if x is None:
             return None
-        elif isinstance(x, np.ndarray):
-            return point(x[0], x[1], x[2])
         elif isinstance(x, point):
             return x
         elif isinstance(x, vector):
@@ -40,20 +20,47 @@ def oce_point(x, y=None, z=None):
     return point(x, y, z)
 
 
+def oce_vector(x, y=None, z=None):
+    if y is None and z is None:
+        if x is None:
+            return None
+        elif isinstance(x, point):
+            return vector(x)
+        elif isinstance(x, vector):
+            return x
+        elif isinstance(x, Sequence) and len(x) == 3:
+            return vector([x[0], x[1], x[2]])
+        else:
+            raise RuntimeError("Wrong input: {}".format(repr(x)))
+    return vector(x, y, z)
+
+
+def norm(a):
+    return hypot(hypot(a.x, a.y), a.z)
+
+
+def dot(a, b):
+    return a.x * b.x + a.y * b.y + a.z * b.z
+
+
+def cross(a, b):
+    return vector(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x)
+
+
 class Connector:
     def __init__(self, position=None, direction=None, top=None):
-        self.position = np_point(position)
+        self.position = oce_point(position)
 
-        direction = np_point(direction)
+        direction = oce_vector(direction)
         if direction is not None:
-            direction = direction / np.linalg.norm(direction)
+            direction = direction / norm(direction)
         self.direction = direction
 
-        top = np_point(top)
+        top = oce_vector(top)
         if top is not None:
-            top = top / np.linalg.norm(top)
+            top = top / norm(top)
             if direction is not None and top is not None:
-                proj = np.dot(top, direction)
+                proj = dot(top, direction)
                 if abs(proj) > 1e-6:
                     raise RuntimeError("Top and directions are not orthogonal: {} {}".format(top, direction))
 
@@ -76,25 +83,18 @@ class Transform:
         self.transform = transform
 
     def __call__(self, arg):
-        if isinstance(arg, np.ndarray):
-            arg = oce_point(arg)
-            return np_point(self.transform(arg))
-
         if isinstance(arg, Connector):
-            p = oce_point(arg.position)
+            p = arg.position
             if p is not None:
-                p = np_point(self.transform(p))
+                p = self.transform(p)
 
-            z = oce_point(0, 0, 0)
-            z = np_point(self.transform(z))
-
-            d = oce_point(arg.direction)
+            d = arg.direction
             if d is not None:
-                d = np_point(self.transform(d)) - z
+                d = self.transform(d)
 
-            t = oce_point(arg.top)
+            t = arg.top
             if t is not None:
-                t = np_point(self.transform(t)) - z
+                t = self.transform(t)
 
             return Connector(p, d, t)
 
@@ -105,12 +105,6 @@ class Transform:
             arg = arg.unlazy()
 
         return self.transform(arg)
-
-    def gen_transform(self):
-        r = translate(*list(self.translation))
-        if self.ax is not None and self.angle is not None and self.angle != 0:
-            r = r * axrotation(self.ax[0], self.ax[1], self.ax[2], self.angle)
-        return r
 
 
 class Solver:
@@ -141,7 +135,7 @@ class Solver:
 
         tr1 = translate(-p1[0], -p1[1], -p1[2])
 
-        check_d = np.dot(d1, d2)
+        check_d = dot(d1, d2)
         if check_d > 0.99999:
             print("rot1 skipped")
             rot1 = axrotation(0, 0, 1, 0)
@@ -149,28 +143,28 @@ class Solver:
             print("rot1 180deg")
             rot1 = axrotation(t1[0], t1[1], t1[2], deg(180))
         else:
-            ax = np.cross(d1, d2)
-            angle = np.arccos(np.clip(np.dot(d1, d2), -1.0, 1.0))
+            ax = cross(d1, d2)
+            angle = acos(dot(d1, d2))
             print("ax, angle:", ax, angle)
             rot1 = axrotation(ax[0], ax[1], ax[2], angle)
 
-            d1_rot = np_point(rot1(oce_point(d1)))
-            check_d1 = np.dot(d1_rot, d2)
+            d1_rot = rot1(d1)
+            check_d1 = dot(d1_rot, d2)
             print("check_d1:", check_d1)
             if check_d1 < 0:
                 print("d1 reverse")
                 angle = angle + deg(180)
 
                 rot1 = axrotation(ax[0], ax[1], ax[2], angle)
-                d1_rot = np_point(rot1(oce_point(d1)))
-                check_d1 = np.dot(d1_rot, d2)
+                d1_rot = rot1(d1)
+                check_d1 = dot(d1_rot, d2)
                 print("check_d1:", check_d1)
-                assert check_d1 > 0.95
+            assert check_d1 > 0.99
 
-        t1_rot = np_point(rot1(oce_point(t1)))
+        t1_rot = rot1(t1)
         print("t1_rot, t2, d2:", t1_rot, t2, d2)
 
-        check_t = np.dot(t1_rot, t2)
+        check_t = dot(t1_rot, t2)
         if check_t > 0.99999:
             print("rot2 skipped")
             rot2 = axrotation(0, 0, 1, 0)
@@ -178,39 +172,40 @@ class Solver:
             print("rot2 180deg")
             rot2 = axrotation(d2[0], d2[1], d2[2], deg(180))
         else:
-            ax = np.cross(t1_rot, t2)
-            angle2 = np.arccos(np.clip(np.dot(t1_rot, t2), -1.0, 1.0))
+            ax = cross(t1_rot, t2)
+            angle2 = acos(dot(t1_rot, t2))
             print("angle2:", angle2)
             print("ax, d2", ax, d2)
-            if np.dot(ax, d2) < 0:
-                print("Flip rot2", np.dot(ax, d2))
+            if dot(ax, d2) < 0:
+                print("Flip rot2", dot(ax, d2))
                 angle2 = -angle2
 
             rot2 = axrotation(d2[0], d2[1], d2[2], angle2)
-            t1_rot2 = np_point(rot2(oce_point(t1_rot)))
+            t1_rot2 = rot2(t1_rot)
 
             print("t1_rot2, t2:", t1_rot2, t2)
-            check_t1 = np.dot(t1_rot2, t2)
+            check_t1 = dot(t1_rot2, t2)
             print("check_t1:", check_t1)
             if check_t1 < 0:
                 print("t1 reverse")
                 angle2 = angle2 + deg(180)
 
                 rot2 = axrotation(d2[0], d2[1], d2[2], angle2)
-                t1_rot2 = np_point(rot2(oce_point(t1_rot)))
-                check_t1 = np.dot(t1_rot2, t2)
+                t1_rot2 = rot2(t1_rot)
+                check_t1 = dot(t1_rot2, t2)
                 print("check_t1:", check_t1)
-                assert check_t1 > 0.95
+            assert check_t1 > 0.99
 
         tr2 = translate(p2[0], p2[1], p2[2])
 
         r = tr2 * rot2 * rot1 * tr1
 
-        z1_rot = np_point(r(oce_point(0,0,0)))
-        t1_rot = np_point(r(oce_point(t1)))
-        d1_rot = np_point(r(oce_point(d1)))
-        print("t1_rot, t2", t1_rot - z1_rot, t2)
-        print("d1_rot, d2", d1_rot - z1_rot, d2)
+        t1_rot = r(t1)
+        d1_rot = r(d1)
+        print("t1_rot, t2", t1_rot, t2)
+        print("d1_rot, d2", d1_rot, d2)
+        assert dot(t1_rot, t2) > 0.999
+        assert dot(d1_rot, d2) > 0.999
 
         return Transform(r)
 
@@ -257,8 +252,16 @@ class Unit:
     def model(self):
         raise NotImplementedError
 
-    def inst(self, transform):
-        return Part(self, transform)
+    def inst(self, transform=None, connectors=None, constraints=None):
+        if transform is None:
+            transform = Solver(connectors, constraints).solve()
+
+        part = Part(self, transform)
+
+        #for c in constraints:
+        #    c_local = transform(c)
+
+        return part
 
     def get_connector(self, *args, **kw):
         raise NotImplementedError
@@ -276,6 +279,3 @@ class Part:
     def model(self):
         model = self.unit.model()
         return self.transform(model)
-
-
-
