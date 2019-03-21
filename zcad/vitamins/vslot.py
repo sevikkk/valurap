@@ -11,11 +11,11 @@ class VSlot20x20(Unit):
         slot = box([6, 7, self.length]).translate(-3, 4, 0)
         return body - slot
 
-    def get_connector(self, side="top"):
+    def get_connector(self, params="top", part=None):
         x = 0
         y = 0
         z = 0
-        for s in side.split(','):
+        for s in params.split(','):
             s = s.strip()
             if s.startswith("to"): # top
                 z = self.length
@@ -37,7 +37,7 @@ class VSlot20x20(Unit):
             t = [0,0,z - self.length/2 ]
             d = [x, y, 0]
 
-        return Connector([x, y, z], d, t)
+        return Connector(position=[x, y, z], direction=d, top=t, data=params)
 
 
 class VSlot20x40(Unit):

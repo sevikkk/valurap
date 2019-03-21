@@ -48,7 +48,7 @@ def cross(a, b):
 
 
 class Connector:
-    def __init__(self, position=None, direction=None, top=None):
+    def __init__(self, position=None, direction=None, top=None, data=None, use_for_solve=True):
         self.position = oce_point(position)
 
         direction = oce_vector(direction)
@@ -65,6 +65,8 @@ class Connector:
                     raise RuntimeError("Top and directions are not orthogonal: {} {}".format(top, direction))
 
         self.top = top
+        self.data = data
+        self.use_for_solve = use_for_solve
 
     def __repr__(self):
         s = ["<Connector"]
@@ -74,6 +76,10 @@ class Connector:
             s.append("direction={}".format(self.direction))
         if self.top is not None:
             s.append("top={}".format(self.top))
+        if self.data is not None:
+            s.append("data={}".format(self.data))
+        if self.use_for_solve is not None:
+            s.append("use_for_solve={}".format(self.use_for_solve))
         s = " ".join(s) + ">"
         return s
 
@@ -226,6 +232,9 @@ class Solver:
         points = []
         directions = []
         for connector, constraint in zip(self.connectors, self.constraints):
+            if not connector.use_for_solve:
+                continue
+
             print(connector, constraint)
 
             p1 = connector.position
@@ -267,37 +276,45 @@ class Unit:
 
     def inst(self, transform=None, connectors=None, constraints=None, pose=None):
         if transform is None:
-            if pose is not None:
-                connectors = []
-                constraints = []
-                for k, v in pose.items():
-                    if isinstance(k, str):
-                        k = [k]
-                    c = self.get_connector(*k)
-                    connectors.append(c)
-                    if not isinstance(v, Connector):
-                        v = Connector(*v)
-                    constraints.append(v)
-            transform = Solver(connectors, constraints).solve()
+            transform = self.calculate_transform(connectors, constraints, pose)
 
-        part = Part(self, transform)
+        localized_connectors = []
 
-        #for c in constraints:
-        #    c_local = transform(c)
+        if connectors and constraints:
+            for connector, constraint in zip(connectors, constraints):
+                c_local = transform.invert()(constraint)
+                localized_connectors.append([connector, c_local])
+
+        part = Part(self, transform, localized_connectors)
 
         return part
 
-    def get_connector(self, *args, **kw):
+    def calculate_transform(self, connectors, constraints, pose):
+        if pose is not None:
+            connectors = []
+            constraints = []
+            for params, constraint in pose.items():
+                c = self.get_connector(params)
+                connectors.append(c)
+                if not isinstance(constraint, Connector):
+                    constraint = Connector(*constraint)
+                constraints.append(constraint)
+        return Solver(connectors, constraints).solve()
+
+    def get_connector(self, params, part=None):
         raise NotImplementedError
 
 
 class Part:
-    def __init__(self, unit, transform):
+    def __init__(self, unit, transform=None, localized_connectors=None):
         self.unit = unit
+        if transform is None:
+            transform = axrotation(0, 0, 1, 0)
         self.transform = transform
+        self.localized_connectors = localized_connectors
 
-    def get_connector(self, *args, **kw):
-        c = self.unit.get_connector(*args, **kw)
+    def get_connector(self, *args):
+        c = self.unit.get_connector(*args, part=self)
         return self.transform(c)
 
     def model(self):
