@@ -1,10 +1,6 @@
-from vitamins.vslot import VSlot20x20
 from pyservoce import rotateZ
 from zencad import box, cylinder, display, show, Color, vector3, deg, point3
 from connectors import Connector, Unit, Assembly, Shape, NULL_TRANSFORM
-
-base_long = VSlot20x20(150)
-base_short = VSlot20x20(500)
 
 v_up = vector3(0,0,1)
 v_down = vector3(0,0,-1)
