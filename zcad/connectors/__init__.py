@@ -48,7 +48,9 @@ def cross(a, b):
 
 
 class Connector:
-    def __init__(self, position=None, direction=None, top=None, data=None, use_for_solve=True):
+    def __init__(
+        self, position=None, direction=None, top=None, data=None, use_for_solve=True
+    ):
         self.position = oce_point(position)
 
         direction = oce_vector(direction)
@@ -62,7 +64,11 @@ class Connector:
             if direction is not None and top is not None:
                 proj = dot(top, direction)
                 if abs(proj) > 1e-6:
-                    raise RuntimeError("Top and directions are not orthogonal: {} {}".format(top, direction))
+                    raise RuntimeError(
+                        "Top and directions are not orthogonal: {} {}".format(
+                            top, direction
+                        )
+                    )
 
         self.top = top
         self.data = data
@@ -256,10 +262,7 @@ class Solver:
         print(points)
         print(directions)
 
-        for solver in [
-            self.simple_translate,
-            self.simple_attach,
-        ]:
+        for solver in [self.simple_translate, self.simple_attach]:
 
             result = solver(directions, points)
             if result:
@@ -274,6 +277,7 @@ class Solver:
 
 
 NULL_TRANSFORM = Transform(axrotation(0, 0, 1, 0))
+
 
 class Shape:
     def __init__(self, shape, color=None, transform=None):
@@ -309,11 +313,15 @@ class Unit:
     def shapes(self, part=None):
         raise NotImplementedError
 
-    def inst(self, transform=None, connectors=None, constraints=None, pose=None, config=None):
+    def inst(
+        self, transform=None, connectors=None, constraints=None, pose=None, config=None
+    ):
         if transform is None:
             transform = self.calculate_transform(connectors, constraints, pose)
 
-        localized_connectors = self.localize_connectors(connectors, constraints, transform)
+        localized_connectors = self.localize_connectors(
+            connectors, constraints, transform
+        )
 
         part = self.parts_factory(self, transform, localized_connectors, config)
 
