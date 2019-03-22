@@ -131,8 +131,6 @@ shapes.extend(robot.shapes())
 
 robot2 = Robot().inst(pose={
     "origin": Connector([30,0,0], rotateZ(-20)(v_backward), v_up)
-}, config={
-    "head_angle": deg(0)
 })
 
 shapes.extend(robot2.shapes())
