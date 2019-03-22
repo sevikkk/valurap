@@ -120,6 +120,9 @@ class Transform:
         if isinstance(arg, Transform):
             return Transform(self.transform * arg.transform)
 
+        if isinstance(arg, Shape):
+            return Shape(arg.shape, arg.color, self.transform * arg.transform)
+
         if hasattr(arg, "unlazy"):
             arg = arg.unlazy()
 
@@ -270,26 +273,64 @@ class Solver:
         )
 
 
+NULL_TRANSFORM = Transform(axrotation(0, 0, 1, 0))
+
+class Shape:
+    def __init__(self, shape, color=None, transform=None):
+        self.shape = shape
+        self.color = color
+        if transform is None:
+            transform = axrotation(0, 0, 1, 0)
+        self.transform = transform
+
+
+class Part:
+    def __init__(self, unit, transform=None, localized_connectors=None, config=None):
+        self.unit = unit
+        if transform is None:
+            transform = axrotation(0, 0, 1, 0)
+        self.transform = transform
+        self.localized_connectors = unit.normalize_connectors(localized_connectors)
+        self.config = config
+
+    def get_connector(self, *args):
+        c = self.unit.get_connector(*args, self)
+        return self.transform(c)
+
+    def shapes(self):
+        shapes = self.unit.shapes(self)
+        shapes = [self.transform(s) for s in shapes]
+        return shapes
+
+
 class Unit:
-    def model(self):
+    parts_factory = Part
+
+    def shapes(self, part=None):
         raise NotImplementedError
 
-    def inst(self, transform=None, connectors=None, constraints=None, pose=None):
+    def inst(self, transform=None, connectors=None, constraints=None, pose=None, config=None):
         if transform is None:
             transform = self.calculate_transform(connectors, constraints, pose)
 
-        localized_connectors = []
+        localized_connectors = self.localize_connectors(connectors, constraints, transform)
 
+        part = self.parts_factory(self, transform, localized_connectors, config)
+
+        return part
+
+    def localize_connectors(self, connectors, constraints, transform):
+        localized_connectors = []
         if connectors and constraints:
             for connector, constraint in zip(connectors, constraints):
                 c_local = transform.invert()(constraint)
                 localized_connectors.append([connector, c_local])
+        return localized_connectors
 
-        part = Part(self, transform, localized_connectors)
+    def normalize_connectors(self, localized_connectors):
+        return localized_connectors
 
-        return part
-
-    def calculate_transform(self, connectors, constraints, pose):
+    def calculate_transform(self, connectors=None, constraints=None, pose=None):
         if pose is not None:
             connectors = []
             constraints = []
@@ -305,18 +346,16 @@ class Unit:
         raise NotImplementedError
 
 
-class Part:
-    def __init__(self, unit, transform=None, localized_connectors=None):
-        self.unit = unit
-        if transform is None:
-            transform = axrotation(0, 0, 1, 0)
-        self.transform = transform
-        self.localized_connectors = localized_connectors
+class Assembly(Unit):
+    def get_subunits(self, part=None):
+        raise NotImplementedError
 
-    def get_connector(self, *args):
-        c = self.unit.get_connector(*args, part=self)
-        return self.transform(c)
+    def get_subpart(self, name, part=None):
+        return None
 
-    def model(self):
-        model = self.unit.model()
-        return self.transform(model)
+    def shapes(self, part=None):
+        result = []
+        for name, u, transform in self.get_subunits(part):
+            subpart = self.get_subpart(name, part)
+            result.extend([transform(s) for s in u.shapes(subpart)])
+        return result

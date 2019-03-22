@@ -1,15 +1,22 @@
-from zencad import box
-from connectors import Connector, Unit
+from zencad import box, color, deg
+from connectors import Connector, Unit, Shape
 
 
 class VSlot20x20(Unit):
     def __init__(self, length):
         self.length = length
 
-    def model(self):
+    def shapes(self, part=None):
+        if part and part.config and "color" in part.config:
+            part_color = part.config["color"]
+        else:
+            part_color = color(0.7, 0.7, 0.7)
+
         body = box([20, 20, self.length]).translate(-10, -10, 0)
-        slot = box([6, 7, self.length]).translate(-3, 4, 0)
-        return body - slot
+        for angle in range(0,360,90):
+            body = body - box([6, 7, self.length]).translate(-3, 4, 0).rotateZ(deg(angle))
+
+        return [Shape(body, part_color)]
 
     def get_connector(self, params="top", part=None):
         x = 0
@@ -44,5 +51,4 @@ class VSlot20x40(Unit):
     def __init__(self, length):
         self.length = length
 
-    def model(self):
-        return box([20, 40, self.length]).translate(-10, -20, 0)
+
