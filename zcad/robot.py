@@ -79,11 +79,11 @@ class HeadAssembly(Assembly):
         right_eye = Indicator()
 
         le_transform = left_eye.calculate_transform(
-            pose={"origin": head.get_connector("left_eye")}
+            pose={"origin": head.get_connector("left_eye", part)}
         )
 
         re_transform = right_eye.calculate_transform(
-            pose={"origin": head.get_connector("right_eye")}
+            pose={"origin": head.get_connector("right_eye", part)}
         )
 
         return [
@@ -94,7 +94,7 @@ class HeadAssembly(Assembly):
 
     def get_connector(self, params, part=None):
         if params == "origin":
-            return Head().get_connector("origin")
+            return Head().get_connector("origin", part)
 
 
 class Robot(Assembly):
@@ -119,7 +119,7 @@ class Robot(Assembly):
 
     def get_connector(self, params, part=None):
         if params == "origin":
-            return RobotBody().get_connector("origin")
+            return RobotBody().get_connector("origin", part)
 
 
 shapes = []
