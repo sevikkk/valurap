@@ -1,4 +1,4 @@
-from zencad import box, color, deg
+from zencad import color, deg, polygon, circle, rectangle, linear_extrude, square
 from connectors import Connector, Unit, Shape
 
 
@@ -12,11 +12,35 @@ class VSlot20x20(Unit):
         else:
             part_color = color(0.7, 0.7, 0.7)
 
-        body = box([20, 20, self.length]).translate(-10, -10, 0)
-        for angle in range(0, 360, 90):
-            body = body - box([6, 7, self.length]).translate(-3, 4, 0).rotateZ(
-                deg(angle)
-            )
+        corner = polygon([
+            [10, 10],
+            [10, 9.55 / 2],
+            [10 - 1.8, 6.2 / 2],
+            [10 - 1.8, 11 / 2],
+            [11 / 2, 11 / 2],
+            [11 / 2, 10 - 1.8],
+            [6.2 / 2, 10 - 1.8],
+            [9.55 / 2, 10],
+            [10, 10],
+        ]).fillet(1.5, [[10, 10]]).fillet(0.2, [
+            [11 / 2, 10 - 1.8],
+            [10 - 1.8, 11 / 2],
+            [10, 9.55 / 2],
+            [10 - 1.8, 6.2 / 2],
+            [6.2 / 2, 10 - 1.8],
+            [9.55 / 2, 10],
+        ])
+
+        s = square(a=7.3, center=True)
+        for a in range(4):
+            s += corner.rotateZ(deg(a * 90))
+            s -= circle(r=0.3).translate(0, 7.3 / 2, 0).rotateZ(deg(a * 90))
+
+        s += rectangle(1.8, 17 * 1.4, center=True).rotateZ(deg(45))
+        s += rectangle(1.8, 17 * 1.4, center=True).rotateZ(deg(-45))
+        s -= circle(r=2.1)
+
+        body = linear_extrude(s, self.length)
 
         return [Shape(body, part_color)]
 
