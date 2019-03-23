@@ -1,3 +1,5 @@
+import time
+
 from pyservoce import rotateZ
 from zencad import box, cylinder, display, show, Color, vector3, deg, point3
 from connectors import Connector, Unit, Shape
@@ -96,24 +98,43 @@ class Robot(Unit):
         )
 
 
-shapes = []
+nulltime = time.time()
 
-robot = Robot().place(
-    pose={"origin": Connector([-30, 0, 0], v_backward, v_up)},
-    config={"head_angle": deg(30)},
-)
 
-shapes.extend(robot.shapes())
+def get_actor_shapes():
+    t = time.time() - nulltime
+    shapes = {}
 
-robot2 = Robot().place(
-    pose={"origin": Connector([30, 0, 0], rotateZ(-20)(v_backward), v_up)}
-)
+    robot = Robot().place(
+        pose={"origin": Connector([-30, 0, 0], v_backward, v_up)},
+        config={"head_angle": t},
+    )
 
-shapes.extend(robot2.shapes())
+    shapes.update(robot.shapes("robot"))
+
+    robot2 = Robot().place(
+        pose={"origin": Connector([30, 0, 0], rotateZ(-t / 4)(v_backward), v_up)}
+    )
+
+    shapes.update(robot2.shapes("robot2"))
+    return shapes
+
 
 display(box(200, 200, 1).translate(-100, -100, -1), Color(0.5, 0.5, 0.5))
+controllers = {}
 
-for shape in shapes:
-    display(shape.transform(shape.shape.unlazy()), shape.color)
+shapes = get_actor_shapes()
+for n, shape in shapes.items():
+    c = display(shape.shape.unlazy(), shape.color)
+    # c.set_location(shape.transform)
+    controllers[n] = c
 
-show()
+
+def animate(widget):
+    shapes = get_actor_shapes()
+    for n, shape in shapes.items():
+        controllers[n].set_location(shape.transform)
+
+
+print(4)
+show(animate=animate)
