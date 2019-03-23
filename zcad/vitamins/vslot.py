@@ -2,6 +2,7 @@ from zencad import color, deg, polygon, circle, rectangle, linear_extrude, squar
 from connectors import Connector, Unit, Shape
 
 
+
 class VSlot20x20(Unit):
     def __init__(self, length):
         self.length = length
@@ -12,23 +13,29 @@ class VSlot20x20(Unit):
         else:
             part_color = color(0.7, 0.7, 0.7)
 
+        ext_size = 10
+        ext_thick = 1.8
+        slot_ext = 9.7
+        slot_int = 6.1
+        hole_int = 11
+
         corner = polygon([
-            [10, 10],
-            [10, 9.55 / 2],
-            [10 - 1.8, 6.2 / 2],
-            [10 - 1.8, 11 / 2],
-            [11 / 2, 11 / 2],
-            [11 / 2, 10 - 1.8],
-            [6.2 / 2, 10 - 1.8],
-            [9.55 / 2, 10],
-            [10, 10],
-        ]).fillet(1.5, [[10, 10]]).fillet(0.2, [
-            [11 / 2, 10 - 1.8],
-            [10 - 1.8, 11 / 2],
-            [10, 9.55 / 2],
-            [10 - 1.8, 6.2 / 2],
-            [6.2 / 2, 10 - 1.8],
-            [9.55 / 2, 10],
+            [ext_size, ext_size],
+            [ext_size, slot_ext / 2],
+            [ext_size - ext_thick, slot_int / 2],
+            [ext_size - ext_thick, hole_int / 2],
+            [hole_int / 2, hole_int / 2],
+            [hole_int / 2, ext_size - ext_thick],
+            [slot_int / 2, ext_size - ext_thick],
+            [slot_ext / 2, ext_size],
+            [ext_size, ext_size],
+        ]).fillet(1.5, [[ext_size, ext_size]]).fillet(0.2, [
+            [hole_int / 2, ext_size - ext_thick],
+            [ext_size - ext_thick, hole_int / 2],
+            [ext_size, slot_ext / 2],
+            [ext_size - ext_thick, slot_int / 2],
+            [slot_int / 2, ext_size - ext_thick],
+            [slot_ext / 2, ext_size],
         ])
 
         s = square(a=7.3, center=True)
@@ -36,8 +43,8 @@ class VSlot20x20(Unit):
             s += corner.rotateZ(deg(a * 90))
             s -= circle(r=0.3).translate(0, 7.3 / 2, 0).rotateZ(deg(a * 90))
 
-        s += rectangle(1.8, 17 * 1.4, center=True).rotateZ(deg(45))
-        s += rectangle(1.8, 17 * 1.4, center=True).rotateZ(deg(-45))
+        s += rectangle(ext_thick, 17 * 1.4, center=True).rotateZ(deg(45))
+        s += rectangle(ext_thick, 17 * 1.4, center=True).rotateZ(deg(-45))
         s -= circle(r=2.1)
 
         body = linear_extrude(s, self.length)
