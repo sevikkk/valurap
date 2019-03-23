@@ -53,14 +53,15 @@ class Connector:
     ):
         self.position = oce_point(position)
 
-        direction = oce_vector(direction)
         if direction is not None:
+            direction = oce_vector(direction)
             direction = direction / norm(direction)
         self.direction = direction
 
-        top = oce_vector(top)
         if top is not None:
+            top = oce_vector(top)
             top = top / norm(top)
+
             if direction is not None and top is not None:
                 proj = dot(top, direction)
                 if abs(proj) > 1e-6:
@@ -103,8 +104,14 @@ class Connector:
         return Connector(p, d, t)
 
 
+NULL_TRANSFORM = axrotation(0, 0, 1, 0)
+
+
 class Transform:
-    def __init__(self, transform):
+    def __init__(self, transform=None):
+        if transform is None:
+            transform = NULL_TRANSFORM
+
         self.transform = transform
 
     def __call__(self, arg):
@@ -133,6 +140,9 @@ class Transform:
             arg = arg.unlazy()
 
         return self.transform(arg)
+
+    def invert(self):
+        return Transform(self.transform.invert())
 
 
 class Solver:
@@ -166,7 +176,7 @@ class Solver:
         check_d = dot(d1, d2)
         if check_d > 0.99999:
             print("rot1 skipped")
-            rot1 = axrotation(0, 0, 1, 0)
+            rot1 = NULL_TRANSFORM
         elif check_d < -0.99999:
             print("rot1 180deg")
             rot1 = axrotation(t1[0], t1[1], t1[2], deg(180))
@@ -195,7 +205,7 @@ class Solver:
         check_t = dot(t1_rot, t2)
         if check_t > 0.99999:
             print("rot2 skipped")
-            rot2 = axrotation(0, 0, 1, 0)
+            rot2 = NULL_TRANSFORM
         elif check_t < -0.99999:
             print("rot2 180deg")
             rot2 = axrotation(d2[0], d2[1], d2[2], deg(180))
@@ -276,26 +286,45 @@ class Solver:
         )
 
 
-NULL_TRANSFORM = Transform(axrotation(0, 0, 1, 0))
-
-
 class Shape:
-    def __init__(self, shape, color=None, transform=None):
+    def __init__(self, shape, color=None, transform=None, tags=None):
         self.shape = shape
         self.color = color
         if transform is None:
-            transform = axrotation(0, 0, 1, 0)
+            transform = NULL_TRANSFORM
         self.transform = transform
+        self.tags = tags
 
 
 class Part:
     def __init__(self, unit, transform=None, localized_connectors=None, config=None):
         self.unit = unit
         if transform is None:
-            transform = axrotation(0, 0, 1, 0)
+            transform = Transform()
         self.transform = transform
         self.localized_connectors = unit.normalize_connectors(localized_connectors)
         self.config = config
+        self.subparts = {}
+
+    def add_subpart(self, name, part, idx=None):
+        if idx is None:
+            assert name not in self.subparts
+            self.subparts[name] = part
+        else:
+            self.subparts.setdefault(name, {})
+            assert idx not in self.subparts[name]
+            self.subparts[name][idx] = part
+
+    def get_subpart(self, name, idx=None):
+        if idx is None:
+            assert name in self.subparts
+            part = self.subparts[name]
+            assert isinstance(part, Part)
+        else:
+            assert name in self.subparts
+            assert idx in self.subparts[name]
+            part = self.subparts[name][idx]
+        return part
 
     def get_connector(self, *args):
         c = self.unit.get_connector(*args, self)
@@ -303,6 +332,12 @@ class Part:
 
     def shapes(self):
         shapes = self.unit.shapes(self)
+        for k, v in self.subparts.items():
+            if isinstance(v, Part):
+                shapes.extend(v.shapes())
+            else:
+                for vv in v.values():
+                    shapes.extend(vv.shapes())
         shapes = [self.transform(s) for s in shapes]
         return shapes
 
@@ -310,20 +345,30 @@ class Part:
 class Unit:
     parts_factory = Part
 
+    # Must be implemented in actual part
     def shapes(self, part=None):
         raise NotImplementedError
 
-    def inst(
-        self, transform=None, connectors=None, constraints=None, pose=None, config=None
-    ):
-        if transform is None:
-            transform = self.calculate_transform(connectors, constraints, pose)
+    def get_connector(self, params, part=None):
+        raise NotImplementedError
+
+    # Must be implemented for assemblies
+    def place_subparts(self, part):
+        return
+
+    # Public interface
+    def place(self, pose, config=None):
+        connectors, constraints = self.process_pose(pose)
+
+        transform = self.calculate_transform(connectors, constraints)
 
         localized_connectors = self.localize_connectors(
             connectors, constraints, transform
         )
 
         part = self.parts_factory(self, transform, localized_connectors, config)
+
+        self.place_subparts(part)
 
         return part
 
@@ -338,32 +383,16 @@ class Unit:
     def normalize_connectors(self, localized_connectors):
         return localized_connectors
 
-    def calculate_transform(self, connectors=None, constraints=None, pose=None):
-        if pose is not None:
-            connectors = []
-            constraints = []
-            for params, constraint in pose.items():
-                c = self.get_connector(params)
-                connectors.append(c)
-                if not isinstance(constraint, Connector):
-                    constraint = Connector(*constraint)
-                constraints.append(constraint)
+    def process_pose(self, pose):
+        connectors = []
+        constraints = []
+        for params, constraint in pose.items():
+            c = self.get_connector(params)
+            connectors.append(c)
+            if not isinstance(constraint, Connector):
+                constraint = Connector(*constraint)
+            constraints.append(constraint)
+        return connectors, constraints
+
+    def calculate_transform(self, connectors, constraints):
         return Solver(connectors, constraints).solve()
-
-    def get_connector(self, params, part=None):
-        raise NotImplementedError
-
-
-class Assembly(Unit):
-    def get_subunits(self, part=None):
-        raise NotImplementedError
-
-    def get_subpart(self, name, part=None):
-        return None
-
-    def shapes(self, part=None):
-        result = []
-        for name, u, transform in self.get_subunits(part):
-            subpart = self.get_subpart(name, part)
-            result.extend([transform(s) for s in u.shapes(subpart)])
-        return result
