@@ -15,9 +15,11 @@ class VSlot20x20(Unit):
 
         ext_size = 10
         ext_thick = 1.8
-        slot_ext = 9.7
-        slot_int = 6.1
+        int_thick = 1.5
+        slot_ext = 9.6
+        slot_int = 6.0
         hole_int = 11
+        int_size = 7.3
 
         corner = polygon([
             [ext_size, ext_size],
@@ -38,13 +40,13 @@ class VSlot20x20(Unit):
             [slot_ext / 2, ext_size],
         ])
 
-        s = square(a=7.3, center=True)
+        s = square(a=int_size, center=True)
         for a in range(4):
             s += corner.rotateZ(deg(a * 90))
-            s -= circle(r=0.3).translate(0, 7.3 / 2, 0).rotateZ(deg(a * 90))
+            s -= circle(r=0.3).translate(0, int_size / 2, 0).rotateZ(deg(a * 90))
 
-        s += rectangle(ext_thick, 17 * 1.4, center=True).rotateZ(deg(45))
-        s += rectangle(ext_thick, 17 * 1.4, center=True).rotateZ(deg(-45))
+        s += rectangle(int_thick, 17 * 1.4, center=True).rotateZ(deg(45))
+        s += rectangle(int_thick, 17 * 1.4, center=True).rotateZ(deg(-45))
         s -= circle(r=2.1)
 
         body = linear_extrude(s, self.length)
