@@ -41,7 +41,7 @@ class Part:
         return part
 
     def get_connector(self, *args):
-        c = self.unit.get_connector(*args, self)
+        c = self.unit.get_connector(*args, self.config)
         return self.transform(c)
 
     def shapes(self, prefix="", fake_shapes=False):
