@@ -32,7 +32,8 @@ for (x, y) in [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, 
 
 display(box(200, 200, 1).translate(-100, -100, -1), Color(0.5, 0.5, 0.5))
 
-for shape in shapes:
-    display(shape.transform(shape.shape.unlazy()), shape.color)
+for t, shape_list in shapes:
+    for shape in shape_list:
+        c = display(t.transform(shape.shape.unlazy()), shape.color)
 
 show()

@@ -1,16 +1,13 @@
 from zencad import color, deg, polygon, circle, rectangle, linear_extrude, square
-from connectors import Connector, Unit, Shape
+from connectors import Connector, Unit, Shape, get_config_param, copy_config
 
 
 class VSlot20x20(Unit):
     def __init__(self, length):
         self.length = length
 
-    def shapes(self, part=None):
-        if part and part.config and "color" in part.config:
-            part_color = part.config["color"]
-        else:
-            part_color = color(0.7, 0.7, 0.7)
+    def shapes(self, config=None):
+        part_color = get_config_param(config, "color", color(0.7, 0.7, 0.7))
 
         ext_size = 10
         ext_thick = 1.8
@@ -88,6 +85,9 @@ class VSlot20x20(Unit):
             d = [x, y, 0]
 
         return Connector(position=[x, y, z], direction=d, top=t, data=params)
+
+    def finalize_config(self, config, localized_connectors):
+        return copy_config(config, ["color"])
 
 
 class VSlot20x40(Unit):

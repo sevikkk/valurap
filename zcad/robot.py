@@ -2,7 +2,14 @@ import time
 
 from pyservoce import rotateZ
 from zencad import box, cylinder, display, show, Color, vector3, deg, point3
-from connectors import Connector, Unit, Shape
+from connectors import (
+    Connector,
+    Unit,
+    Shape,
+    VisualConnector,
+    get_config_param,
+    copy_config,
+)
 
 v_up = vector3(0, 0, 1)
 v_down = vector3(0, 0, -1)
@@ -13,7 +20,7 @@ v_backward = vector3(0, -1, 0)
 
 
 class Indicator(Unit):
-    def shapes(self, part=None):
+    def shapes(self, config=None):
         indicator = cylinder(r=5, h=3)
         return [Shape(indicator, color=Color(0.7, 0, 0))]
 
@@ -28,13 +35,13 @@ class Head(Unit):
     neck_r = 3
     neck_h = 3
 
-    def shapes(self, part=None):
+    def shapes(self, config=None):
         head = cylinder(r=self.r, h=self.h).up(self.neck_h)
         neck = cylinder(r=self.neck_r, h=self.neck_h)
 
         return [Shape(head + neck, color=Color(0.5, 0.5, 0.5))]
 
-    def get_connector(self, params, part=None):
+    def get_connector(self, params, config=None):
         if params == "origin":
             return Connector([0, 0, 0], v_backward, v_up)
         if params in ("left_eye", "right_eye"):
@@ -45,16 +52,21 @@ class Head(Unit):
 
             return Connector(pos, v_backward, v_up)
 
-    def place_subparts(self, part):
-        part.add_subpart(
-            "left_eye",
-            Indicator().place(pose={"origin": self.get_connector("left_eye", part)}),
-        )
-
-        part.add_subpart(
-            "right_eye",
-            Indicator().place(pose={"origin": self.get_connector("right_eye", part)}),
-        )
+    def subparts(self, config=None):
+        return [
+            [
+                "left_eye",
+                Indicator().place(
+                    pose={"origin": self.get_connector("left_eye", config)}
+                ),
+            ],
+            [
+                "right_eye",
+                Indicator().place(
+                    pose={"origin": self.get_connector("right_eye", config)}
+                ),
+            ],
+        ]
 
 
 class Robot(Unit):
@@ -62,20 +74,18 @@ class Robot(Unit):
     height = 30
     thick = 15
 
-    def shapes(self, part=None):
+    def shapes(self, config=None):
         main_body = box(self.width, self.thick, self.height)
         return [Shape(main_body, color=Color(0.4, 0.4, 0.4))]
 
-    def get_connector(self, params, part=None):
+    def get_connector(self, params, config=None):
         if params == "indicator":
             return Connector(
                 [self.width / 2, 0, self.height * 0.7], v_backward, v_right
             )
         if params == "head":
-            if part and part.config and "head_angle" in part.config:
-                head_angle = part.config["head_angle"]
-            else:
-                head_angle = 0
+            head_angle = get_config_param(config, "head_angle", 0)
+
             return Connector(
                 [self.width / 2, self.thick / 2, self.height],
                 rotateZ(head_angle)(v_backward),
@@ -84,24 +94,36 @@ class Robot(Unit):
         if params == "origin":
             return Connector([self.width / 2, self.thick / 2, 0], v_backward, v_up)
 
-    def place_subparts(self, part):
-        part.add_subpart(
-            "indicator",
-            Indicator().place(pose={"origin": self.get_connector("indicator", part)}),
+    def subparts(self, config=None):
+        parts = []
+        parts.append(
+            [
+                "indicator",
+                Indicator().place(
+                    pose={"origin": self.get_connector("indicator", config)}
+                ),
+            ]
         )
 
-        part.add_subpart(
-            "head",
-            Head().place(
-                pose={"origin": self.get_connector("head", part)}, config=part.config
-            ),
+        parts.append(
+            [
+                "head",
+                Head().place(
+                    pose={"origin": self.get_connector("head", config)}, config=config
+                ),
+            ]
         )
+
+        return parts
+
+    def finalize_config(self, config, localized_connectors):
+        return copy_config(config, ["head_angle"])
 
 
 nulltime = time.time()
 
 
-def get_actor_shapes():
+def get_actor_shapes(fake_shapes=False):
     t = time.time() - nulltime
     shapes = {}
 
@@ -110,13 +132,22 @@ def get_actor_shapes():
         config={"head_angle": t},
     )
 
-    shapes.update(robot.shapes("robot"))
+    shapes.update(robot.shapes("robot", fake_shapes))
 
     robot2 = Robot().place(
         pose={"origin": Connector([30, 0, 0], rotateZ(-t / 4)(v_backward), v_up)}
     )
 
-    shapes.update(robot2.shapes("robot2"))
+    shapes.update(robot2.shapes("robot2", fake_shapes))
+
+    r1 = robot.get_connector("origin")
+    r2 = robot2.get_connector("origin")
+    d = r2.position - r1.position
+    p = r1.position + d / 2
+    u = v_up
+    c = Connector(p, d, u)
+    vc = VisualConnector().place(pose={"origin": c}, config={"text": "Bubu"})
+    shapes.update(vc.shapes("vc", fake_shapes))
     return shapes
 
 
@@ -124,17 +155,19 @@ display(box(200, 200, 1).translate(-100, -100, -1), Color(0.5, 0.5, 0.5))
 controllers = {}
 
 shapes = get_actor_shapes()
-for n, shape in shapes.items():
-    c = display(shape.shape.unlazy(), shape.color)
-    # c.set_location(shape.transform)
-    controllers[n] = c
+for n, (t, shape_list) in shapes.items():
+    controllers[n] = []
+    for shape in shape_list:
+        c = display(shape.shape.unlazy(), shape.color)
+        # c.set_location(t)
+        controllers[n].append(c)
 
 
 def animate(widget):
-    shapes = get_actor_shapes()
-    for n, shape in shapes.items():
-        controllers[n].set_location(shape.transform)
+    shapes = get_actor_shapes(True)
+    for n, (t, shape_list) in shapes.items():
+        for c in controllers[n]:
+            c.set_location(t.transform)
 
 
-print(4)
 show(animate=animate)

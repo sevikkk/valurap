@@ -1,8 +1,9 @@
+import os
 from collections.abc import Sequence
 from math import hypot, acos
 
-from zencad import point, vector, deg
-from pyservoce import translate, axrotation
+from zencad import point, vector, deg, cylinder, cone, sphere, textshape
+from pyservoce import translate, axrotation, Color
 
 
 def oce_point(x, y=None, z=None):
@@ -132,9 +133,6 @@ class Transform:
 
         if isinstance(arg, Transform):
             return Transform(self.transform * arg.transform)
-
-        if isinstance(arg, Shape):
-            return Shape(arg.shape, arg.color, self.transform * arg.transform)
 
         if hasattr(arg, "unlazy"):
             print("calling unlazy on {}".format(arg))
@@ -288,12 +286,9 @@ class Solver:
 
 
 class Shape:
-    def __init__(self, shape, color=None, transform=None, tags=None):
+    def __init__(self, shape, color=None, tags=None):
         self.shape = shape
         self.color = color
-        if transform is None:
-            transform = NULL_TRANSFORM
-        self.transform = transform
         self.tags = tags
 
 
@@ -303,9 +298,9 @@ class Part:
         if transform is None:
             transform = Transform()
         self.transform = transform
-        self.localized_connectors = unit.normalize_connectors(localized_connectors)
-        self.config = config
+
         self.subparts = {}
+        self.config = unit.finalize_config(config, localized_connectors)
 
     def add_subpart(self, name, part, idx=None):
         if idx is None:
@@ -331,21 +326,25 @@ class Part:
         c = self.unit.get_connector(*args, self)
         return self.transform(c)
 
-    def shapes(self, prefix=""):
+    def shapes(self, prefix="", fake_shapes=False):
         shapes = {}
-        for i, s in enumerate(self.unit.shapes(self)):
-            shapes["{}.{}".format(prefix, i)] = s
+        if fake_shapes:
+            own_shapes = []
+        else:
+            own_shapes = self.unit.shapes(self.config)
+
+        shapes[prefix] = [Transform(), own_shapes]
 
         for k, v in self.subparts.items():
             p_prefix = "{}.{}".format(prefix, k)
             if isinstance(v, Part):
-                shapes.update(v.shapes(p_prefix))
+                shapes.update(v.shapes(p_prefix, fake_shapes))
             else:
                 for i, vv in v.items():
                     pp_prefix = "{}.{}".format(p_prefix, i)
-                    shapes.update(vv.shapes(pp_prefix))
+                    shapes.update(vv.shapes(pp_prefix, fake_shapes))
 
-        shapes = {k: self.transform(s) for k, s in shapes.items()}
+        shapes = {k: [self.transform(t), s] for k, (t, s) in shapes.items()}
         return shapes
 
 
@@ -353,15 +352,18 @@ class Unit:
     parts_factory = Part
 
     # Must be implemented in actual part
-    def shapes(self, part=None):
-        raise NotImplementedError
+    def shapes(self, config=None):
+        return []
 
-    def get_connector(self, params, part=None):
+    def get_connector(self, params, config=None):
+        if params == "origin":
+            return Connector([0, 0, 0], [1, 0, 0], [0, 0, 1])
+
         raise NotImplementedError
 
     # Must be implemented for assemblies
-    def place_subparts(self, part):
-        return
+    def subparts(self, config=None):
+        return []
 
     # Public interface
     def place(self, pose, config=None):
@@ -375,7 +377,11 @@ class Unit:
 
         part = self.parts_factory(self, transform, localized_connectors, config)
 
-        self.place_subparts(part)
+        for name, subpart in self.subparts(part.config):
+            idx = None
+            if not isinstance(name, str):
+                name, idx = name
+            part.add_subpart(name, subpart, idx)
 
         return part
 
@@ -387,8 +393,10 @@ class Unit:
                 localized_connectors.append([connector, c_local])
         return localized_connectors
 
-    def normalize_connectors(self, localized_connectors):
-        return localized_connectors
+    def finalize_config(self, config, localized_connectors):
+        # Generate actual config based on input and localized connectors
+        # empty by default, so we can cache effectively
+        return {}
 
     def process_pose(self, pose):
         connectors = []
@@ -403,3 +411,78 @@ class Unit:
 
     def calculate_transform(self, connectors, constraints):
         return Solver(connectors, constraints).solve()
+
+
+def get_config_param(config, param, default=None):
+    if config and param in config:
+        return config[param]
+    return default
+
+
+def copy_config(config, param_list):
+    if not config:
+        return config
+
+    final_config = {}
+    for param in param_list:
+        if param in config:
+            final_config[param] = config[param]
+
+    return final_config
+
+
+class VisualConnector(Unit):
+    r = 1
+    length = 10
+    arrow_r = 2
+    arror_length = 4
+    sphere_r = 2
+    text_size = 5
+    main_color = Color(0.7, 0.7, 0.7)
+    text_color = Color(0.1, 0.7, 0.1)
+    text_thick = 1
+
+    def shapes(self, config=None):
+        ret = []
+        text_length = 0
+
+        text = get_config_param(config, "text")
+        if text:
+            fontpath = os.path.join(
+                os.path.dirname(os.path.realpath(__file__)), "../fonts/testfont.ttf"
+            )
+
+            text_shape = (
+                textshape(text=text, fontpath=fontpath, size=self.text_size)
+                .extrude(self.text_thick)
+                .rotateX(deg(90))
+            )
+
+            text_length = text_shape.center().x * 2
+
+            text_shape = text_shape.translate(
+                self.sphere_r, self.text_thick / 2, self.r * 1.5
+            )
+            ret.append(Shape(text_shape, color=self.text_color))
+
+        body_length = max(
+            text_length + self.sphere_r * 2, self.length - self.arror_length
+        )
+
+        main_shape = (
+            cylinder(r=self.r, h=body_length).rotateY(deg(90))
+            + cone(r1=self.arrow_r, r2=0, h=self.arror_length)
+            .rotateY(deg(90))
+            .right(body_length)
+            + sphere(r=self.sphere_r)
+        )
+        ret.append(Shape(main_shape, color=self.main_color))
+
+        return ret
+
+    def get_connector(self, params, part=None):
+        if params == "origin":
+            return Connector([0, 0, 0], [1, 0, 0], [0, 0, 1])
+
+    def finalize_config(self, config, localized_connectors):
+        return copy_config(config, ["text"])
