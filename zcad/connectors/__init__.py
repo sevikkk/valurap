@@ -1,6 +1,6 @@
-from .transform import Transform
 from .connector import Connector
 from .solver import Solver
-from .util import get_config_param, copy_config, oce_point, oce_vector, norm, dot, cross
-from .units import Unit, Part, Shape
+from .transform import Transform
+from .units import Part, Shape, Unit
+from .util import copy_config, cross, dot, get_config_param, norm, oce_point, oce_vector
 from .visuals import VisualConnector

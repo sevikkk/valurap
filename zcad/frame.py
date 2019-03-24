@@ -1,6 +1,6 @@
-from vitamins.vslot import VSlot20x20
-from zencad import box, display, show, Color
 from connectors import Connector
+from vitamins.vslot import VSlot20x20
+from zencad import Color, box, display, show
 
 base_long = VSlot20x20(150)
 base_short = VSlot20x20(500)

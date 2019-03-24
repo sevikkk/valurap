@@ -1,4 +1,4 @@
-from .util import oce_point, oce_vector, norm, dot
+from .util import dot, norm, oce_point, oce_vector
 
 
 class Connector:

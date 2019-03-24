@@ -1,12 +1,11 @@
 import os
 
 from pyservoce.libservoce import Color
-from zencad import textshape, deg, cylinder, cone, sphere
+from zencad import cone, cylinder, deg, sphere, textshape
 
 from .connector import Connector
 from .units import Shape, Unit
-
-from .util import get_config_param, copy_config
+from .util import copy_config, get_config_param
 
 
 class VisualConnector(Unit):

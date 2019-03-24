@@ -1,15 +1,15 @@
 import time
 
-from pyservoce import rotateZ
-from zencad import box, cylinder, display, show, Color, vector3, deg, point3
 from connectors import (
     Connector,
-    get_config_param,
-    copy_config,
     Shape,
     Unit,
     VisualConnector,
+    copy_config,
+    get_config_param,
 )
+from pyservoce import rotateZ
+from zencad import Color, box, cylinder, deg, display, point3, show, vector3
 
 v_up = vector3(0, 0, 1)
 v_down = vector3(0, 0, -1)

@@ -1,6 +1,5 @@
-from zencad import point3, vector3
-
 from connectors import Connector, Solver
+from zencad import point3, vector3
 
 
 def test_connector_str():

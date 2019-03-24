@@ -1,6 +1,6 @@
-from .transform import Transform
-from .solver import Solver
 from .connector import Connector
+from .solver import Solver
+from .transform import Transform
 
 
 class Shape:
