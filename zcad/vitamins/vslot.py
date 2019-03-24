@@ -2,7 +2,6 @@ from zencad import color, deg, polygon, circle, rectangle, linear_extrude, squar
 from connectors import Connector, Unit, Shape
 
 
-
 class VSlot20x20(Unit):
     def __init__(self, length):
         self.length = length
@@ -21,24 +20,33 @@ class VSlot20x20(Unit):
         hole_int = 11
         int_size = 7.3
 
-        corner = polygon([
-            [ext_size, ext_size],
-            [ext_size, slot_ext / 2],
-            [ext_size - ext_thick, slot_int / 2],
-            [ext_size - ext_thick, hole_int / 2],
-            [hole_int / 2, hole_int / 2],
-            [hole_int / 2, ext_size - ext_thick],
-            [slot_int / 2, ext_size - ext_thick],
-            [slot_ext / 2, ext_size],
-            [ext_size, ext_size],
-        ]).fillet(1.5, [[ext_size, ext_size]]).fillet(0.2, [
-            [hole_int / 2, ext_size - ext_thick],
-            [ext_size - ext_thick, hole_int / 2],
-            [ext_size, slot_ext / 2],
-            [ext_size - ext_thick, slot_int / 2],
-            [slot_int / 2, ext_size - ext_thick],
-            [slot_ext / 2, ext_size],
-        ])
+        corner = (
+            polygon(
+                [
+                    [ext_size, ext_size],
+                    [ext_size, slot_ext / 2],
+                    [ext_size - ext_thick, slot_int / 2],
+                    [ext_size - ext_thick, hole_int / 2],
+                    [hole_int / 2, hole_int / 2],
+                    [hole_int / 2, ext_size - ext_thick],
+                    [slot_int / 2, ext_size - ext_thick],
+                    [slot_ext / 2, ext_size],
+                    [ext_size, ext_size],
+                ]
+            )
+            .fillet(1.5, [[ext_size, ext_size]])
+            .fillet(
+                0.2,
+                [
+                    [hole_int / 2, ext_size - ext_thick],
+                    [ext_size - ext_thick, hole_int / 2],
+                    [ext_size, slot_ext / 2],
+                    [ext_size - ext_thick, slot_int / 2],
+                    [slot_int / 2, ext_size - ext_thick],
+                    [slot_ext / 2, ext_size],
+                ],
+            )
+        )
 
         s = square(a=int_size, center=True)
         for a in range(4):
