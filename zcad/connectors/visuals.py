@@ -3,8 +3,8 @@ import os
 from pyservoce.libservoce import Color
 from zencad import textshape, deg, cylinder, cone, sphere
 
-from connectors import Connector
-from connectors.units import Shape, Unit
+from .connector import Connector
+from .units import Shape, Unit
 
 from .util import get_config_param, copy_config
 
