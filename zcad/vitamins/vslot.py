@@ -1,5 +1,6 @@
 from zencad import color, deg, polygon, circle, rectangle, linear_extrude, square
-from connectors import Connector, Unit, Shape, get_config_param, copy_config
+from connectors import Connector, get_config_param, copy_config
+from connectors.units import Shape, Unit
 
 
 class VSlot20x20(Unit):

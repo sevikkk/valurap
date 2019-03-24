@@ -4,11 +4,11 @@ from pyservoce import rotateZ
 from zencad import box, cylinder, display, show, Color, vector3, deg, point3
 from connectors import (
     Connector,
-    Unit,
-    Shape,
-    VisualConnector,
     get_config_param,
     copy_config,
+    Shape,
+    Unit,
+    VisualConnector,
 )
 
 v_up = vector3(0, 0, 1)
