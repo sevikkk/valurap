@@ -1,9 +1,10 @@
-from connectors import Connector
-from vitamins.vslot import VSlot20x20
+from connectors import Connector, VisualConnector
+from vitamins.vslot import VSlot20x20, VSlot20x40
 from zencad import Color, box, display, show
 
 base_long = VSlot20x20(150)
-base_short = VSlot20x20(500)
+base_short = VSlot20x40(500)
+vc = VisualConnector()
 
 shapes = []
 
@@ -22,12 +23,25 @@ for (x, y) in [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, 
     b = base_short.place(pose={"top": c3}, config={"color": Color(0.1, 0.5, 0)})
     shapes.extend(b.shapes().values())
 
-    c4 = b.get_connector("bottom, left")
+    c4 = b.get_connector("bottom, left2")
     new_pos = c4.position + c4.top * 10
     c5 = c4.replace(position=new_pos)
 
     c = base_short.place(pose={"top": c5})
     shapes.extend(c.shapes().values())
+
+    for n in [
+        "bottom, front",
+        "bottom, back",
+        "bottom, left",
+        "bottom, right",
+        "bottom, left2",
+        "bottom, right2",
+        "bottom",
+        "bottom2",
+    ]:
+        vvc = vc.place({"origin": c.get_connector(n)}, config={"text": n})
+        shapes.extend(vvc.shapes().values())
 
 
 display(box(200, 200, 1).translate(-100, -100, -1), Color(0.5, 0.5, 0.5))
