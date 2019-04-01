@@ -1,5 +1,6 @@
 from connectors import Connector, VisualConnector
 from vitamins.vslot import VSlot20x20, VSlot20x40
+from vitamins.nema import Nema17
 from zencad import Color, box, display, show
 
 base_long = VSlot20x20(150)
@@ -43,6 +44,8 @@ for (x, y) in [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, 
         vvc = vc.place({"origin": c.get_connector(n)}, config={"text": n})
         shapes.extend(vvc.shapes().values())
 
+motor = Nema17().place(pose={"origin": Connector([0,0,40], [0,0,1], [1, 0 ,0])})
+shapes.extend(motor.shapes().values())
 
 display(box(200, 200, 1).translate(-100, -100, -1), Color(0.5, 0.5, 0.5))
 
