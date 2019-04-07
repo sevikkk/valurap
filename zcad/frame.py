@@ -26,7 +26,7 @@ c3 = Connector([0, 200, 0], [1, 0, 0], [0, 0, 1])
 rail = Demo(MGR12(400)).place(pose={"top": c3})
 parts.append(rail)
 
-carriage = Demo(MGN12H(), connectors=None).place(pose={("mgr_top", 50): c3})
+carriage = Demo(MGN12H(), connectors=None).place(pose={("mgr_top", 150): c3})
 parts.append(carriage)
 
 for part in parts:
