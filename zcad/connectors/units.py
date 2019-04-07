@@ -68,6 +68,7 @@ class Part:
 
 class Unit:
     parts_factory = Part
+    demo_connectors = ["origin"]
 
     # Must be implemented in actual part
     def shapes(self, config=None):

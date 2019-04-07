@@ -1,56 +1,31 @@
-from connectors import Connector, VisualConnector
+from connectors import Connector, VisualConnector, Demo
 from vitamins.vslot import VSlot20x20, VSlot20x40
 from vitamins.nema import Nema17
 from zencad import Color, box, display, show
 
-base_long = VSlot20x20(150)
+base_long = VSlot20x40(1000)
 base_short = VSlot20x40(500)
 vc = VisualConnector()
 
-shapes = []
+parts = []
 
-for (x, y) in [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]]:
-    print("=============================================")
-    top = [x, y, 0]
-    c1 = Connector([0, 0, 0], [0, 0, -1], top)
+c1 = Connector([0,0,0], [1,0,0], [0,0,1])
+vslot_demo = Demo(VSlot20x20(length=100)).place(pose={"origin": c1})
+parts.append(vslot_demo)
 
-    a = base_long.place(pose={"top, front": c1})
-    shapes.extend(a.shapes().values())
+c1a = Connector([0, -100,0], [1,0,0], [0,0,1])
+vslot_demo = Demo(VSlot20x40(length=100)).place(pose={"origin": c1a})
+parts.append(vslot_demo)
 
-    c2 = a.get_connector("bottom, front, left")
-    new_pos = c2.position + c2.top * 10
-    c3 = c2.replace(position=new_pos)
+c2 = Connector([0, 100,0], [1,0,0], [0,0,1])
+motor = Demo(Nema17()).place(pose={"origin": c2})
+parts.append(motor)
 
-    b = base_short.place(pose={"top": c3}, config={"color": Color(0.1, 0.5, 0)})
-    shapes.extend(b.shapes().values())
+#display(box(200, 200, 1).translate(-100, -100, -1), Color(0.5, 0.5, 0.5))
 
-    c4 = b.get_connector("bottom, left2")
-    new_pos = c4.position + c4.top * 10
-    c5 = c4.replace(position=new_pos)
-
-    c = base_short.place(pose={"top": c5})
-    shapes.extend(c.shapes().values())
-
-    for n in [
-        "bottom, front",
-        "bottom, back",
-        "bottom, left",
-        "bottom, right",
-        "bottom, left2",
-        "bottom, right2",
-        "bottom",
-        "bottom2",
-    ]:
-        vvc = vc.place({"origin": c.get_connector(n)}, config={"text": n})
-        shapes.extend(vvc.shapes().values())
-
-motor = Nema17().place(pose={"origin": Connector([0,0,40], [0,0,1], [1, 0 ,0])})
-shapes.extend(motor.shapes().values())
-
-display(box(200, 200, 1).translate(-100, -100, -1), Color(0.5, 0.5, 0.5))
-
-for t, shape_list in shapes:
-    for shape in shape_list:
-        c = display(t.transform(shape.shape.unlazy()), shape.color)
+for part in parts:
+    for t, shape_list in part.shapes().values():
+        for shape in shape_list:
+            c = display(t.transform(shape.shape.unlazy()), shape.color)
 
 show()

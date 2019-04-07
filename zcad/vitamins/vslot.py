@@ -1,4 +1,4 @@
-from connectors import Connector, copy_config, get_config_param
+from connectors import Connector, copy_config, get_config_param, VisualConnector
 from connectors.units import Shape, Unit
 from zencad import circle, color, deg, linear_extrude, polygon, rectangle, square, unify
 
@@ -54,6 +54,27 @@ def base_section():
 
 
 class VSlot20x20(Unit):
+    demo_connectors = [
+        "bottom",
+        "bottom, front",
+        "bottom, back",
+        "bottom, left",
+        "bottom, right",
+        "bottom, front, right",
+        "bottom, front, left",
+        "bottom, back, left",
+        "bottom, back, right",
+        "top",
+        "top, front",
+        "top, back",
+        "top, left",
+        "top, right",
+        "top, front, right",
+        "top, front, left",
+        "top, back, left",
+        "top, back, right",
+    ]
+
     def __init__(self, length):
         self.length = length
 
@@ -99,6 +120,32 @@ class VSlot20x20(Unit):
 
 
 class VSlot20x40(Unit):
+    demo_connectors = [
+        "bottom",
+        "bottom2",
+        "bottom, front",
+        "bottom, back",
+        "bottom, left",
+        "bottom, right",
+        "bottom, left2",
+        "bottom, right2",
+        "bottom, front, right",
+        "bottom, front, left",
+        "bottom, back, left",
+        "bottom, back, right",
+        "top",
+        "top2",
+        "top, front",
+        "top, back",
+        "top, left",
+        "top, right",
+        "top, left2",
+        "top, right2",
+        "top, front, right",
+        "top, front, left",
+        "top, back, left",
+        "top, back, right",
+    ]
     def __init__(self, length):
         self.length = length
 
@@ -137,6 +184,7 @@ class VSlot20x40(Unit):
                 y = -10
             elif s.startswith("ba"):  # back
                 y = 30
+                dy = 20
             elif s.startswith("l"):  # left
                 x = -10
                 if s.endswith("2"):

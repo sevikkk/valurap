@@ -63,3 +63,19 @@ class VisualConnector(Unit):
 
     def finalize_config(self, config, localized_connectors):
         return copy_config(config, ["text"])
+
+
+class Demo(Unit):
+    def __init__(self, demo_unit):
+        self.unit = demo_unit
+
+    def subparts(self, config=None):
+        parts = []
+        base = self.unit.place(pose={"origin": self.get_connector("origin")})
+        parts.append(["base", base])
+
+        vc = VisualConnector()
+        for i, conn in enumerate(self.unit.demo_connectors):
+            vvc = vc.place({"origin": base.get_connector(conn)}, config={"text": str(conn)})
+            parts.append(["c{}".format(i), vvc])
+        return parts
