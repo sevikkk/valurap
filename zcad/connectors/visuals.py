@@ -57,7 +57,7 @@ class VisualConnector(Unit):
 
         return ret
 
-    def get_connector(self, params, part=None):
+    def get_connector(self, params, config=None):
         if params == "origin":
             return Connector([0, 0, 0], [1, 0, 0], [0, 0, 1])
 
@@ -79,3 +79,6 @@ class Demo(Unit):
             vvc = vc.place({"origin": base.get_connector(conn)}, config={"text": str(conn)})
             parts.append(["c{}".format(i), vvc])
         return parts
+
+    def get_connector(self, params, config=None):
+        return self.unit.get_connector(params, config)
