@@ -66,8 +66,9 @@ class VisualConnector(Unit):
 
 
 class Demo(Unit):
-    def __init__(self, demo_unit):
+    def __init__(self, demo_unit, connectors=None):
         self.unit = demo_unit
+        self.connectors = connectors
 
     def subparts(self, config=None):
         parts = []
@@ -75,7 +76,11 @@ class Demo(Unit):
         parts.append(["base", base])
 
         vc = VisualConnector()
-        for i, conn in enumerate(self.unit.demo_connectors):
+        connectors = self.connectors
+        if connectors is None:
+            connectors = self.unit.demo_connectors
+
+        for i, conn in enumerate(connectors):
             vvc = vc.place(
                 {"origin": base.get_connector(conn)}, config={"text": str(conn)}
             )
