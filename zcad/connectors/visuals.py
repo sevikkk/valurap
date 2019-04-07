@@ -76,7 +76,9 @@ class Demo(Unit):
 
         vc = VisualConnector()
         for i, conn in enumerate(self.unit.demo_connectors):
-            vvc = vc.place({"origin": base.get_connector(conn)}, config={"text": str(conn)})
+            vvc = vc.place(
+                {"origin": base.get_connector(conn)}, config={"text": str(conn)}
+            )
             parts.append(["c{}".format(i), vvc])
         return parts
 

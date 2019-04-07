@@ -1,4 +1,4 @@
-from connectors import Connector, copy_config, get_config_param, VisualConnector
+from connectors import Connector, VisualConnector, copy_config, get_config_param
 from connectors.units import Shape, Unit
 from zencad import circle, color, deg, linear_extrude, polygon, rectangle, square, unify
 
@@ -146,6 +146,7 @@ class VSlot20x40(Unit):
         "top, back, left",
         "top, back, right",
     ]
+
     def __init__(self, length):
         self.length = length
 
