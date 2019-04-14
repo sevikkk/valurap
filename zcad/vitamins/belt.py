@@ -1,9 +1,11 @@
 import math
 from collections import namedtuple
 
+from pyservoce.libservoce import rotateZ
+
 from connectors import Connector, VisualConnector, copy_config, get_config_param, dot, norm, cross
 from connectors.units import Shape, Unit
-from zencad import circle, color, deg, linear_extrude, polygon, rectangle, square, unify, box, cylinder
+from zencad import circle, color, deg, linear_extrude, polygon, rectangle, square, unify, box, cylinder, vector3, point3
 
 BeltRadiuses = namedtuple("BeltRadiuses", "tip dip pld base")
 
@@ -165,9 +167,9 @@ class GT2x20Pulley(Unit):
     demo_connectors = [
         "top",
         "bottom",
-        #("belt_cw", 0),
-        #("belt_cw", 90),
-        #("belt_cw", 180),
+        ("belt_cw", 0),
+        ("belt_cw", 90),
+        ("belt_ccw", 180),
         #("belt_ccw", 0),
         #("belt_ccw", 180),
     ]
@@ -201,16 +203,31 @@ class GT2x20Pulley(Unit):
         return [Shape(body, body_color)]
 
     def get_connector(self, params="top", part=None):
+        if isinstance(params, str):
+            param = params
+            args = []
+        else:
+            param = params[0]
+            args = params[1:]
+
+        offsets = self.belt().pulley_radiuses(self.teeth)
         x = 0
         y = 0
         z = 0
         d = [0,0,1]
         t = [0,1,0]
-        if params == "top":
+        if param == "top":
             z = self.groove_h/2 + self.cap_h
-        elif params == "bottom":
+        elif param == "bottom":
             z = -self.groove_h/2 - self.base_h
             d = [0,0,-1]
+        elif param in ("belt_cw", "belt_ccw"):
+            t = rotateZ(deg(args[0]))(vector3(0,1,0))
+            d = rotateZ(deg(args[0]))(vector3(1,0,0))
+            p = point3(0,0,0) + t * offsets.pld
+            if param == "belt_cw":
+                d = d * -1
+            return Connector(position=p, direction=d, top=t, data=params)
 
         return Connector(position=[x, y, z], direction=d, top=t, data=params)
 
