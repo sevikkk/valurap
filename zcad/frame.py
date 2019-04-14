@@ -3,7 +3,7 @@ from vitamins.mgn import MGN12H, MGR12
 from vitamins.nema import Nema17
 from vitamins.vslot import VSlot20x20, VSlot20x40
 from vitamins.belt import GT2x6BeltPU, GT2x6BeltStd, GT2x20Pulley, GT2x20Idler
-from zencad import Color, box, display, show
+from zencad import Color, box, display, show, point3
 
 base_long = VSlot20x40(1000)
 base_short = VSlot20x40(500)
@@ -45,6 +45,35 @@ parts.append(belt)
 c4 = Connector([0, 390, 0], [1, 0, 0], [0, 0, 1])
 belt = Demo(GT2x20Idler()).place(pose={"start": c4})
 parts.append(belt)
+
+motor_bottom = Connector([100, 500, 0], [0, 0, -1], [0, 1, 0])
+motor = Nema17().place(pose={"bottom": motor_bottom})
+parts.append(motor)
+
+first_pulley_bottom = motor.get_connector("top").forward(5).reverse()
+
+pulley1 = GT2x20Pulley().place(pose={"bottom": first_pulley_bottom})
+parts.append(pulley1)
+
+belt = GT2x6BeltPU()
+
+pose = belt.calculate_poses(pulley1, point3(200,750,0))
+print(pose)
+
+pulley2 = GT2x20Idler().place(pose={"origin": pose["p2_origin"]})
+parts.append(pulley2)
+
+cw_belt = GT2x6BeltPU().place(pose={
+    "start": pose["cw_belt_start"],
+    "end": pose["cw_belt_end"]
+})
+parts.append(cw_belt)
+
+ccw_belt = GT2x6BeltPU().place(pose={
+    "start": pose["ccw_belt_start"],
+    "end": pose["ccw_belt_end"]
+})
+parts.append(ccw_belt)
 
 for part in parts:
     for t, shape_list in part.shapes().values():

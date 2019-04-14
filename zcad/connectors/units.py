@@ -116,10 +116,12 @@ class Unit:
         # empty by default, so we can cache effectively
         return {}
 
-    def process_pose(self, pose):
+    def process_pose(self, pose, config=None):
         connectors = []
         constraints = []
         for params, constraint in pose.items():
+            if not constraint.use_for_solve:
+                continue
             c = self.get_connector(params)
             connectors.append(c)
             if not isinstance(constraint, Connector):

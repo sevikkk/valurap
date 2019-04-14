@@ -37,7 +37,7 @@ class GT2Belt(Unit):
         base_r = tip_r + self.belt_height
         return BeltRadiuses(tip_r, dip_r, pld_r, base_r)
 
-    def calculate_poses(self, pulley1, pulley2_base_point, pulley2_teeth, crossing=False):
+    def calculate_poses(self, pulley1, pulley2_base_point, pulley2_teeth=None, crossing=False):
         """
         Calculate poses for cw and ccw belts and second pulley, so second pulley
         axe is parallel to first and goes through pulley2_base_point
@@ -58,18 +58,29 @@ class GT2Belt(Unit):
         """
 
         p1_origin = pulley1.get_connector("origin")
+        print("p1_origin", p1_origin)
         axe_direction = p1_origin.direction
+        print("axe_direction", axe_direction)
         p1_center = p1_origin.position
+        print("p1_center", p1_center)
         delta = pulley2_base_point - p1_center
+        print("delta", delta)
         offset = dot(delta, axe_direction)
-        p2_center = p1_center + offset * axe_direction
-        p2_direction = p1_origin.direction
+        print("offset", offset)
+        p2_center = pulley2_base_point - axe_direction * offset
+        print("p2_center", p2_center)
+        p2_direction = axe_direction
+        print("p2_direction", p2_direction)
         if crossing:
-            p2_direction = -1 * p2_direction
+            p2_direction = p2_direction * -1
 
-        p2_origin = Connector(position=p2_center, direction=p2_direction, top=p1_origin.top)
+        result = {
+            "p2_origin": Connector(position=p2_center, direction=p2_direction, top=p1_origin.top)
+        }
 
-        p1_offset = self.pulley_radiuses(pulley1.teeth).pld
+        p1_offset = self.pulley_radiuses(pulley1.unit.teeth).pld
+        if pulley2_teeth is None:
+            pulley2_teeth = pulley1.unit.teeth
         p2_offset = self.pulley_radiuses(pulley2_teeth).pld
 
         if 1:
@@ -80,13 +91,39 @@ class GT2Belt(Unit):
             belt_direction = p2_center - p1_center
             belt_length = norm(belt_direction)
             belt_direction = belt_direction / belt_length
+            print("p2_dir", p2_direction, "belt_dir", belt_direction)
             new_top = cross(p2_direction, belt_direction)
+            print("new_top", new_top)
             new_top = new_top / norm(new_top)
 
-        cw_belt_start = p1_center + new_top * p1_offset
-        ccw_belt_start = p1_center - new_top * p1_offset
-        cw_belt_end = p2_center + new_top * p2_offset
-        ccw_belt_end = p2_center - new_top * p2_offset
+        result["cw_belt_start"] = Connector(
+            p1_center + new_top * p1_offset,
+            belt_direction,
+            new_top
+        )
+
+        result["ccw_belt_start"] = Connector(
+            p1_center - new_top * p1_offset,
+            belt_direction,
+            new_top * -1
+        )
+
+        result["cw_belt_end"] = Connector(
+            p2_center + new_top * p2_offset,
+            belt_direction * -1,
+            new_top,
+            use_for_solve=False
+        )
+
+        result["ccw_belt_end"] = Connector(
+            p2_center - new_top * p2_offset,
+            belt_direction * -1,
+            new_top * -1,
+            use_for_solve=False
+        )
+
+        return result
+
 
     def get_connector(self, params="base", config=None):
         if isinstance(params, str):
@@ -115,7 +152,7 @@ class GT2Belt(Unit):
         elif param == "dip":
             y = radiuses.dip
         elif param == "end":
-            z = self.length
+            z = config["length"]
             d = [0, 0, 1]
             t = [0, 1, 0]
 
@@ -221,6 +258,9 @@ class GT2x20Pulley(Unit):
         elif param == "bottom":
             z = -self.groove_h/2 - self.base_h
             d = [0,0,-1]
+        elif param == "origin":
+            z = 0
+            d = [0,0,1]
         elif param in ("belt_cw", "belt_ccw"):
             t = rotateZ(deg(args[0]))(vector3(0,1,0))
             d = rotateZ(deg(args[0]))(vector3(1,0,0))

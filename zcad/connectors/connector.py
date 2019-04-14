@@ -50,9 +50,17 @@ class Connector:
             p = position
         d = self.direction
         if direction is not None:
-            p = direction
+            d = direction
         t = self.top
         if top is not None:
             t = top
 
         return Connector(p, d, t)
+
+    def forward(self, offset):
+        new_pos = self.position + self.direction * offset
+        return self.replace(position=new_pos)
+
+    def reverse(self):
+        new_direction = self.direction * -1
+        return self.replace(direction=new_direction)
