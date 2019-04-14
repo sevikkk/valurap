@@ -44,7 +44,7 @@ class Connector:
         s = " ".join(s) + ">"
         return s
 
-    def replace(self, position=None, direction=None, top=None):
+    def replace(self, position=None, direction=None, top=None, use_for_solve=True):
         p = self.position
         if position is not None:
             p = position
@@ -55,7 +55,7 @@ class Connector:
         if top is not None:
             t = top
 
-        return Connector(p, d, t)
+        return Connector(p, d, t, use_for_solve=use_for_solve)
 
     def forward(self, offset):
         new_pos = self.position + self.direction * offset

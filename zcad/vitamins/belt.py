@@ -165,9 +165,38 @@ class GT2Belt(Unit):
         if "end" in localized_connectors:
             end_c = localized_connectors["end"]
             start_c = self.get_connector("start")
-            assert abs(dot(start_c.direction, end_c.direction)) > 0.999
-            assert dot(start_c.top, end_c.top) > 0.999
-            length = localized_connectors["end"].position.z
+            if (
+                    -dot(start_c.direction, end_c.direction) > 0.999
+                and
+                    dot(start_c.top, end_c.top) > 0.999
+            ):
+                # straight
+                length = localized_connectors["end"].position.z
+            elif "pulley_origin" in localized_connectors:
+                center_c = localized_connectors["pulley_origin"]
+                left1 = cross(start_c.direction, start_c.top)
+                left2 = cross(end_c.direction, end_c.top)
+                print("left1", left1, "left2", left2)
+                assert abs(dot(left1, left2)) > 0.999
+                assert abs(dot(left1, center_c.direction)) > 0.999
+                center_pos = center_c.position
+                assert abs(center_pos.x) < 0.0001
+                assert abs(center_pos.z) < 0.0001
+                end_pos = end_c.position
+                assert abs(end_pos.x) < 0.0001
+                assert (norm(center_pos) - norm(end_pos - center_pos)) < 0.0001
+                end_v = end_pos - center_pos
+                print("end_v", end_v)
+                angle = math.atan2(-end_v.z, end_v.y)
+                if angle < 0:
+                    angle += 2 * math.pi
+                print("angle", angle/math.pi*180)
+                straight = False
+                final_config["angle"] = angle
+                final_config["r"] = -center_pos.y
+            else:
+                raise RuntimeError("Unable to fit belt")
+
 
         if length is None:
             length = 100
@@ -180,18 +209,46 @@ class GT2Belt(Unit):
     def shapes(self, config):
         body_color = color(0.1, 0.1, 0.1)
         teeth_color = color(0.3, 0.3, 0.3)
-        assert config["straight"]
         offsets = self.pulley_radiuses()
-        body = box(self.belt_width, offsets.base - offsets.dip, config["length"]).translate(
-            -self.belt_width / 2, offsets.dip, 0
+        if config["straight"]:
+            body = box(self.belt_width, offsets.base - offsets.dip, config["length"]).translate(
+                -self.belt_width / 2, offsets.dip, 0
+            )
+            teeth = box(self.belt_width, offsets.dip - offsets.tip, config["length"]).translate(
+                -self.belt_width / 2, offsets.tip, 0
+            )
+            return [
+                Shape(body, body_color),
+                Shape(teeth, teeth_color),
+            ]
+
+        r = config["r"]
+        angle = config["angle"]
+
+        p1 = (
+            circle(offsets.base + r, angle)
+            - circle(offsets.dip + r, angle)
         )
-        teeth = box(self.belt_width, offsets.dip - offsets.tip, config["length"]).translate(
-            -self.belt_width / 2, offsets.tip, 0
+        body = linear_extrude(p1, self.belt_width)\
+            .translate(-r, 0, -self.belt_width/2)\
+            .rotateY(deg(-90))\
+            .rotateX(deg(-90))
+
+        p2 = (
+                circle(offsets.dip + r, angle)
+                - circle(offsets.tip + r, angle)
         )
+        teeth =linear_extrude(p2, self.belt_width) \
+            .translate(-r, 0, -self.belt_width/2) \
+            .rotateY(deg(-90)) \
+            .rotateX(deg(-90))
+
+
         return [
             Shape(body, body_color),
             Shape(teeth, teeth_color),
         ]
+
 
 
 class GT2x6BeltStd(GT2Belt):
