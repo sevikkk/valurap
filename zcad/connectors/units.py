@@ -91,7 +91,7 @@ class Unit:
         transform = self.calculate_transform(connectors, constraints)
 
         localized_connectors = self.localize_connectors(
-            connectors, constraints, transform
+            pose, transform
         )
 
         part = self.parts_factory(self, transform, localized_connectors, config)
@@ -104,12 +104,11 @@ class Unit:
 
         return part
 
-    def localize_connectors(self, connectors, constraints, transform):
-        localized_connectors = []
-        if connectors and constraints:
-            for connector, constraint in zip(connectors, constraints):
-                c_local = transform.invert()(constraint)
-                localized_connectors.append([connector, c_local])
+    def localize_connectors(self, pose, transform):
+        localized_connectors = {}
+        for c, connector in pose.items():
+            c_local = transform.invert()(connector)
+            localized_connectors[c] = c_local
         return localized_connectors
 
     def finalize_config(self, config, localized_connectors):

@@ -2,6 +2,7 @@ from connectors import Connector, Demo, VisualConnector
 from vitamins.mgn import MGN12H, MGR12
 from vitamins.nema import Nema17
 from vitamins.vslot import VSlot20x20, VSlot20x40
+from vitamins.belt import GT2x6BeltPU
 from zencad import Color, box, display, show
 
 base_long = VSlot20x40(1000)
@@ -28,6 +29,10 @@ parts.append(rail)
 
 carriage = Demo(MGN12H(), connectors=None).place(pose={("mgr_top", 150): c3})
 parts.append(carriage)
+
+c4 = Connector([0, 300, 0], [1, 0, 0], [0, 0, 1])
+belt = Demo(GT2x6BeltPU(400)).place(pose={"start": c4})
+parts.append(belt)
 
 for part in parts:
     for t, shape_list in part.shapes().values():
