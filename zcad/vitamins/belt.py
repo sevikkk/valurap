@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from connectors import Connector, VisualConnector, copy_config, get_config_param, dot, norm, cross
 from connectors.units import Shape, Unit
-from zencad import circle, color, deg, linear_extrude, polygon, rectangle, square, unify, box
+from zencad import circle, color, deg, linear_extrude, polygon, rectangle, square, unify, box, cylinder
 
 BeltRadiuses = namedtuple("BeltRadiuses", "tip dip pld base")
 
@@ -104,17 +104,14 @@ class GT2Belt(Unit):
 
         if param == "base":
             y = radiuses.base
-            z = 10
         elif param == "start":
             d = [0, 0, -1]
             t = [0, 1, 0]
             y = 0
         elif param == "tip":
             y = radiuses.tip
-            z = 20
         elif param == "dip":
             y = radiuses.dip
-            z = 30
         elif param == "end":
             z = self.length
             d = [0, 0, 1]
@@ -168,107 +165,59 @@ class GT2x20Pulley(Unit):
     demo_connectors = [
         "top",
         "bottom",
-        ("belt_cw", 0),
-        ("belt_cw", 90),
-        ("belt_cw", 180),
-        ("belt_ccw", 0),
-        ("belt_ccw", 180),
+        #("belt_cw", 0),
+        #("belt_cw", 90),
+        #("belt_cw", 180),
+        #("belt_ccw", 0),
+        #("belt_ccw", 180),
     ]
     teeth = 20
+    body_r = 8
+    base_h = 7.5
+    groove_h = 7
+    cap_h = 1.5
+    inner_r = 2.5
+
+    belt = GT2x6BeltStd
 
     def shapes(self, config=None):
-        part_color = get_config_param(config, "color", color(0.7, 0.7, 0.7))
+        offsets = self.belt().pulley_radiuses(self.teeth)
+        body_color = color(0.7, 0.7, 0.7)
 
-        s = base_section()
+        body = (
+            cylinder(r=self.body_r, h=self.base_h)
+            + cylinder(r=offsets.tip, h=self.groove_h).up(self.base_h)
+            + cylinder(r=self.body_r, h=self.cap_h).up(self.base_h + self.groove_h)
+            - cylinder(r=self.inner_r, h=self.base_h + self.groove_h+self.cap_h + 2).down(1)
+        )
+        if self.base_h > 4:
+            body = (
+                body
+                - cylinder(r=1.5, h=self.body_r + 1).rotateX(deg(90)).up(self.base_h/2)
+                - cylinder(r=1.5, h=self.body_r + 1).rotateY(deg(90)).up(self.base_h/2)
+            )
+        body = body.down(self.base_h + self.groove_h/2)
 
-        body = linear_extrude(s, self.length)
-
-        return [Shape(body, part_color)]
+        return [Shape(body, body_color)]
 
     def get_connector(self, params="top", part=None):
         x = 0
         y = 0
         z = 0
-        for s in params.split(","):
-            s = s.strip()
-            if s.startswith("to"):  # top
-                z = self.length
-            elif s.startswith("bo"):  # bottom
-                z = 0
-            elif s.startswith("f"):  # front
-                y = -10
-            elif s.startswith("ba"):  # back
-                y = 10
-            elif s.startswith("l"):  # left
-                x = -10
-            elif s.startswith("r"):  # right
-                x = 10
-
-        if x == 0 and y == 0:
-            d = [0, 0, z - self.length / 2]
-            t = [0, 1, 0]
-        else:
-            t = [0, 0, z - self.length / 2]
-            d = [x, y, 0]
+        d = [0,0,1]
+        t = [0,1,0]
+        if params == "top":
+            z = self.groove_h/2 + self.cap_h
+        elif params == "bottom":
+            z = -self.groove_h/2 - self.base_h
+            d = [0,0,-1]
 
         return Connector(position=[x, y, z], direction=d, top=t, data=params)
 
-    def finalize_config(self, config, localized_connectors):
-        return copy_config(config, ["color"])
 
-
-
-class GT2x20Idler(Unit):
-    demo_connectors = [
-        "top",
-        "bottom",
-        ("belt_cw", 0),
-        ("belt_cw", 90),
-        ("belt_cw", 180),
-        ("belt_ccw", 0),
-        ("belt_ccw", 180),
-    ]
-
-    def __init__(self, toothed=True):
-        self.toothed = toothed
-
-    def shapes(self, config=None):
-        part_color = get_config_param(config, "color", color(0.7, 0.7, 0.7))
-
-        s = base_section()
-
-        body = linear_extrude(s, self.length)
-
-        return [Shape(body, part_color)]
-
-    def get_connector(self, params="top", part=None):
-        x = 0
-        y = 0
-        z = 0
-        for s in params.split(","):
-            s = s.strip()
-            if s.startswith("to"):  # top
-                z = self.length
-            elif s.startswith("bo"):  # bottom
-                z = 0
-            elif s.startswith("f"):  # front
-                y = -10
-            elif s.startswith("ba"):  # back
-                y = 10
-            elif s.startswith("l"):  # left
-                x = -10
-            elif s.startswith("r"):  # right
-                x = 10
-
-        if x == 0 and y == 0:
-            d = [0, 0, z - self.length / 2]
-            t = [0, 1, 0]
-        else:
-            t = [0, 0, z - self.length / 2]
-            d = [x, y, 0]
-
-        return Connector(position=[x, y, z], direction=d, top=t, data=params)
-
-    def finalize_config(self, config, localized_connectors):
-        return copy_config(config, ["color"])
+class GT2x20Idler(GT2x20Pulley):
+    body_r = 9
+    base_h = 1
+    inner_r = 1.5
+    cap_h = 1
 

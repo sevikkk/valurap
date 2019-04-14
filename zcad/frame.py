@@ -2,7 +2,7 @@ from connectors import Connector, Demo, VisualConnector
 from vitamins.mgn import MGN12H, MGR12
 from vitamins.nema import Nema17
 from vitamins.vslot import VSlot20x20, VSlot20x40
-from vitamins.belt import GT2x6BeltPU
+from vitamins.belt import GT2x6BeltPU, GT2x6BeltStd, GT2x20Pulley, GT2x20Idler
 from zencad import Color, box, display, show
 
 base_long = VSlot20x40(1000)
@@ -32,6 +32,18 @@ parts.append(carriage)
 
 c4 = Connector([0, 300, 0], [1, 0, 0], [0, 0, 1])
 belt = Demo(GT2x6BeltPU(400)).place(pose={"start": c4})
+parts.append(belt)
+
+c4 = Connector([0, 310, 0], [1, 0, 0], [0, 0, 1])
+belt = Demo(GT2x6BeltStd(400)).place(pose={"start": c4})
+parts.append(belt)
+
+c4 = Connector([0, 350, 0], [1, 0, 0], [0, 0, 1])
+belt = Demo(GT2x20Pulley()).place(pose={"start": c4})
+parts.append(belt)
+
+c4 = Connector([0, 390, 0], [1, 0, 0], [0, 0, 1])
+belt = Demo(GT2x20Idler()).place(pose={"start": c4})
 parts.append(belt)
 
 for part in parts:
