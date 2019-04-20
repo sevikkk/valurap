@@ -165,11 +165,19 @@ class VSlot20x40(Unit):
         return [Shape(body, part_color)]
 
     def get_connector(self, params="top", part=None):
+        if isinstance(params, str):
+            param = params
+            args = []
+        else:
+            param = params[0]
+            args = params[1:]
+
         x = 0
         y = 0
         z = 0
         dy = 0
-        for s in params.split(","):
+        mount = False
+        for s in param.split(","):
             s = s.strip()
             if s.startswith("to"):  # top
                 z = self.length
@@ -196,6 +204,8 @@ class VSlot20x40(Unit):
                 if s.endswith("2"):
                     y += 20
                     dy = 20
+            elif s.startswith("m"):  # mount_this_side
+                mount = True
 
         if x == 0 and y - dy == 0:
             d = [0, 0, z - self.length / 2]
@@ -203,6 +213,20 @@ class VSlot20x40(Unit):
         else:
             t = [0, 0, z - self.length / 2]
             d = [x, y - dy, 0]
+
+        if mount:
+            # Invert connector, so it will mount this side
+            # on other beam
+            d, t = t, d
+            d = [-1 * a for a in d]
+
+        if len(args) > 0:
+            offset = args[0]
+
+            if z == 0:
+                z = offset
+            else:
+                z = z - offset
 
         return Connector(position=[x, y, z], direction=d, top=t, data=params)
 

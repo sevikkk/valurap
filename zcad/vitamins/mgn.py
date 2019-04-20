@@ -121,9 +121,12 @@ class MGN12H(Unit):
             return Connector(
                 position=[0, 0, self.length / 2], direction=[0, 0, 1], top=[0, 1, 0]
             )
-        elif param == "mount_hole":
-            idx = args[0]
-            x, z = [[-1, -1], [-1, 1], [1, 1], [1, -1]][args[0]]
+        elif param in ("mount_hole", "mount_plate"):
+            if param == "mount_hole":
+                idx = args[0]
+                x, z = [[-1, -1], [-1, 1], [1, 1], [1, -1]][args[0]]
+            else:
+                x, z = 0, 0
 
             x = x * 10
             z = z * 10

@@ -64,3 +64,12 @@ class Connector:
     def reverse(self):
         new_direction = self.direction * -1
         return self.replace(direction=new_direction)
+
+    def swapTD(self, use_for_solve=True):
+        p = self.position
+        d = self.direction
+        t = self.top
+
+        t, d = d, t
+
+        return Connector(p, d, t, use_for_solve=use_for_solve)
