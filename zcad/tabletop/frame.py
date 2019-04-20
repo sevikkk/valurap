@@ -12,11 +12,14 @@ class Frame(Unit):
     beam_vslot_length = 500
     y_rails_length = 1000
     x_rails_length = 450
+    y_belt_offset = 15
 
     y_rail_offset = (long_vslot_length - y_rails_length) / 2
     x_rail_offset = (beam_vslot_length - x_rails_length) / 2
 
     x_plate_height = 6
+    y_motor_offset = 5
+    y_idler_offset = 5
 
     def subparts(self, config=None):
         parts = []
@@ -98,7 +101,86 @@ class Frame(Unit):
         x2_mgn = x_mgn.place(pose={("mgr_top", x2_mgn_offset): x2_mgn_mount})
         parts.append(["x2_mgn", x2_mgn])
 
+        y_belt = GT2x6BeltPU()
+        y_pulley = GT2x20Pulley()
+        y_idler = GT2x20Idler()
+        y_motor = Nema17()
+        left_mgn_top = left_mgn.get_connector("mount_plate").position
+        right_mgn_top = right_mgn.get_connector("mount_plate").position
+        belt_top_z = left_mgn_top.z
+        offsets = y_belt.pulley_radiuses(y_pulley.teeth)
+        pulley_z = belt_top_z - offsets.base
+        left_pulley_x = left_mgn_top.x - self.y_belt_offset - y_belt.belt_width/2
+        right_pulley_x = right_mgn_top.x + self.y_belt_offset + y_belt.belt_width/2
+        pulley_y = front_vslot.get_connector("right").position.y - y_motor.body_size/2 - self.y_motor_offset
+        idler_y = back_vslot.get_connector("left").position.y + self.y_idler_offset + y_idler.body_r
+
+        left_pulley_mount = Connector(
+            position=[left_pulley_x, pulley_y, pulley_z],
+            direction=[-1,0,0],
+            top=[0,0,1]
+        )
+        left_pulley = y_pulley.place(pose={"origin": left_pulley_mount})
+        parts.append(["left_pulley", left_pulley])
+
+        right_pulley_mount = Connector(
+            position=[right_pulley_x, pulley_y, pulley_z],
+            direction=[1,0,0],
+            top=[0,0,1]
+        )
+        right_pulley = y_pulley.place(pose={"origin": right_pulley_mount})
+        parts.append(["right_pulley", right_pulley])
+
+        left_motor = y_motor.place(pose={"top": left_pulley.get_connector("bottom").forward(5).reverse()})
+        parts.append(["left_motor", left_motor])
+
+        right_motor = y_motor.place(pose={"top": right_pulley.get_connector("bottom").forward(5).reverse()})
+        parts.append(["right_motor", right_motor])
+
+        left_idler_mount = Connector(
+            position=[left_pulley_x, idler_y, pulley_z],
+            direction=[-1,0,0],
+            top=[0,0,1]
+        )
+        left_idler = y_idler.place(pose={"origin": left_idler_mount})
+        parts.append(["left_idler", left_idler])
+
+        right_idler_mount = Connector(
+            position=[right_pulley_x, idler_y, pulley_z],
+            direction=[1,0,0],
+            top=[0,0,1]
+        )
+        right_idler = y_idler.place(pose={"origin": right_idler_mount})
+        parts.append(["right_idler", right_idler])
+
+        self.gen_y_belt(left_idler, left_pulley, parts, y_belt, "y_left")
+        self.gen_y_belt(right_pulley, right_idler, parts, y_belt, "y_right")
+
         return parts
+
+    def gen_y_belt(self, left_idler, left_pulley, parts, y_belt, prefix):
+        left_belt_a = y_belt.place(pose={
+            "start": left_pulley.get_connector(("belt_cw", 0)),
+            "end": left_idler.get_connector(("belt_ccw", 0)).replace(use_for_solve=False),
+        })
+        parts.append(["{}_belt_a".format(prefix), left_belt_a])
+        left_belt_b = y_belt.place(pose={
+            "start": left_pulley.get_connector(("belt_ccw", 180)),
+            "end": left_idler.get_connector(("belt_cw", 180)).replace(use_for_solve=False),
+        })
+        parts.append(["{}_belt_b".format(prefix), left_belt_b])
+        left_belt_c = y_belt.place(pose={
+            "start": left_pulley.get_connector(("belt_ccw", 0)),
+            "pulley_origin": left_pulley.get_connector("origin").replace(use_for_solve=False),
+            "end": left_pulley.get_connector(("belt_cw", 180)).replace(use_for_solve=False),
+        })
+        parts.append(["{}_belt_c".format(prefix), left_belt_c])
+        left_belt_d = y_belt.place(pose={
+            "start": left_idler.get_connector(("belt_cw", 0)),
+            "pulley_origin": left_idler.get_connector("origin").replace(use_for_solve=False),
+            "end": left_idler.get_connector(("belt_ccw", 180)).replace(use_for_solve=False),
+        })
+        parts.append(["{}_belt_d".format(prefix), left_belt_d])
 
     def finalize_config(self, config, localized_connectors):
         final_config = {}

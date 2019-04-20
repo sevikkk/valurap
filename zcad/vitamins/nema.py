@@ -25,6 +25,8 @@ class Nema17(Unit):
         ("mount_hole", 3),
     ]
 
+    body_size = 42
+
     def __init__(self, length=37, dshaft=True):
         self.length = length
         self.dshaft = dshaft
@@ -34,7 +36,7 @@ class Nema17(Unit):
         plates_color = color(0.5, 0.5, 0.5)
         shaft_color = color(0.7, 0.7, 0.7)
         cables_color = color(0.4, 0.4, 0.2)
-        body_size = 42
+        body_size = self.body_size
         plates_thick = 8
         body_chamfer = 5
         plates_chamfer = 3
