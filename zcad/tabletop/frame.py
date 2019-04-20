@@ -13,6 +13,7 @@ class Frame(Unit):
     y_rails_length = 1000
     x_rails_length = 450
     y_belt_offset = 15
+    x_belt_offset = 15
 
     y_rail_offset = (long_vslot_length - y_rails_length) / 2
     x_rail_offset = (beam_vslot_length - x_rails_length) / 2
@@ -20,6 +21,8 @@ class Frame(Unit):
     x_plate_height = 6
     y_motor_offset = 5
     y_idler_offset = 5
+    x_motor_offset = 5
+    x_idler_offset = 5
 
     def subparts(self, config=None):
         parts = []
@@ -115,6 +118,7 @@ class Frame(Unit):
         y_pulley = GT2x20Pulley()
         y_idler = GT2x20Idler()
         y_motor = Nema17()
+
         left_mgn_top = left_mgn.get_connector("mount_plate").position
         right_mgn_top = right_mgn.get_connector("mount_plate").position
         belt_top_z = left_mgn_top.z
@@ -177,6 +181,78 @@ class Frame(Unit):
 
         self.gen_belt(left_idler, left_pulley, parts, y_belt, "y_left")
         self.gen_belt(right_pulley, right_idler, parts, y_belt, "y_right")
+
+        x_belt = GT2x6BeltPU()
+        x_pulley = GT2x20Pulley()
+        x_idler = GT2x20Idler()
+        x_motor = Nema17()
+
+        x1_mgn_top = x1_mgn.get_connector("mount_plate").position
+        x2_mgn_top = x2_mgn.get_connector("mount_plate").position
+        offsets = y_belt.pulley_radiuses(y_pulley.teeth)
+
+        x1_pulley_y = x1_mgn_top.y - offsets.base
+        x_pulley_z = x1_mgn_top.z + self.x_belt_offset + x_belt.belt_width / 2
+        x1_pulley_x = (
+            left_pulley_x
+            - self.x_motor_offset
+            - y_belt.belt_width / 2
+            - x_motor.body_size / 2
+        )
+        x1_idler_x = right_mgn_top.x
+
+        x1_pulley_mount = Connector(
+            position=[x1_pulley_x, x1_pulley_y, x_pulley_z],
+            direction=[0, 0, 1],
+            top=[0, 1, 0],
+        )
+        x1_pulley = x_pulley.place(pose={"origin": x1_pulley_mount})
+        parts.append(["x1_pulley", x1_pulley])
+
+        x1_idler_mount = Connector(
+            position=[x1_idler_x, x1_pulley_y, x_pulley_z],
+            direction=[0, 0, 1],
+            top=[0, 1, 0],
+        )
+        x1_idler = x_idler.place(pose={"origin": x1_idler_mount})
+        parts.append(["x1_idler", x1_idler])
+
+        x1_motor = x_motor.place(
+            pose={"top": x1_pulley.get_connector("bottom").forward(5).reverse()}
+        )
+        parts.append(["x1_motor", x1_motor])
+        self.gen_belt(x1_pulley, x1_idler, parts, x_belt, "x1")
+
+        x2_pulley_y = x2_mgn_top.y + offsets.base
+        x2_pulley_x = (
+            right_pulley_x
+            + self.x_motor_offset
+            + y_belt.belt_width / 2
+            + x_motor.body_size / 2
+        )
+        x2_idler_x = left_mgn_top.x
+
+        x2_pulley_mount = Connector(
+            position=[x2_pulley_x, x2_pulley_y, x_pulley_z],
+            direction=[0, 0, 1],
+            top=[0, 1, 0],
+        )
+        x2_pulley = x_pulley.place(pose={"origin": x2_pulley_mount})
+        parts.append(["x2_pulley", x2_pulley])
+
+        x2_idler_mount = Connector(
+            position=[x2_idler_x, x2_pulley_y, x_pulley_z],
+            direction=[0, 0, 1],
+            top=[0, 1, 0],
+        )
+        x2_idler = x_idler.place(pose={"origin": x2_idler_mount})
+        parts.append(["x2_idler", x2_idler])
+
+        x2_motor = x_motor.place(
+            pose={"top": x2_pulley.get_connector("bottom").forward(5).reverse()}
+        )
+        parts.append(["x2_motor", x2_motor])
+        self.gen_belt(x2_idler, x2_pulley, parts, x_belt, "x2")
 
         return parts
 
