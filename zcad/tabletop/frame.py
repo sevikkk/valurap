@@ -175,12 +175,12 @@ class Frame(Unit):
         right_idler = y_idler.place(pose={"origin": right_idler_mount})
         parts.append(["right_idler", right_idler])
 
-        self.gen_y_belt(left_idler, left_pulley, parts, y_belt, "y_left")
-        self.gen_y_belt(right_pulley, right_idler, parts, y_belt, "y_right")
+        self.gen_belt(left_idler, left_pulley, parts, y_belt, "y_left")
+        self.gen_belt(right_pulley, right_idler, parts, y_belt, "y_right")
 
         return parts
 
-    def gen_y_belt(self, left_idler, left_pulley, parts, y_belt, prefix):
+    def gen_belt(self, left_idler, left_pulley, parts, y_belt, prefix):
         left_belt_a = y_belt.place(
             pose={
                 "start": left_pulley.get_connector(("belt_cw", 0)),
