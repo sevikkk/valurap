@@ -90,9 +90,7 @@ class Unit:
 
         transform = self.calculate_transform(connectors, constraints)
 
-        localized_connectors = self.localize_connectors(
-            pose, transform
-        )
+        localized_connectors = self.localize_connectors(pose, transform)
 
         part = self.parts_factory(self, transform, localized_connectors, config)
 

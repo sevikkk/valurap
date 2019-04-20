@@ -1,9 +1,9 @@
 from connectors import Connector, Demo, VisualConnector
+from vitamins.belt import GT2x6BeltPU, GT2x6BeltStd, GT2x20Idler, GT2x20Pulley
 from vitamins.mgn import MGN12H, MGR12
 from vitamins.nema import Nema17
 from vitamins.vslot import VSlot20x20, VSlot20x40
-from vitamins.belt import GT2x6BeltPU, GT2x6BeltStd, GT2x20Pulley, GT2x20Idler
-from zencad import Color, box, display, show, point3
+from zencad import Color, box, display, point3, show
 
 base_long = VSlot20x40(1000)
 base_short = VSlot20x40(500)
@@ -57,48 +57,49 @@ parts.append(pulley1)
 
 belt = GT2x6BeltPU()
 
-pose = belt.calculate_poses(pulley1, point3(200,750,0))
+pose = belt.calculate_poses(pulley1, point3(200, 750, 0))
 print(pose)
 
 pulley2 = GT2x20Idler().place(pose={"origin": pose["p2_origin"]})
 parts.append(pulley2)
 
-pose2 = belt.calculate_poses(pulley2, point3(200,300,0))
+pose2 = belt.calculate_poses(pulley2, point3(200, 300, 0))
 print(pose2)
 
 pulley3 = GT2x20Idler().place(pose={"origin": pose2["p2_origin"]})
 parts.append(pulley3)
 
-cw_belt = GT2x6BeltPU().place(pose={
-    "start": pose["cw_belt_start"],
-    "end": pose["cw_belt_end"]
-})
+cw_belt = GT2x6BeltPU().place(
+    pose={"start": pose["cw_belt_start"], "end": pose["cw_belt_end"]}
+)
 parts.append(cw_belt)
 
-ccw_belt = GT2x6BeltPU().place(pose={
-    "start": pose["ccw_belt_start"],
-    "end": pose["ccw_belt_end"]
-})
+ccw_belt = GT2x6BeltPU().place(
+    pose={"start": pose["ccw_belt_start"], "end": pose["ccw_belt_end"]}
+)
 parts.append(ccw_belt)
 
-thrd_belt = GT2x6BeltPU().place(pose={
-    "start": pose2["cw_belt_start"],
-    "end": pose2["cw_belt_end"]
-})
+thrd_belt = GT2x6BeltPU().place(
+    pose={"start": pose2["cw_belt_start"], "end": pose2["cw_belt_end"]}
+)
 parts.append(thrd_belt)
 
-closing_belt = GT2x6BeltPU().place(pose={
-    "start": pose["ccw_belt_start"].reverse(),
-    "end": pose["cw_belt_start"].reverse().replace(use_for_solve=False),
-    "pulley_origin": pulley1.get_connector("origin").replace(use_for_solve=False),
-})
+closing_belt = GT2x6BeltPU().place(
+    pose={
+        "start": pose["ccw_belt_start"].reverse(),
+        "end": pose["cw_belt_start"].reverse().replace(use_for_solve=False),
+        "pulley_origin": pulley1.get_connector("origin").replace(use_for_solve=False),
+    }
+)
 parts.append(closing_belt)
 
-cont_belt = GT2x6BeltPU().place(pose={
-    "start": pose["cw_belt_end"].reverse(),
-    "end": pose2["cw_belt_start"].reverse().replace(use_for_solve=False),
-    "pulley_origin": pose["p2_origin"].replace(use_for_solve=False),
-})
+cont_belt = GT2x6BeltPU().place(
+    pose={
+        "start": pose["cw_belt_end"].reverse(),
+        "end": pose2["cw_belt_start"].reverse().replace(use_for_solve=False),
+        "pulley_origin": pose["p2_origin"].replace(use_for_solve=False),
+    }
+)
 parts.append(cont_belt)
 
 for part in parts:

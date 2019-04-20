@@ -1,22 +1,37 @@
 import math
 from collections import namedtuple
 
-from pyservoce.libservoce import rotateZ
-
-from connectors import Connector, VisualConnector, copy_config, get_config_param, dot, norm, cross
+from connectors import (
+    Connector,
+    VisualConnector,
+    copy_config,
+    cross,
+    dot,
+    get_config_param,
+    norm,
+)
 from connectors.units import Shape, Unit
-from zencad import circle, color, deg, linear_extrude, polygon, rectangle, square, unify, box, cylinder, vector3, point3
+from pyservoce.libservoce import rotateZ
+from zencad import (
+    box,
+    circle,
+    color,
+    cylinder,
+    deg,
+    linear_extrude,
+    point3,
+    polygon,
+    rectangle,
+    square,
+    unify,
+    vector3,
+)
 
 BeltRadiuses = namedtuple("BeltRadiuses", "tip dip pld base")
 
+
 class GT2Belt(Unit):
-    demo_connectors = [
-        "base",
-        "start",
-        "tip",
-        "dip",
-        "end",
-    ]
+    demo_connectors = ["base", "start", "tip", "dip", "end"]
     tooth_pitch = 2.0
     tooth_height = 0.75
     belt_width = 10
@@ -37,7 +52,9 @@ class GT2Belt(Unit):
         base_r = tip_r + self.belt_height
         return BeltRadiuses(tip_r, dip_r, pld_r, base_r)
 
-    def calculate_poses(self, pulley1, pulley2_base_point, pulley2_teeth=None, crossing=False):
+    def calculate_poses(
+        self, pulley1, pulley2_base_point, pulley2_teeth=None, crossing=False
+    ):
         """
         Calculate poses for cw and ccw belts and second pulley, so second pulley
         axe is parallel to first and goes through pulley2_base_point
@@ -75,7 +92,9 @@ class GT2Belt(Unit):
             p2_direction = p2_direction * -1
 
         result = {
-            "p2_origin": Connector(position=p2_center, direction=p2_direction, top=p1_origin.top)
+            "p2_origin": Connector(
+                position=p2_center, direction=p2_direction, top=p1_origin.top
+            )
         }
 
         p1_offset = self.pulley_radiuses(pulley1.unit.teeth).pld
@@ -97,33 +116,28 @@ class GT2Belt(Unit):
             new_top = new_top / norm(new_top)
 
         result["cw_belt_start"] = Connector(
-            p1_center + new_top * p1_offset,
-            belt_direction,
-            new_top
+            p1_center + new_top * p1_offset, belt_direction, new_top
         )
 
         result["ccw_belt_start"] = Connector(
-            p1_center - new_top * p1_offset,
-            belt_direction,
-            new_top * -1
+            p1_center - new_top * p1_offset, belt_direction, new_top * -1
         )
 
         result["cw_belt_end"] = Connector(
             p2_center + new_top * p2_offset,
             belt_direction * -1,
             new_top,
-            use_for_solve=False
+            use_for_solve=False,
         )
 
         result["ccw_belt_end"] = Connector(
             p2_center - new_top * p2_offset,
             belt_direction * -1,
             new_top * -1,
-            use_for_solve=False
+            use_for_solve=False,
         )
 
         return result
-
 
     def get_connector(self, params="base", config=None):
         if isinstance(params, str):
@@ -166,9 +180,8 @@ class GT2Belt(Unit):
             end_c = localized_connectors["end"]
             start_c = self.get_connector("start")
             if (
-                    -dot(start_c.direction, end_c.direction) > 0.999
-                and
-                    dot(start_c.top, end_c.top) > 0.999
+                -dot(start_c.direction, end_c.direction) > 0.999
+                and dot(start_c.top, end_c.top) > 0.999
             ):
                 # straight
                 length = localized_connectors["end"].position.z
@@ -190,13 +203,12 @@ class GT2Belt(Unit):
                 angle = math.atan2(-end_v.z, end_v.y)
                 if angle < 0:
                     angle += 2 * math.pi
-                print("angle", angle/math.pi*180)
+                print("angle", angle / math.pi * 180)
                 straight = False
                 final_config["angle"] = angle
                 final_config["r"] = -center_pos.y
             else:
                 raise RuntimeError("Unable to fit belt")
-
 
         if length is None:
             length = 100
@@ -211,51 +223,43 @@ class GT2Belt(Unit):
         teeth_color = color(0.3, 0.3, 0.3)
         offsets = self.pulley_radiuses()
         if config["straight"]:
-            body = box(self.belt_width, offsets.base - offsets.dip, config["length"]).translate(
-                -self.belt_width / 2, offsets.dip, 0
-            )
-            teeth = box(self.belt_width, offsets.dip - offsets.tip, config["length"]).translate(
-                -self.belt_width / 2, offsets.tip, 0
-            )
-            return [
-                Shape(body, body_color),
-                Shape(teeth, teeth_color),
-            ]
+            body = box(
+                self.belt_width, offsets.base - offsets.dip, config["length"]
+            ).translate(-self.belt_width / 2, offsets.dip, 0)
+            teeth = box(
+                self.belt_width, offsets.dip - offsets.tip, config["length"]
+            ).translate(-self.belt_width / 2, offsets.tip, 0)
+            return [Shape(body, body_color), Shape(teeth, teeth_color)]
 
         r = config["r"]
         angle = config["angle"]
 
-        p1 = (
-            circle(offsets.base + r, angle)
-            - circle(offsets.dip + r, angle)
-        )
-        body = linear_extrude(p1, self.belt_width)\
-            .translate(-r, 0, -self.belt_width/2)\
-            .rotateY(deg(-90))\
+        p1 = circle(offsets.base + r, angle) - circle(offsets.dip + r, angle)
+        body = (
+            linear_extrude(p1, self.belt_width)
+            .translate(-r, 0, -self.belt_width / 2)
+            .rotateY(deg(-90))
             .rotateX(deg(-90))
-
-        p2 = (
-                circle(offsets.dip + r, angle)
-                - circle(offsets.tip + r, angle)
         )
-        teeth =linear_extrude(p2, self.belt_width) \
-            .translate(-r, 0, -self.belt_width/2) \
-            .rotateY(deg(-90)) \
+
+        p2 = circle(offsets.dip + r, angle) - circle(offsets.tip + r, angle)
+        teeth = (
+            linear_extrude(p2, self.belt_width)
+            .translate(-r, 0, -self.belt_width / 2)
+            .rotateY(deg(-90))
             .rotateX(deg(-90))
+        )
 
-
-        return [
-            Shape(body, body_color),
-            Shape(teeth, teeth_color),
-        ]
-
+        return [Shape(body, body_color), Shape(teeth, teeth_color)]
 
 
 class GT2x6BeltStd(GT2Belt):
     belt_width = 6
 
+
 class GT2x6BeltPU(GT2x6BeltStd):
     belt_height = 1.7
+
 
 class GT2x20Pulley(Unit):
     demo_connectors = [
@@ -264,8 +268,8 @@ class GT2x20Pulley(Unit):
         ("belt_cw", 0),
         ("belt_cw", 90),
         ("belt_ccw", 180),
-        #("belt_ccw", 0),
-        #("belt_ccw", 180),
+        # ("belt_ccw", 0),
+        # ("belt_ccw", 180),
     ]
     teeth = 20
     body_r = 8
@@ -284,15 +288,21 @@ class GT2x20Pulley(Unit):
             cylinder(r=self.body_r, h=self.base_h)
             + cylinder(r=offsets.tip, h=self.groove_h).up(self.base_h)
             + cylinder(r=self.body_r, h=self.cap_h).up(self.base_h + self.groove_h)
-            - cylinder(r=self.inner_r, h=self.base_h + self.groove_h+self.cap_h + 2).down(1)
+            - cylinder(
+                r=self.inner_r, h=self.base_h + self.groove_h + self.cap_h + 2
+            ).down(1)
         )
         if self.base_h > 4:
             body = (
                 body
-                - cylinder(r=1.5, h=self.body_r + 1).rotateX(deg(90)).up(self.base_h/2)
-                - cylinder(r=1.5, h=self.body_r + 1).rotateY(deg(90)).up(self.base_h/2)
+                - cylinder(r=1.5, h=self.body_r + 1)
+                .rotateX(deg(90))
+                .up(self.base_h / 2)
+                - cylinder(r=1.5, h=self.body_r + 1)
+                .rotateY(deg(90))
+                .up(self.base_h / 2)
             )
-        body = body.down(self.base_h + self.groove_h/2)
+        body = body.down(self.base_h + self.groove_h / 2)
 
         return [Shape(body, body_color)]
 
@@ -308,20 +318,20 @@ class GT2x20Pulley(Unit):
         x = 0
         y = 0
         z = 0
-        d = [0,0,1]
-        t = [0,1,0]
+        d = [0, 0, 1]
+        t = [0, 1, 0]
         if param == "top":
-            z = self.groove_h/2 + self.cap_h
+            z = self.groove_h / 2 + self.cap_h
         elif param == "bottom":
-            z = -self.groove_h/2 - self.base_h
-            d = [0,0,-1]
+            z = -self.groove_h / 2 - self.base_h
+            d = [0, 0, -1]
         elif param == "origin":
             z = 0
-            d = [0,0,1]
+            d = [0, 0, 1]
         elif param in ("belt_cw", "belt_ccw"):
-            t = rotateZ(deg(args[0]))(vector3(0,1,0))
-            d = rotateZ(deg(args[0]))(vector3(1,0,0))
-            p = point3(0,0,0) + t * offsets.pld
+            t = rotateZ(deg(args[0]))(vector3(0, 1, 0))
+            d = rotateZ(deg(args[0]))(vector3(1, 0, 0))
+            p = point3(0, 0, 0) + t * offsets.pld
             if param == "belt_cw":
                 d = d * -1
             return Connector(position=p, direction=d, top=t, data=params)
@@ -334,4 +344,3 @@ class GT2x20Idler(GT2x20Pulley):
     base_h = 1
     inner_r = 1.5
     cap_h = 1
-
