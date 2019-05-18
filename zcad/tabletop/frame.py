@@ -41,13 +41,24 @@ class LeftYMotorMount(Unit):
         motor_center_y = config["motor_top"].position.y
         motor_center_z = config["motor_top"].position.z
 
+        if base_y < 0:
+            left_right_c = -1
+            right_c = 1
+            left_c = 0
+        else:
+            left_right_c = 1
+            right_c = 0
+            left_c = 1
+
         motor_hole_left_x = config["motor_top"].position.x
         motor_hole_right_x = config["motor_bottom"].position.x + self.base_thickness
         motor_hole_back_y = (
-            motor_center_y + motor_body_size / 2 + self.motor_hole_spacing
+            motor_center_y
+            + (motor_body_size / 2 + self.motor_hole_spacing) * left_right_c
         )
         motor_hole_front_y = (
-            motor_center_y - motor_body_size / 2 - self.motor_hole_spacing
+            motor_center_y
+            - (motor_body_size / 2 + self.motor_hole_spacing) * left_right_c
         )
         motor_hole_top_z = (
             motor_center_z + motor_body_size / 2 + self.motor_hole_spacing
@@ -60,6 +71,11 @@ class LeftYMotorMount(Unit):
         motor_depth = config["motor_bottom"].position.x - config["motor_top"].position.x
         motor_hole_depth = motor_depth * 0.7
         motor_hole_width = motor_body_size + self.motor_hole_spacing * 2
+        print("base_y", base_y)
+        print("back_y", motor_hole_back_y)
+        print("front_y", motor_hole_front_y)
+
+        base_plate_height = abs(base_y - motor_hole_back_y)
 
         base_plate = (
             linear_extrude(
@@ -73,15 +89,19 @@ class LeftYMotorMount(Unit):
                         [left_x, bottom_z],
                     ]
                 ).fillet(1.5),
-                base_y - motor_hole_back_y,
+                base_plate_height,
             )
             .rotateX(deg(90))
-            .translate(0, base_y, 0)
+            .translate(0, base_y + base_plate_height * right_c, 0)
         )
 
         motor_hole = box(
             motor_hole_depth + 1, motor_hole_width, motor_hole_width
-        ).translate(motor_hole_left_x, motor_hole_front_y, motor_hole_bottom_z)
+        ).translate(
+            motor_hole_left_x,
+            motor_hole_front_y - motor_hole_width * right_c,
+            motor_hole_bottom_z,
+        )
 
         motor_box = (
             box(
@@ -90,7 +110,9 @@ class LeftYMotorMount(Unit):
                 motor_hole_width + self.base_thickness * 2,
             ).translate(
                 motor_hole_left_x - self.base_thickness,
-                motor_hole_front_y - self.base_thickness,
+                motor_hole_front_y
+                - self.base_thickness * left_right_c
+                - (motor_hole_width + self.base_thickness + 1) * right_c,
                 motor_hole_bottom_z - self.base_thickness,
             )
             - motor_hole
@@ -103,13 +125,12 @@ class LeftYMotorMount(Unit):
             )
         )
         for i in range(4):
-            if __name__ == "__main__":
-                hole_pos = config[("motor_mount_hole", i)].position
-                motor_box -= (
-                    cylinder(r=2, h=self.base_thickness + 2)
-                    .rotateY(deg(-90))
-                    .translate(hole_pos.x - 1, hole_pos.y, hole_pos.z)
-                )
+            hole_pos = config[("motor_mount_hole", i)].position
+            motor_box -= (
+                cylinder(r=2, h=self.base_thickness + 2)
+                .rotateY(deg(-90))
+                .translate(hole_pos.x - 1, hole_pos.y, hole_pos.z)
+            )
 
         base_plate += motor_box
 
@@ -125,7 +146,7 @@ class LeftYMotorMount(Unit):
             base_plate -= (
                 cylinder(r=2.5, h=self.base_thickness + 2)
                 .rotateX(deg(90))
-                .translate(pos.x, pos.y + 1, pos.z)
+                .translate(pos.x, pos.y + 1 + self.base_thickness * right_c, pos.z)
             )
 
         return [Shape(unify(base_plate), Color(0.7, 0.7, 0))]
@@ -413,35 +434,76 @@ class Frame(Unit):
         parts.append(["x2_motor", x2_motor])
         self.gen_belt(x2_idler, x2_pulley, parts, x_belt, "x2")
 
+        left_y_motor_mount = self.gen_y_motor_mount(
+            front_vslot, left_motor, left_rail, left_vslot, parts, "vcrm_"
+        )
+        parts.append(["left_y_motor_mount", left_y_motor_mount])
+
+        right_y_motor_mount = self.gen_y_motor_mount(
+            front_vslot, right_motor, right_rail, right_vslot, parts, "vclm_", True
+        )
+        parts.append(["right_y_motor_mount", right_y_motor_mount])
+
+        return parts
+
+    def gen_y_motor_mount(
+        self,
+        front_vslot,
+        left_motor,
+        left_rail,
+        left_vslot,
+        parts,
+        vc_prefix,
+        is_right=False,
+    ):
         pose = {}
-        pose["mount_plane"] = front_vslot.get_connector(("bottom, right2"))
-        pose["top_plane"] = front_vslot.get_connector("bottom, front")
-        pose["bottom_plane"] = front_vslot.get_connector("bottom, back")
-        pose["left_plane"] = left_vslot.get_connector("bottom, left")
+        if is_right:
+            front_slot_end = "top"
+            left_slot_side = "right"
+        else:
+            front_slot_end = "bottom"
+            left_slot_side = "left"
+
+        pose["mount_plane"] = front_vslot.get_connector(
+            "{}, right2".format(front_slot_end)
+        )
+        pose["top_plane"] = front_vslot.get_connector(
+            "{}, front".format(front_slot_end)
+        )
+        pose["bottom_plane"] = front_vslot.get_connector(
+            "{}, back".format(front_slot_end)
+        )
+        pose["left_plane"] = left_vslot.get_connector(
+            "bottom, {}".format(left_slot_side)
+        )
         pose["rail_top_plane"] = left_rail.get_connector("front")
-        pose["mount_holes_1"] = front_vslot.get_connector(("bottom, right", 10))
-        pose["mount_holes_2"] = front_vslot.get_connector(("bottom, right2", 10))
-        pose["mount_hole_3"] = front_vslot.get_connector(("bottom, right2", -10))
+        pose["mount_holes_1"] = front_vslot.get_connector(
+            ("{}, right".format(front_slot_end), 10)
+        )
+        pose["mount_holes_2"] = front_vslot.get_connector(
+            ("{}, right2".format(front_slot_end), 10)
+        )
+        pose["mount_hole_3"] = front_vslot.get_connector(
+            ("{}, right2".format(front_slot_end), -10)
+        )
         pose["motor_bottom"] = left_motor.get_connector("bottom")
         pose["motor_top"] = left_motor.get_connector("top")
         for i in range(4):
             pose[("motor_mount_hole", i)] = left_motor.get_connector(("mount_hole", i))
-
-        for n, c in pose.items():
-            vcn = "vc_" + str(n)
-            vc = VisualConnector().place(pose={"origin": c}, config={"text": str(n)})
-            parts.append([vcn, vc])
-
+        if 0:
+            for n, c in pose.items():
+                vcn = vc_prefix + str(n)
+                vc = VisualConnector().place(
+                    pose={"origin": c}, config={"text": str(n)}
+                )
+                parts.append([vcn, vc])
         for k, v in pose.items():
             if k not in ["motor_top"]:
                 pose[k] = v.replace(use_for_solve=False)
-
         left_y_motor_mount = LeftYMotorMount().place(
             pose=pose, config={"motor_body_size": left_motor.unit.body_size}
         )
-        parts.append(["left_y_motor_mount", left_y_motor_mount])
-
-        return parts
+        return left_y_motor_mount
 
     def gen_belt(self, left_idler, left_pulley, parts, y_belt, prefix):
         left_belt_a = y_belt.place(
@@ -514,17 +576,16 @@ def main():
 
     print(parts)
     lym = frame.subparts["left_y_motor_mount"].get_connector("origin").position
-    print(lym)
-
     view_port = box(200, 200, 200, center=True).translate(lym.x, lym.y, lym.z).unlazy()
+
+    rym = frame.subparts["right_y_motor_mount"].get_connector("origin").position
+    view_port += box(200, 200, 200, center=True).translate(rym.x, rym.y, rym.z).unlazy()
 
     for part in parts:
         for t, shape_list in part.shapes().values():
             for shape in shape_list:
                 print(shape)
-                disp_shape = (t.transform(shape.shape.unlazy()) ^ view_port).translate(
-                    -lym.x, -lym.y, -lym.z
-                )
+                disp_shape = t.transform(shape.shape.unlazy()) ^ view_port
                 c = display(disp_shape, shape.color)
 
     show()
