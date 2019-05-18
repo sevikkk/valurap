@@ -40,6 +40,15 @@ class Part:
             part = self.subparts[name][idx]
         return part
 
+    def get_all_subparts(self):
+        result = {}
+        for n, part in self.subparts.items():
+            result[(n,)] = part
+            for sn, sp in part.get_all_subparts():
+                result[(n,) + sn] = sp
+
+        return result
+
     def get_connector(self, *args):
         c = self.unit.get_connector(*args, self.config)
         return self.transform(c)
