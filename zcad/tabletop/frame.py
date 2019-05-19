@@ -6,12 +6,90 @@ from vitamins.belt import GT2x6BeltPU, GT2x20Idler, GT2x20Pulley
 from vitamins.mgn import MGN12H, MGR12
 from vitamins.nema import Nema17
 from vitamins.vslot import VSlot20x40
-from zencad import box, display, show, unify, vector3
+from zencad import box, cylinder, display, show, unify, vector3
 
 
 class YCarriage(Unit):
+    base_tickness = 5
+    motor_extra_space = 1
+    idler_mount_space = 1
+    idler_body_space = 2
+
     def shapes(self, config=None):
-        base_plate = box(50, 100, 5, center=True).translate(10, 40, 2.5)
+        base_z = config["mgn_mount_plate"].position.z
+
+        motor_hole_left_x = (
+            config["motor_top"].position.x
+            - config["motor_body_size"] / 2
+            - self.motor_extra_space
+        )
+        motor_hole_right_x = (
+            config["motor_top"].position.x
+            + config["motor_body_size"] / 2
+            + self.motor_extra_space
+        )
+        motor_hole_back_y = (
+            config["motor_top"].position.y
+            + config["motor_body_size"] / 2
+            + self.motor_extra_space
+        )
+        motor_hole_front_y = (
+            config["motor_top"].position.y
+            - config["motor_body_size"] / 2
+            - self.motor_extra_space
+        )
+        motor_hole_bottom_z = base_z - 1
+        motor_hole_top_z = config["motor_top"].position.z
+
+        motor_cover_left_x = motor_hole_left_x - self.base_tickness
+        motor_cover_right_x = motor_hole_right_x + self.base_tickness
+        motor_cover_back_y = motor_hole_back_y + self.base_tickness
+        motor_cover_front_y = motor_hole_front_y - self.base_tickness
+        motor_cover_bottom_z = base_z
+        motor_cover_top_z = motor_hole_top_z + self.base_tickness
+
+        base_plate_left_x = motor_hole_left_x - self.base_tickness
+        base_plate_right_x = config["xslot_bottom_holes_1"].position.x + 20 + 10
+        base_plate_back_y = motor_hole_back_y + self.base_tickness
+        base_plate_front_y = (
+            config["idler_top"].position.y
+            - config["idler_body_r"]
+            - self.base_tickness
+            - self.idler_body_space
+        )
+        base_plate_bottom_z = base_z
+        base_plate_top_z = config["xslot_bottom_plane"].position.z
+
+        base_plate = box(
+            base_plate_right_x - base_plate_left_x,
+            base_plate_back_y - base_plate_front_y,
+            base_plate_top_z - base_plate_bottom_z,
+        ).translate(base_plate_left_x, base_plate_front_y, base_plate_bottom_z)
+
+        base_plate += box(
+            motor_cover_right_x - motor_cover_left_x,
+            motor_cover_back_y - motor_cover_front_y,
+            motor_cover_top_z - motor_cover_bottom_z,
+        ).translate(motor_cover_left_x, motor_cover_front_y, motor_cover_bottom_z)
+
+        base_plate -= box(
+            motor_hole_right_x - motor_hole_left_x,
+            motor_hole_back_y - motor_hole_front_y,
+            motor_hole_top_z - motor_hole_bottom_z,
+        ).translate(motor_hole_left_x, motor_hole_front_y, motor_hole_bottom_z)
+
+        for i in range(4):
+            hole_pos = config[("motor_mount_hole", i)].position
+            base_plate -= cylinder(r=2, h=self.base_tickness + 2).translate(
+                hole_pos.x, hole_pos.y, hole_pos.z + 0.3
+            )  # diaphragm so it can be printed
+
+        for i in range(4):
+            hole_pos = config[("mgn_mount_hole", i)].position
+            base_plate -= cylinder(
+                r=2, h=base_plate_top_z - base_plate_bottom_z + 2
+            ).translate(hole_pos.x, hole_pos.y, hole_pos.z - 1)
+
         return [Shape(unify(base_plate), Color(0.7, 0.7, 0))]
 
     def finalize_config(self, config, localized_connectors):
@@ -115,8 +193,10 @@ def gen_y_carriage(
     pose["front_rail_top_plane"] = front_rail.get_connector(front_rail_top)
     pose["back_rail_top_plane"] = back_rail.get_connector(back_rail_top)
 
-    if 1:
+    if 0:
         for n, c in pose.items():
+            if n not in ["mgn_mount_plate"]:
+                continue
             vcn = vc_prefix + str(n)
             color = Color(0.2, 0.7, 0.7)
             if is_right:
@@ -126,6 +206,7 @@ def gen_y_carriage(
                 pose={"origin": c}, config={"text": str(n), "color": color}
             )
             parts.append([vcn, vc])
+
     for k, v in pose.items():
         if k not in ["mgn_mount_plate"]:
             pose[k] = v.replace(use_for_solve=False)
@@ -497,9 +578,9 @@ def main():
     parts.append(frame)
 
     print(parts)
-    if 0:
+    if 1:
         lym = frame.transform(
-            frame.subparts["left_y_idler_mount"].get_connector("idler_top").position
+            frame.subparts["left_y_carriage"].get_connector("origin").position
         )
         view_port = (
             box(200, 200, 200, center=True).translate(lym.x, lym.y, lym.z).unlazy()
@@ -513,7 +594,7 @@ def main():
             box(200, 200, 200, center=True).translate(rym.x, rym.y, rym.z).unlazy()
         )
 
-    if 1:
+    if 0:
         view_port = box(3000, 3000, 3000, center=True).unlazy()
 
     for part in parts:
