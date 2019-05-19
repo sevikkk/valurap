@@ -87,7 +87,7 @@ class Unit:
         if params == "origin":
             return Connector([0, 0, 0], [1, 0, 0], [0, 0, 1])
 
-        raise NotImplementedError
+        raise NotImplementedError("Unknown connector {}".format(params))
 
     # Must be implemented for assemblies
     def subparts(self, config=None):

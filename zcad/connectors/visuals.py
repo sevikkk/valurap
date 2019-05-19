@@ -40,7 +40,7 @@ class VisualConnector(Unit):
             text_shape = text_shape.translate(
                 self.sphere_r, self.text_thick / 2, self.r * 1.5
             )
-            ret.append(Shape(text_shape, color=self.text_color))
+            ret.append(Shape(text_shape, color=config["text_color"]))
 
         body_length = max(
             text_length + self.sphere_r * 2, self.length - self.arror_length
@@ -53,7 +53,7 @@ class VisualConnector(Unit):
             .right(body_length)
             + sphere(r=self.sphere_r)
         )
-        ret.append(Shape(main_shape, color=self.main_color))
+        ret.append(Shape(main_shape, color=config["color"]))
 
         return ret
 
@@ -62,7 +62,13 @@ class VisualConnector(Unit):
             return Connector([0, 0, 0], [1, 0, 0], [0, 0, 1])
 
     def finalize_config(self, config, localized_connectors):
-        return copy_config(config, ["text"])
+        config = copy_config(config, ["text", "color", "text_color"])
+        if "color" not in config:
+            config["color"] = self.main_color
+        if "text_color" not in config:
+            config["text_color"] = self.text_color
+
+        return config
 
 
 class Demo(Unit):

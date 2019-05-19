@@ -168,7 +168,7 @@ def gen_y_idler_mount(
     )
     pose["idler_bottom"] = idler.get_connector("bottom")
     pose["idler_top"] = idler.get_connector("top")
-    if 1:
+    if 0:
         for n, c in pose.items():
             vcn = vc_prefix + str(n)
             vc = VisualConnector().place(pose={"origin": c}, config={"text": str(n)})

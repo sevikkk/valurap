@@ -1,11 +1,142 @@
-from connectors import Connector, Unit, get_config_param, norm
+from connectors import Connector, Shape, Unit, VisualConnector, get_config_param, norm
+from pyservoce.libservoce import Color
 from tabletop.y_idler_mount import gen_y_idler_mount
 from tabletop.y_motor_mount import gen_y_motor_mount
 from vitamins.belt import GT2x6BeltPU, GT2x20Idler, GT2x20Pulley
 from vitamins.mgn import MGN12H, MGR12
 from vitamins.nema import Nema17
 from vitamins.vslot import VSlot20x40
-from zencad import box, display, show, vector3
+from zencad import box, display, show, unify, vector3
+
+
+class YCarriage(Unit):
+    def shapes(self, config=None):
+        base_plate = box(50, 100, 5, center=True).translate(10, 40, 2.5)
+        return [Shape(unify(base_plate), Color(0.7, 0.7, 0))]
+
+    def finalize_config(self, config, localized_connectors):
+        finalized_config = {}
+
+        for name in [
+            "idler_top",
+            "idler_bottom",
+            "motor_top",
+            "mgn_mount_plate",
+            ("mgn_mount_hole", 0),
+            ("mgn_mount_hole", 1),
+            ("mgn_mount_hole", 2),
+            ("mgn_mount_hole", 3),
+            ("motor_mount_hole", 0),
+            ("motor_mount_hole", 1),
+            ("motor_mount_hole", 2),
+            ("motor_mount_hole", 3),
+            "xslot_top_holes_1",
+            "xslot_top_holes_2",
+            "xslot_bottom_holes_1",
+            "xslot_bottom_holes_2",
+            "xslot_top_plane",
+            "xslot_bottom_plane",
+            "xslot_front_plane",
+            "xslot_back_plane",
+            "xslot_side_plane",
+            "front_rail_top_plane",
+            "front_rail_side_plane",
+            "back_rail_top_plane",
+            "back_rail_side_plane",
+        ]:
+            finalized_config[name] = localized_connectors.get(name)
+
+        for name in ["idler_body_r", "motor_body_size"]:
+            finalized_config[name] = config[name]
+
+        return finalized_config
+
+    def get_connector(self, params, config=None):
+        if params == "mgn_mount_plate":
+            return Connector([0, 0, 0], [0, 0, 1], [0, 1, 0])
+
+        return super().get_connector(params, config)
+
+
+def gen_y_carriage(
+    x_vslot, motor, idler, mgn, front_rail, back_rail, parts, vc_prefix, is_right=False
+):
+    pose = {}
+    if is_right:
+        x_slot_holes_top = "top, right2"
+        x_slot_holes_top2 = "top, right"
+        x_slot_holes_bottom = "top, left2"
+        x_slot_holes_bottom2 = "top, left"
+        x_slot_front = "top, front"
+        x_slot_back = "top, back"
+        x_slot_side = "top"
+        front_rail_side = "top"
+        front_rail_top = ("front", -10)
+        back_rail_side = "top"
+        back_rail_top = ("front", -10)
+    else:
+        x_slot_holes_top = "bottom, right"
+        x_slot_holes_top2 = "bottom, right2"
+        x_slot_holes_bottom = "bottom, left"
+        x_slot_holes_bottom2 = "bottom, left2"
+        x_slot_front = "bottom, back"
+        x_slot_back = "bottom, front"
+        x_slot_side = "bottom"
+        front_rail_side = "bottom"
+        front_rail_top = ("front", 10)
+        back_rail_side = "bottom"
+        back_rail_top = ("front", 10)
+
+    mgn_mp = mgn.get_connector("mount_plate")
+    if is_right:
+        mgn_mp = Connector(mgn_mp.position, mgn_mp.direction, mgn_mp.top * -1)
+
+    pose["mgn_mount_plate"] = mgn_mp
+    pose["motor_top"] = motor.get_connector("top")
+    pose["idler_bottom"] = idler.get_connector("bottom")
+    pose["idler_top"] = idler.get_connector("top")
+
+    for i in range(4):
+        pose[("motor_mount_hole", i)] = motor.get_connector(("mount_hole", i))
+        pose[("mgn_mount_hole", i)] = mgn.get_connector(("mount_hole", i))
+
+    pose["xslot_top_holes_1"] = x_vslot.get_connector((x_slot_holes_top, 10))
+    pose["xslot_top_holes_2"] = x_vslot.get_connector((x_slot_holes_top2, 10))
+
+    pose["xslot_bottom_holes_1"] = x_vslot.get_connector((x_slot_holes_bottom, 10))
+    pose["xslot_bottom_holes_2"] = x_vslot.get_connector((x_slot_holes_bottom2, 10))
+    pose["xslot_top_plane"] = pose["xslot_top_holes_1"]
+    pose["xslot_bottom_plane"] = pose["xslot_bottom_holes_1"]
+    pose["xslot_front_plane"] = x_vslot.get_connector(x_slot_front)
+    pose["xslot_back_plane"] = x_vslot.get_connector(x_slot_back)
+    pose["xslot_side_plane"] = x_vslot.get_connector(x_slot_side)
+    pose["front_rail_side_plane"] = front_rail.get_connector(front_rail_side)
+    pose["back_rail_side_plane"] = back_rail.get_connector(back_rail_side)
+    pose["front_rail_top_plane"] = front_rail.get_connector(front_rail_top)
+    pose["back_rail_top_plane"] = back_rail.get_connector(back_rail_top)
+
+    if 1:
+        for n, c in pose.items():
+            vcn = vc_prefix + str(n)
+            color = Color(0.2, 0.7, 0.7)
+            if is_right:
+                color = Color(0.7, 0.2, 0.7)
+
+            vc = VisualConnector().place(
+                pose={"origin": c}, config={"text": str(n), "color": color}
+            )
+            parts.append([vcn, vc])
+    for k, v in pose.items():
+        if k not in ["mgn_mount_plate"]:
+            pose[k] = v.replace(use_for_solve=False)
+    y_carriage = YCarriage().place(
+        pose=pose,
+        config={
+            "idler_body_r": idler.unit.body_r,
+            "motor_body_size": motor.unit.body_size,
+        },
+    )
+    return y_carriage
 
 
 class Frame(Unit):
@@ -276,6 +407,24 @@ class Frame(Unit):
         )
         parts.append(["right_y_idler_mount", right_y_idler_mount])
 
+        left_y_carriage = gen_y_carriage(
+            beam_vslot, x1_motor, x2_idler, left_mgn, x2_rail, x1_rail, parts, "vclx_"
+        )
+        parts.append(["left_y_carriage", left_y_carriage])
+
+        right_y_carriage = gen_y_carriage(
+            beam_vslot,
+            x2_motor,
+            x1_idler,
+            right_mgn,
+            x1_rail,
+            x2_rail,
+            parts,
+            "vcrx_",
+            True,
+        )
+        parts.append(["right_y_carriage", right_y_carriage])
+
         return parts
 
     def gen_belt(self, left_idler, left_pulley, parts, y_belt, prefix):
@@ -343,12 +492,12 @@ class Frame(Unit):
 def main():
     parts = []
 
-    c1 = Connector([0, 0, 0], [-1, 0, 0], [0, 0, 1])
+    c1 = Connector([0, 0, 0], [1, 0, 0], [0, 0, 1])
     frame = Frame().place(pose={"origin": c1}, config={"Y": 100, "X1": 100, "X2": -100})
     parts.append(frame)
 
     print(parts)
-    if 1:
+    if 0:
         lym = frame.transform(
             frame.subparts["left_y_idler_mount"].get_connector("idler_top").position
         )
@@ -356,7 +505,7 @@ def main():
             box(200, 200, 200, center=True).translate(lym.x, lym.y, lym.z).unlazy()
         )
 
-    if 1:
+    if 0:
         rym = frame.transform(
             frame.subparts["right_y_idler_mount"].get_connector("origin").position
         )
@@ -364,7 +513,7 @@ def main():
             box(200, 200, 200, center=True).translate(rym.x, rym.y, rym.z).unlazy()
         )
 
-    if 0:
+    if 1:
         view_port = box(3000, 3000, 3000, center=True).unlazy()
 
     for part in parts:
