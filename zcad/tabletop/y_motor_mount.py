@@ -200,7 +200,5 @@ class LeftYMotorMount(Unit):
     def get_connector(self, params, config=None):
         if params == "motor_top":
             return Connector([0, 0, 0], [-1, 0, 0], [0, 0, 1])
-        elif params == "motor_top":
-            return Connector([0, 0, 0], [1, 0, 0], [0, 0, 1])
 
         return super().get_connector(params, config)

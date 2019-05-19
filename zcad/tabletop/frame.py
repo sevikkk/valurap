@@ -1,4 +1,5 @@
 from connectors import Connector, Unit, get_config_param, norm
+from tabletop.y_idler_mount import gen_y_idler_mount
 from tabletop.y_motor_mount import gen_y_motor_mount
 from vitamins.belt import GT2x6BeltPU, GT2x20Idler, GT2x20Pulley
 from vitamins.mgn import MGN12H, MGR12
@@ -265,6 +266,16 @@ class Frame(Unit):
         )
         parts.append(["right_y_motor_mount", right_y_motor_mount])
 
+        left_y_idler_mount = gen_y_idler_mount(
+            back_vslot, left_idler, left_rail, left_vslot, parts, "vcli_"
+        )
+        parts.append(["left_y_idler_mount", left_y_idler_mount])
+
+        right_y_idler_mount = gen_y_idler_mount(
+            back_vslot, right_idler, right_rail, right_vslot, parts, "vcri_", True
+        )
+        parts.append(["right_y_idler_mount", right_y_idler_mount])
+
         return parts
 
     def gen_belt(self, left_idler, left_pulley, parts, y_belt, prefix):
@@ -332,16 +343,29 @@ class Frame(Unit):
 def main():
     parts = []
 
-    c1 = Connector([0, 0, 0], [1, 0, 0], [0, 0, 1])
+    c1 = Connector([0, 0, 0], [-1, 0, 0], [0, 0, 1])
     frame = Frame().place(pose={"origin": c1}, config={"Y": 100, "X1": 100, "X2": -100})
     parts.append(frame)
 
     print(parts)
-    lym = frame.subparts["left_y_motor_mount"].get_connector("origin").position
-    view_port = box(200, 200, 200, center=True).translate(lym.x, lym.y, lym.z).unlazy()
+    if 1:
+        lym = frame.transform(
+            frame.subparts["left_y_idler_mount"].get_connector("idler_top").position
+        )
+        view_port = (
+            box(200, 200, 200, center=True).translate(lym.x, lym.y, lym.z).unlazy()
+        )
 
-    rym = frame.subparts["right_y_motor_mount"].get_connector("origin").position
-    view_port += box(200, 200, 200, center=True).translate(rym.x, rym.y, rym.z).unlazy()
+    if 1:
+        rym = frame.transform(
+            frame.subparts["right_y_idler_mount"].get_connector("origin").position
+        )
+        view_port += (
+            box(200, 200, 200, center=True).translate(rym.x, rym.y, rym.z).unlazy()
+        )
+
+    if 0:
+        view_port = box(3000, 3000, 3000, center=True).unlazy()
 
     for part in parts:
         for t, shape_list in part.shapes().values():

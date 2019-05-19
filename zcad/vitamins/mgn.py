@@ -82,9 +82,21 @@ class MGR12(Unit):
                 position=[0, 0, self.length], direction=[0, 0, 1], top=[0, 1, 0]
             )
         elif param == "front":
-            return Connector(position=[0, 8, 0], direction=[0, 1, 0], top=[0, 0, -1])
+            if args:
+                z = args[0]
+                if z < 0:
+                    z = self.length + z
+            else:
+                z = 0
+            return Connector(position=[0, 8, z], direction=[0, 1, 0], top=[0, 0, -1])
         elif param == "back":
-            return Connector(position=[0, 0, 0], direction=[0, -1, 0], top=[0, 0, -1])
+            if args:
+                z = args[0]
+                if z < 0:
+                    z = self.length - z
+            else:
+                z = 0
+            return Connector(position=[0, 0, z], direction=[0, -1, 0], top=[0, 0, -1])
         elif param == "mount_hole":
             idx = args[0]
             z = self.mounting_holes()[idx]

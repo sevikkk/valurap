@@ -1,7 +1,7 @@
 from math import hypot
 from typing import Sequence
 
-from zencad import point, vector
+from zencad import box, cylinder, linear_extrude, point, vector
 
 
 def oce_point(x, y=None, z=None):
@@ -62,3 +62,42 @@ def copy_config(config, param_list):
             final_config[param] = config[param]
 
     return final_config
+
+
+def uni_box(sx, sy, sz):
+    dx = 0
+    dy = 0
+    dz = 0
+
+    if sx < 0:
+        sx = -sx
+        dx = -sx
+    if sy < 0:
+        sy = -sy
+        dy = -sy
+    if sz < 0:
+        sz = -sz
+        dz = -sz
+
+    return box(sx, sy, sz).translate(dx, dy, dz)
+
+
+def uni_cylinder(**kw):
+    h = kw.pop("h", 0)
+    dz = 0
+    if h < 0:
+        h = -h
+        dz = -h
+
+    kw["h"] = h
+
+    return cylinder(**kw).translate(0, 0, dz)
+
+
+def uni_extrude(path, h):
+    dz = 0
+    if h < 0:
+        h = -h
+        dz = -h
+
+    return linear_extrude(path, h).translate(0, 0, dz)
