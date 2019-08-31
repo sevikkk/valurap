@@ -6,9 +6,9 @@ if 0:
 	X2 = 450 - 44
 elif 1:
 	X1 = 0
-	X2 = 40
+	X2 = 50
 elif 0:
-	X1 = 450 - 40 - 44
+	X1 = 450 - 50 - 44
 	X2 = 450 - 44
 else:
 	X1 = 180
@@ -24,6 +24,7 @@ y_belt_offset_y = 42/2 + 5
 y_belt_offset_z = -12
 y_belt_end_offset_y = 25
 y_belt_length = 1000 + y_belt_offset_y + y_belt_end_offset_y
+x_belt_length = 450 - 50
 
 pulley_r = 6
 
@@ -303,12 +304,24 @@ remove("LeftTopBelt")
 remove("RightTopBelt")
 remove("LeftBottomBelt")
 remove("RightBottomBelt")
+remove("FrontTopBelt")
+remove("BackTopBelt")
+remove("FrontBottomBelt")
+remove("BackBottomBelt")
 remove("YBelt")
+remove("XBelt")
+
 y_belt = App.ActiveDocument.addObject("Part::Box","YBelt")
 y_belt.Length = '{} mm'.format(y_belt_length)
 y_belt.Width = '6 mm'
 y_belt.Height = '2 mm'
 y_belt.ViewObject.Visibility = False
+
+x_belt = App.ActiveDocument.addObject("Part::Box","XBelt")
+x_belt.Length = '{} mm'.format(x_belt_length)
+x_belt.Width = '6 mm'
+x_belt.Height = '2 mm'
+x_belt.ViewObject.Visibility = False
 
 
 left_top_belt = add("LeftTopBelt", y_belt,
@@ -513,5 +526,84 @@ x_right_pulley = add("XRightPulley", gt2_pulley,
 		App.Rotation(App.Vector(0,0,1),0),
 	)
 )
+
+x_left_idler = add("XLeftIdler", gt2_idler,
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(1,0,0),-90),
+	),
+	App.Placement(
+		x_right_pulley.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(-x_belt_length, 5.5, 0),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+
+x_right_idler = add("XRightIdler", gt2_idler,
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(1,0,0),90),
+	),
+	App.Placement(
+		x_left_pulley.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(x_belt_length, -5.5, 0),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+front_top_belt = add("FrontTopBelt", x_belt,
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		x_left_pulley.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(0, -6.75 - 6, pulley_r),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+
+back_top_belt = add("BackTopBelt", x_belt,
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		x_left_idler.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(0, 1.5, pulley_r),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+front_bottom_belt = add("FrontBottomBelt", x_belt,
+	front_top_belt.Placement,
+	App.Placement(
+		App.Vector(0,0,-pulley_r * 2 - 2),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+back_bottom_belt = add("BackBottomBelt", x_belt,
+	back_top_belt.Placement,
+	App.Placement(
+		App.Vector(0,0,-pulley_r * 2 - 2),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
 App.ActiveDocument.recompute()
 #Gui.SendMsgToActiveView("ViewFit")
