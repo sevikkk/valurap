@@ -41,6 +41,7 @@ gt2_idler = App.ActiveDocument.GT2IdlerToothed_20
 heated_plate = App.ActiveDocument.HeatedPlate
 vslot_20x20_1000 = App.ActiveDocument.BOLTS_part001
 vslot_20x40_400 = App.ActiveDocument.BOLTS_part
+vslot_20x20_500 = App.ActiveDocument.BOLTS_part002
 
 def remove(name):
 	old = App.ActiveDocument.getObject(name)
@@ -700,6 +701,72 @@ for i in range(3):
 		),
 	)
 	panels.append(panel)
+
+frame_fl_vslot = add("FrameFLVSlot", vslot_20x40_500,
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(1,0,0),180),
+	),
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(0,0,1),90),
+	),
+	App.Placement(
+		left_vslot.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(0,30,-10),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_fr_vslot = add("FrameFRVSlot", vslot_20x40_500,
+	frame_fl_vslot.Placement,
+	App.Placement(
+		App.Vector(500 + 20,0,0),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_bl_vslot = add("FrameBLVSlot", vslot_20x40_500,
+	frame_fl_vslot.Placement,
+	App.Placement(
+		App.Vector(0,1000-40,0),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_br_vslot = add("FrameBRVSlot", vslot_20x40_500,
+	frame_bl_vslot.Placement,
+	App.Placement(
+		App.Vector(500 + 20,0,0),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_front_vslot = add("FrameFrontVSlot", vslot_20x20_500,
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(0,1,0),90),
+	),
+	App.Placement(
+		front_vslot.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(0,0,-490),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_back_vslot = add("FrameBackVSlot", vslot_20x20_500,
+	frame_front_vslot.Placement,
+	App.Placement(
+		App.Vector(0, 1000 - 20,0),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
 
 App.ActiveDocument.recompute()
 #Gui.SendMsgToActiveView("ViewFit")
