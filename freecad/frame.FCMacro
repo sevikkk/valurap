@@ -42,6 +42,10 @@ heated_plate = App.ActiveDocument.HeatedPlate
 vslot_20x20_1000 = App.ActiveDocument.BOLTS_part001
 vslot_20x40_400 = App.ActiveDocument.BOLTS_part
 vslot_20x20_500 = App.ActiveDocument.BOLTS_part002
+rod8_500 = App.ActiveDocument.Rod8
+nut8 = App.ActiveDocument.Nut8
+coupler5x8 = App.ActiveDocument.Coupler5x8
+bb608zz = App.ActiveDocument.Part__Feature004
 
 def remove(name):
 	old = App.ActiveDocument.getObject(name)
@@ -764,6 +768,189 @@ frame_back_vslot = add("FrameBackVSlot", vslot_20x20_500,
 	frame_front_vslot.Placement,
 	App.Placement(
 		App.Vector(0, 1000 - 20,0),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_fl_rail = add('FrameFLRail', mgr_450,
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(0,0,1),-90),
+	),
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(0,1,0),90),
+	),
+	App.Placement(
+		frame_fl_vslot.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(10,0,-20),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_bl_rail = add('FrameBLRail', mgr_450,
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(0,0,1),-90),
+	),
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(0,1,0),90),
+	),
+	App.Placement(
+		frame_bl_vslot.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(10,0,-20),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_fr_rail = add('FrameFRRail', mgr_450,
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(0,0,1),90),
+	),
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(0,1,0),-90),
+	),
+	App.Placement(
+		frame_fr_vslot.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(-10,0,-20),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_br_rail = add('FrameBRRail', mgr_450,
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(0,0,1),90),
+	),
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(0,1,0),-90),
+	),
+	App.Placement(
+		frame_br_vslot.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(-10,0,-20),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_fl_mgn = add('FrameFLMGN', mgn_12,
+	frame_fl_rail.Placement,
+	App.Placement(
+		App.Vector(0, 0, -Z),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+frame_fr_mgn = add('FrameFRMGN', mgn_12,
+	frame_fr_rail.Placement,
+	App.Placement(
+		App.Vector(0, 0, -Z),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+frame_bl_mgn = add('FrameBLMGN', mgn_12,
+	frame_bl_rail.Placement,
+	App.Placement(
+		App.Vector(0, 0, -Z),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+frame_br_mgn = add('FrameBRMGN', mgn_12,
+	frame_br_rail.Placement,
+	App.Placement(
+		App.Vector(0, 0, -Z),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_fl_motor = add('FrameFLMotor', nema17_47,
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(0,1,0), 180),
+	),
+	App.Placement(
+		front_vslot.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(70,-(21+5+10),47+35),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_fl_rod = add('FrameFLRod', rod8_500,
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(0,1,0),180),
+	),
+	App.Placement(
+		frame_fl_motor.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(0,0,-(47+25)),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_fl_coupler = add('FrameFLCoupler', coupler5x8,
+	App.Placement(
+		frame_fl_motor.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(0,0,-(47 + 25 + 12)),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_fl_nut = add('FrameFLNut', nut8,
+	App.Placement(
+		App.Vector(0,0,0),
+		App.Rotation(App.Vector(0,1,0),-90),
+	),
+	App.Placement(
+		frame_fl_motor.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(0,0,-(47 + 80 + Z)),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_fl_topbb = add('FrameFLTopBB', bb608zz,
+	App.Placement(
+		frame_fl_motor.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(0,0,-(47 + 25 + 15)),
+		App.Rotation(App.Vector(0,0,1),0),
+	)
+)
+
+frame_fl_bottombb = add('FrameFLBottomBB', bb608zz,
+	App.Placement(
+		frame_fl_motor.Placement.Base,
+		App.Rotation(App.Vector(0,0,1),0),
+	),
+	App.Placement(
+		App.Vector(0,0,-565),
 		App.Rotation(App.Vector(0,0,1),0),
 	)
 )
