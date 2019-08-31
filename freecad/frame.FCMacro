@@ -13,7 +13,7 @@ elif 0:
 else:
 	X1 = 180
 	X2 = 280
-Z = 0
+Z = 100
 
 X_plate_thickness = 5
 titan_motor_plate_thickness = 5
@@ -877,83 +877,109 @@ frame_br_mgn = add('FrameBRMGN', mgn_12,
 	)
 )
 
-frame_fl_motor = add('FrameFLMotor', nema17_47,
-	App.Placement(
-		App.Vector(0,0,0),
-		App.Rotation(App.Vector(0,1,0), 180),
-	),
-	App.Placement(
-		front_vslot.Placement.Base,
-		App.Rotation(App.Vector(0,0,1),0),
-	),
-	App.Placement(
-		App.Vector(70,-(21+5+10),47+35),
-		App.Rotation(App.Vector(0,0,1),0),
-	)
-)
+for i in range(4):
+	if i == 0:
+		p = "FL"
+		base = front_vslot.Placement.Base
+		k1 = 1
+		k2 = 1
+		k3 = 0
+	elif i == 1:
+		p = "FR"
+		base = front_vslot.Placement.Base
+		k1 = -1
+		k2 = 1
+		k3 = 500
+	if i == 2:
+		p = "BL"
+		base = back_vslot.Placement.Base
+		k1 = 1
+		k2 = -1
+		k3 = 0
+	if i == 3:
+		p = "BR"
+		base = back_vslot.Placement.Base
+		k1 = -1
+		k2 = -1
+		k3 = 500
 
-frame_fl_rod = add('FrameFLRod', rod8_500,
-	App.Placement(
-		App.Vector(0,0,0),
-		App.Rotation(App.Vector(0,1,0),180),
-	),
-	App.Placement(
-		frame_fl_motor.Placement.Base,
-		App.Rotation(App.Vector(0,0,1),0),
-	),
-	App.Placement(
-		App.Vector(0,0,-(47+25)),
-		App.Rotation(App.Vector(0,0,1),0),
+	frame_fl_motor = add(f'Frame{p}Motor', nema17_47,
+		App.Placement(
+			App.Vector(0,0,0),
+			App.Rotation(App.Vector(0,1,0), 180),
+		),
+		App.Placement(
+			base,
+			App.Rotation(App.Vector(0,0,1),0),
+		),
+		App.Placement(
+			App.Vector(70 * k1 + k3,-(21+5+10) * k2,47+35),
+			App.Rotation(App.Vector(0,0,1),0),
+		)
 	)
-)
 
-frame_fl_coupler = add('FrameFLCoupler', coupler5x8,
-	App.Placement(
-		frame_fl_motor.Placement.Base,
-		App.Rotation(App.Vector(0,0,1),0),
-	),
-	App.Placement(
-		App.Vector(0,0,-(47 + 25 + 12)),
-		App.Rotation(App.Vector(0,0,1),0),
+	frame_fl_rod = add(f'Frame{p}Rod', rod8_500,
+		App.Placement(
+			App.Vector(0,0,0),
+			App.Rotation(App.Vector(0,1,0),180),
+		),
+		App.Placement(
+			frame_fl_motor.Placement.Base,
+			App.Rotation(App.Vector(0,0,1),0),
+		),
+		App.Placement(
+			App.Vector(0,0,-(47+25)),
+			App.Rotation(App.Vector(0,0,1),0),
+		)
 	)
-)
 
-frame_fl_nut = add('FrameFLNut', nut8,
-	App.Placement(
-		App.Vector(0,0,0),
-		App.Rotation(App.Vector(0,1,0),-90),
-	),
-	App.Placement(
-		frame_fl_motor.Placement.Base,
-		App.Rotation(App.Vector(0,0,1),0),
-	),
-	App.Placement(
-		App.Vector(0,0,-(47 + 80 + Z)),
-		App.Rotation(App.Vector(0,0,1),0),
+	frame_fl_coupler = add(f'Frame{p}Coupler', coupler5x8,
+		App.Placement(
+			frame_fl_motor.Placement.Base,
+			App.Rotation(App.Vector(0,0,1),0),
+		),
+		App.Placement(
+			App.Vector(0,0,-(47 + 25 + 12)),
+			App.Rotation(App.Vector(0,0,1),0),
+		)
 	)
-)
 
-frame_fl_topbb = add('FrameFLTopBB', bb608zz,
-	App.Placement(
-		frame_fl_motor.Placement.Base,
-		App.Rotation(App.Vector(0,0,1),0),
-	),
-	App.Placement(
-		App.Vector(0,0,-(47 + 25 + 15)),
-		App.Rotation(App.Vector(0,0,1),0),
+	frame_fl_nut = add(f'Frame{p}Nut', nut8,
+		App.Placement(
+			App.Vector(0,0,0),
+			App.Rotation(App.Vector(0,1,0),-90),
+		),
+		App.Placement(
+			frame_fl_motor.Placement.Base,
+			App.Rotation(App.Vector(0,0,1),0),
+		),
+		App.Placement(
+			App.Vector(0,0,-(47 + 80 + Z)),
+			App.Rotation(App.Vector(0,0,1),0),
+		)
 	)
-)
 
-frame_fl_bottombb = add('FrameFLBottomBB', bb608zz,
-	App.Placement(
-		frame_fl_motor.Placement.Base,
-		App.Rotation(App.Vector(0,0,1),0),
-	),
-	App.Placement(
-		App.Vector(0,0,-565),
-		App.Rotation(App.Vector(0,0,1),0),
+	frame_fl_topbb = add(f'Frame{p}TopBB', bb608zz,
+		App.Placement(
+			frame_fl_motor.Placement.Base,
+			App.Rotation(App.Vector(0,0,1),0),
+		),
+		App.Placement(
+			App.Vector(0,0,-(47 + 25 + 15)),
+			App.Rotation(App.Vector(0,0,1),0),
+		)
 	)
-)
+
+	frame_fl_bottombb = add(f'Frame{p}BottomBB', bb608zz,
+		App.Placement(
+			frame_fl_motor.Placement.Base,
+			App.Rotation(App.Vector(0,0,1),0),
+		),
+		App.Placement(
+			App.Vector(0,0,-565),
+			App.Rotation(App.Vector(0,0,1),0),
+		)
+	)
 
 App.ActiveDocument.recompute()
 #Gui.SendMsgToActiveView("ViewFit")
