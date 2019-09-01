@@ -1,5 +1,8 @@
 import sys
 
+FreeCAD.open(u"vitamins/vitamins2.FCStd")
+App.setActiveDocument("vitamins2")
+
 Y = 400
 if 0:
 	X1 = 450 - 44
@@ -86,20 +89,23 @@ y_belt = App.ActiveDocument.addObject("Part::Box","YBelt")
 y_belt.Length = '{} mm'.format(y_belt_length)
 y_belt.Width = '6 mm'
 y_belt.Height = '2 mm'
-y_belt.ViewObject.Visibility = False
+if y_belt.ViewObject:
+	y_belt.ViewObject.Visibility = False
 
 x_belt = App.ActiveDocument.addObject("Part::Box","XBelt")
 x_belt.Length = '{} mm'.format(x_belt_length)
 x_belt.Width = '6 mm'
 x_belt.Height = '2 mm'
-x_belt.ViewObject.Visibility = False
+if x_belt.ViewObject:
+	x_belt.ViewObject.Visibility = False
 
 if 0:
 	heated_plate = App.ActiveDocument.addObject("Part::Box","HeatedPlate_base")
 	heated_plate.Length = '300 mm'
 	heated_plate.Width = '300 mm'
 	heated_plate.Height = '3 mm'
-	heated_plate.ViewObject.Visibility = False
+	if heated_plate.ViewObject:
+		heated_plate.ViewObject.Visibility = False
 
 	for x in [7, 300-7]:
 		for y in [7, 300-7]:
@@ -107,11 +113,13 @@ if 0:
 			cyl.Height = '5 mm'
 			cyl.Radius = '2 mm'
 			cyl.Placement = App.Placement(App.Vector(x, y, -1), App.Rotation(App.Vector(0,0,1), 0))
-			cyl.ViewObject.Visibility = False
+			if cyl.ViewObject:
+				cyl.ViewObject.Visibility = False
 			cut = App.ActiveDocument.addObject("Part::Cut","HeatedPlate_cut")
 			cut.Base = heated_plate
 			cut.Tool = cyl
-			cut.ViewObject.Visibility = False
+			if cut.ViewObject:
+				cut.ViewObject.Visibility = False
 			heated_plate = cut
 
 front_vslot = add('FrontVSlot',  vslot_20x40_500, 
@@ -913,7 +921,7 @@ for i in range(4):
 			App.Rotation(App.Vector(0,0,1),0),
 		),
 		App.Placement(
-			App.Vector(70 * k1 + k3,-(21+5+10) * k2,47+35),
+			App.Vector(65 * k1 + k3,-(21+5+10) * k2,47+35),
 			App.Rotation(App.Vector(0,0,1),0),
 		)
 	)
@@ -983,3 +991,8 @@ for i in range(4):
 
 App.ActiveDocument.recompute()
 #Gui.SendMsgToActiveView("ViewFit")
+App.ActiveDocument.saveAs(u"frame.FCStd")
+print()
+print()
+print()
+
