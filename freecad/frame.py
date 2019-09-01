@@ -1,4 +1,7 @@
 import sys
+import FreeCAD
+
+App = FreeCAD
 
 FreeCAD.open("vitamins/vitamins2.FCStd")
 App.setActiveDocument("vitamins2")
