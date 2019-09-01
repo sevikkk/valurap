@@ -3,8 +3,8 @@ import FreeCAD
 
 App = FreeCAD
 
-FreeCAD.open("vitamins/vitamins2.FCStd")
-App.setActiveDocument("vitamins2")
+FreeCAD.open("vitamins/vitamins.FCStd")
+App.setActiveDocument("vitamins")
 
 Y = 400
 if 0:
@@ -35,23 +35,23 @@ x_belt_length = 450 - 50
 
 pulley_r = 6
 
-vslot_20x40_500 = App.ActiveDocument.PartShape19
-vslot_20x40_1000 = App.ActiveDocument.PartShape17
+vslot_20x40_500 = App.ActiveDocument.VSLOT20x40_500
+vslot_20x40_1000 = App.ActiveDocument.VSLOT20x40_1000
 mgn_12 = App.ActiveDocument.MGN12H
-mgr_1000 = App.ActiveDocument.Part__Feature002
-mgr_450 = App.ActiveDocument.Part__Feature003
+mgr_1000 = App.ActiveDocument.MGNR12R1000
+mgr_450 = App.ActiveDocument.MGNR12R450
 titan = App.ActiveDocument.TitanAero
-nema17_47 = App.ActiveDocument.Part__Feature
+nema17_47 = App.ActiveDocument.NEMA17_47
 gt2_pulley = App.ActiveDocument.GT2Pulley_20
 gt2_idler = App.ActiveDocument.GT2IdlerToothed_20
 heated_plate = App.ActiveDocument.HeatedPlate
-vslot_20x20_1000 = App.ActiveDocument.BOLTS_part001
-vslot_20x40_400 = App.ActiveDocument.BOLTS_part
-vslot_20x20_500 = App.ActiveDocument.BOLTS_part002
+vslot_20x20_1000 = App.ActiveDocument.VSLOT20x20_1000
+vslot_20x40_400 = App.ActiveDocument.VSLOT20x40_400
+vslot_20x20_500 = App.ActiveDocument.VSLOT20x20_500
 rod8_500 = App.ActiveDocument.Rod8
 nut8 = App.ActiveDocument.Nut8
 coupler5x8 = App.ActiveDocument.Coupler5x8
-bb608zz = App.ActiveDocument.Part__Feature004
+bb608zz = App.ActiveDocument.BB608ZZ
 
 
 def remove(name):
@@ -76,6 +76,7 @@ def add(name, base, placement, *moves):
     new.Placement = p
     new.Group = [new_f]
     new.Tip = new_f
+    print(new.supportedProperties())
     return new
 
 
