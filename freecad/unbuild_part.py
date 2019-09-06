@@ -175,8 +175,7 @@ class Body:
         for prop in obj.PropertiesList:
             print(prop, getattr(obj, prop))
 
-        ext_geom = []
-        ext_geoms_text = []
+        ext_geom_names = []
         if obj.ExternalGeometry:
             for ext_obj, ext_features in obj.ExternalGeometry:
                 ext_obj_var = obj_to_var.get(ext_obj, None)
@@ -184,8 +183,7 @@ class Body:
                     ext_obj_var, ext_text = self.unparse_obj(ext_obj)
                     text.extend(ext_text)
                 for ext_feature in ext_features:
-                    ext_geom.append([ext_obj_var, ext_feature])
-                    ext_geoms_text.append(f"{var_name}.addExternal({ext_obj_var}.Name, '{ext_feature}')")
+                    ext_geom_names.append([ext_obj_var, ext_feature])
 
         text.append(f"{var_name} = {self.var_name}.newObject('Sketcher::SketchObject', '{obj.Name}')")
         if obj.Support:
@@ -250,33 +248,115 @@ class Body:
         text.extend(vectors_text)
         text.extend(geoms_text)
         all_geoms = ", ".join(geom_names)
-        text.append(f"{var_name}.addGeometry([{all_geoms}],False)")
-        text.extend(ext_geoms_text)
+        text.extend([
+            f"{var_name}_all_geoms = [{all_geoms}]",
+            f"{var_name}.addGeometry({var_name}_all_geoms, False)",
+        ])
+        if ext_geom_names:
+            ext_geoms_text = ', '.join([f"[{a}, '{b}']".format(a=a, b=b) for a, b in ext_geom_names])
+            text.extend([
+                f"{var_name}_all_ext_geoms = [{ext_geoms_text}]",
+                f"for a, b in {var_name}_all_ext_geoms:",
+                f"    {var_name}.addExternal(a.Name, b)",
+                f"{var_name}_all_geoms = ({var_name}_all_geoms + {var_name}_all_ext_geoms)",
+            ])
 
         constraints = []
         if obj.Constraints:
+            text.append(f"{var_name}_constraints = [")
             for constr in obj.Constraints:
+                print(constr.Type,
+                    constr.First,
+                    constr.FirstPos,
+                    constr.Second,
+                    constr.SecondPos,
+                    constr.Third,
+                    constr.ThirdPos,
+                    constr.Value)
+                if constr.First != -2000:
+                    first = (geom_names + ext_geom_names)[constr.First]
+                    if type(first) is list:
+                        first = "[{}, '{}']".format(*first)
+
+                    first_text = f"{var_name}_all_geoms.index({first})"
+                    print(first_text)
+                else:
+                    first = None
+
+                if constr.Second != -2000:
+                    second = (geom_names + ext_geom_names)[constr.Second]
+                    if type(second) is list:
+                        second = "[{}, '{}']".format(*second)
+                    second_text = f"{var_name}_all_geoms.index({second})"
+                    print(second_text)
+                else:
+                    second = None
+
+                if constr.Third != -2000:
+                    third = (geom_names + ext_geom_names)[constr.Third]
+                    if type(third) is list:
+                        third = "[{}, '{}']".format(*third)
+                    third_text = f"{var_name}_all_geoms.index({third})"
+                    print(third_text)
+                else:
+                    third = None
+
                 if constr.Type == "Coincident":
-                    pass
-                elif constr.Type == "Horizontal":
-                    pass
-                elif constr.Type == "Vertical":
-                    pass
-                elif constr.Type == "DistanceY":
-                    pass
-                elif constr.Type == "DistanceX":
-                    pass
+                    text.extend([
+                        f"    Sketcher.Constraint('{constr.Type}',",
+                        f"        {first_text}, {constr.FirstPos},",
+                        f"        {second_text}, {constr.SecondPos},",
+                        f"    ),"
+                    ])
+                elif constr.Type in ("Horizontal", "Vertical"):
+                    text.extend([
+                        f"    Sketcher.Constraint('{constr.Type}',",
+                        f"        {first_text},",
+                        f"    ),"
+                    ])
+                elif constr.Type in ("DistanceX", "DistanceY"):
+                    text.extend([
+                        f"    Sketcher.Constraint('{constr.Type}',",
+                        f"        {first_text}, {constr.FirstPos},",
+                        f"        {second_text}, {constr.SecondPos},",
+                        f"        {constr.Value},",
+                        f"    ),"
+                    ])
                 elif constr.Type == "Symmetric":
-                    pass
+                    text.extend([
+                        f"    Sketcher.Constraint('{constr.Type}',",
+                        f"        {first_text}, {constr.FirstPos},",
+                        f"        {second_text}, {constr.SecondPos},",
+                        f"        {third_text}, {constr.ThirdPos},",
+                        f"    ),"
+                    ])
                 elif constr.Type == "Radius":
-                    pass
+                    text.extend([
+                        f"    Sketcher.Constraint('{constr.Type}',",
+                        f"        {first_text}, {constr.Value},",
+                        f"    ),"
+                    ])
                 elif constr.Type == "PointOnObject":
-                    pass
+                    text.extend([
+                        f"    Sketcher.Constraint('{constr.Type}',",
+                        f"        {first_text}, {constr.FirstPos},",
+                        f"        {second_text}, {constr.SecondPos},",
+                        f"    ),"
+                    ])
                 elif constr.Type == "Equal":
-                    pass
+                    text.extend([
+                        f"    Sketcher.Constraint('{constr.Type}',",
+                        f"        {first_text}, {constr.FirstPos},",
+                        f"        {second_text}, {constr.SecondPos},",
+                        f"    ),"
+                    ])
                 else:
                     print(constr.Type)
                     raise RuntimeError(f"Unknown constraint type {constr.Type} at sketch unparse")
+            text.extend([
+                f"]",
+                f"{var_name}.addConstraint({var_name}_constraints)",
+            ])
 
 
         return text
