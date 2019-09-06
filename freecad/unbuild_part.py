@@ -1,4 +1,7 @@
+from collections import Counter
+
 import FreeCAD
+import Part
 
 bodies = []
 obj_to_var = {}
@@ -43,6 +46,8 @@ class Body:
                 f"{self.var_name}.Group = [{grp}]"
             ])
 
+        text.append("FreeCAD.ActiveDocument.recompute()")
+
         return text
 
     def unparse_obj(self, obj):
@@ -60,6 +65,11 @@ class Body:
             text = self.unparse_plane(var_name, obj)
         else:
             raise RuntimeError(f"Unknown TypeId {obj.TypeId} at unparse")
+
+        if text:
+            text.append("FreeCAD.ActiveDocument.recompute()")
+            text.append("")
+
         return var_name, text
 
     def unparse_plane(self, var_name, obj):
@@ -166,6 +176,7 @@ class Body:
             print(prop, getattr(obj, prop))
 
         ext_geom = []
+        ext_geoms_text = []
         if obj.ExternalGeometry:
             for ext_obj, ext_features in obj.ExternalGeometry:
                 ext_obj_var = obj_to_var.get(ext_obj, None)
@@ -174,6 +185,7 @@ class Body:
                     text.extend(ext_text)
                 for ext_feature in ext_features:
                     ext_geom.append([ext_obj_var, ext_feature])
+                    ext_geoms_text.append(f"{var_name}.addExternal({ext_obj_var}.Name, '{ext_feature}')")
 
         text.append(f"{var_name} = {self.var_name}.newObject('Sketcher::SketchObject', '{obj.Name}')")
         if obj.Support:
@@ -188,7 +200,97 @@ class Body:
         if obj.MapMode:
             text.append(f"{var_name}.MapMode = '{obj.MapMode}'")
 
+        vectors = {}
+        geoms = []
+        geom_names = []
+        geoms_text = []
+        vectors_text = []
+        numbers = Counter()
+        if obj.Geometry:
+            for geom in obj.Geometry:
+                if isinstance(geom, Part.LineSegment):
+                    numbers["line"] += 1
+                    n = numbers["line"]
+                    geom_var_name = f"{var_name}_line_{n}"
+
+                    start_point = self.get_vector(geom.StartPoint, numbers, var_name, vectors, vectors_text)
+                    end_point = self.get_vector(geom.EndPoint, numbers, var_name, vectors, vectors_text)
+
+                    geoms_text.append(f"{geom_var_name} = Part.LineSegment({start_point}, {end_point})")
+                    if geom.Construction:
+                        geoms_text.append(f"{geom_var_name}.Construction = {geom.Construction}")
+                    if geom.Continuity != "CN":
+                        geoms_text.append(f"{geom_var_name}.Continuity = {geom.Continuity}")
+                elif isinstance(geom, Part.Circle):
+                    numbers["circle"] += 1
+                    n = numbers["circle"]
+                    geom_var_name = f"{var_name}_circle_{n}"
+                    center = self.get_vector(geom.Center, numbers, var_name, vectors, vectors_text)
+                    geoms_text.append(f"{geom_var_name} = Part.Circle({center}, App.{geom.Axis}, {geom.Radius})")
+                    if geom.Construction:
+                        geoms_text.append(f"{geom_var_name}.Construction = {geom.Construction}")
+                    if geom.Continuity != "CN":
+                        geoms_text.append(f"{geom_var_name}.Continuity = {geom.Continuity}")
+                elif isinstance(geom, Part.Point):
+                    numbers["point"] += 1
+                    n = numbers["point"]
+                    geom_var_name = f"{var_name}_point_{n}"
+                    center_point = FreeCAD.Vector(geom.X, geom.Y, geom.Z)
+                    center = self.get_vector(center_point, numbers, var_name, vectors, vectors_text)
+                    geoms_text.append(f"{geom_var_name} = Part.Point({center})")
+                    if geom.Construction:
+                        geoms_text.append(f"{geom_var_name}.Construction = {geom.Construction}")
+                else:
+                    print(type(geom))
+                    raise RuntimeError(f"Unknown part class {geom} at sketch unparse")
+                geoms.append(geom)
+                geom_names.append(geom_var_name)
+                obj_to_var[geom] = geom_var_name
+
+        text.extend(vectors_text)
+        text.extend(geoms_text)
+        all_geoms = ", ".join(geom_names)
+        text.append(f"{var_name}.addGeometry([{all_geoms}],False)")
+        text.extend(ext_geoms_text)
+
+        constraints = []
+        if obj.Constraints:
+            for constr in obj.Constraints:
+                if constr.Type == "Coincident":
+                    pass
+                elif constr.Type == "Horizontal":
+                    pass
+                elif constr.Type == "Vertical":
+                    pass
+                elif constr.Type == "DistanceY":
+                    pass
+                elif constr.Type == "DistanceX":
+                    pass
+                elif constr.Type == "Symmetric":
+                    pass
+                elif constr.Type == "Radius":
+                    pass
+                elif constr.Type == "PointOnObject":
+                    pass
+                elif constr.Type == "Equal":
+                    pass
+                else:
+                    print(constr.Type)
+                    raise RuntimeError(f"Unknown constraint type {constr.Type} at sketch unparse")
+
+
         return text
+
+    def get_vector(self, vector, numbers, var_name, vectors, vectors_text):
+        start_point = vectors.get(str(vector), None)
+        if not start_point:
+            numbers["vector"] += 1
+            v_n = numbers["vector"]
+            vector_var_name = f"{var_name}_vector_{v_n}"
+            vectors_text.append(f"{vector_var_name} = App." + str(vector))
+            vectors[str(vector)] = vector_var_name
+            start_point = vector_var_name
+        return start_point
 
 
 d = FreeCAD.open('left_y_motor_plate.FCStd')
