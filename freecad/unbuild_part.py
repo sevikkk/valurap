@@ -170,7 +170,7 @@ class Body:
         text.extend([
             f"{var_name} = {self.var_name}.newObject('{obj.TypeId}', '{obj.Name}')",
             f"{var_name}.Label = '{obj.Label}'",
-            f"{var_name}.Profile = ({sketch_var_name}, '')",
+            f"{var_name}.Profile = ({sketch_var_name}, [])",
             f"{var_name}.Length = '{obj.Length}'",
             f"{var_name}.Length2 = '{obj.Length2}'",
             f"{var_name}.Type = '{obj.Type}'",
@@ -403,6 +403,7 @@ class Body:
 
 
 d = FreeCAD.open('left_y_motor_plate.FCStd')
+#d = FreeCAD.open('plate.FCStd')
 for obj in d.Objects:
     #print(obj.TypeId, obj.Name, obj.Label)
     #print(obj.PropertiesList)

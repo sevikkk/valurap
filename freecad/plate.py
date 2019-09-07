@@ -332,7 +332,7 @@ print('Sketch')
 
 obj_pad = body_body.newObject('PartDesign::Pad', 'Pad')
 obj_pad.Label = 'Pad'
-obj_pad.Profile = (obj_sketch, '')
+obj_pad.Profile = (obj_sketch, [])
 obj_pad.Length = '5 mm'
 obj_pad.Length2 = '100 mm'
 obj_pad.Type = 'Length'
@@ -548,7 +548,7 @@ print('Sketch001')
 
 obj_pad001 = body_body.newObject('PartDesign::Pad', 'Pad001')
 obj_pad001.Label = 'Pad001'
-obj_pad001.Profile = (obj_sketch001, '')
+obj_pad001.Profile = (obj_sketch001, [])
 obj_pad001.Length = '42 mm'
 obj_pad001.Length2 = '100 mm'
 obj_pad001.Type = 'Length'
@@ -669,7 +669,7 @@ print('Sketch002')
 
 obj_pocket = body_body.newObject('PartDesign::Pocket', 'Pocket')
 obj_pocket.Label = 'Pocket'
-obj_pocket.Profile = (obj_sketch002, '')
+obj_pocket.Profile = (obj_sketch002, [])
 obj_pocket.Length = '5 mm'
 obj_pocket.Length2 = '100 mm'
 obj_pocket.Type = 'ThroughAll'
@@ -758,7 +758,7 @@ print('Sketch003')
 
 obj_pocket001 = body_body.newObject('PartDesign::Pocket', 'Pocket001')
 obj_pocket001.Label = 'Pocket001'
-obj_pocket001.Profile = (obj_sketch003, '')
+obj_pocket001.Profile = (obj_sketch003, [])
 obj_pocket001.Length = '70 mm'
 obj_pocket001.Length2 = '100 mm'
 obj_pocket001.Type = 'Length'
@@ -973,7 +973,7 @@ print('Sketch004')
 
 obj_pad002 = body_body.newObject('PartDesign::Pad', 'Pad002')
 obj_pad002.Label = 'Pad002'
-obj_pad002.Profile = (obj_sketch004, '')
+obj_pad002.Profile = (obj_sketch004, [])
 obj_pad002.Length = '42 mm'
 obj_pad002.Length2 = '100 mm'
 obj_pad002.Type = 'Length'
@@ -1093,7 +1093,7 @@ print('Sketch005')
 
 obj_pocket002 = body_body.newObject('PartDesign::Pocket', 'Pocket002')
 obj_pocket002.Label = 'Pocket002'
-obj_pocket002.Profile = (obj_sketch005, '')
+obj_pocket002.Profile = (obj_sketch005, [])
 obj_pocket002.Length = '5 mm'
 obj_pocket002.Length2 = '100 mm'
 obj_pocket002.Type = 'Length'
@@ -1206,7 +1206,7 @@ print('Sketch006')
 
 obj_pad003 = body_body.newObject('PartDesign::Pad', 'Pad003')
 obj_pad003.Label = 'Pad003'
-obj_pad003.Profile = (obj_sketch006, '')
+obj_pad003.Profile = (obj_sketch006, [])
 obj_pad003.Length = '40 mm'
 obj_pad003.Length2 = '100 mm'
 obj_pad003.Type = 'Length'
@@ -1379,7 +1379,7 @@ print('Sketch007')
 
 obj_pad004 = body_body001.newObject('PartDesign::Pad', 'Pad004')
 obj_pad004.Label = 'Pad004'
-obj_pad004.Profile = (obj_sketch007, '')
+obj_pad004.Profile = (obj_sketch007, [])
 obj_pad004.Length = '10 mm'
 obj_pad004.Length2 = '100 mm'
 obj_pad004.Type = 'Length'
