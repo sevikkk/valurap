@@ -391,13 +391,14 @@ class Body:
         return first_text
 
     def get_vector(self, vector, numbers, var_name, vectors, vectors_text):
-        start_point = vectors.get(str(vector), None)
+        str_vector = f"App.Vector({vector.x:.3f}, {vector.y:.3f}, {vector.z:.3f})"
+        start_point = vectors.get(str_vector, None)
         if not start_point:
             numbers["vector"] += 1
             v_n = numbers["vector"]
             vector_var_name = f"{var_name}_vector_{v_n}"
-            vectors_text.append(f"{vector_var_name} = App." + str(vector))
-            vectors[str(vector)] = vector_var_name
+            vectors_text.append(f"{vector_var_name} = {str_vector}")
+            vectors[str_vector] = vector_var_name
             start_point = vector_var_name
         return start_point
 
