@@ -12,6 +12,8 @@ class Body:
         self.label = obj.Label
         self.tip = obj.Tip
         self.obj = obj
+        self.debug = True
+        self.group = []
 
     def unparse(self):
         obj = self.obj
@@ -22,6 +24,7 @@ class Body:
         self.var_name = "body_" + self.name.lower()
         text = []
         text.extend([
+            f"{self.var_name}_debug = {self.debug}",
             f"{self.var_name} = App.activeDocument().addObject('PartDesign::Body', '{self.name}')",
             f"{self.var_name}.Label = '{self.label}'",
         ])
@@ -30,7 +33,7 @@ class Body:
             var_name, sub_text = self.unparse_obj(self.tip)
             text.extend(sub_text)
             text.extend([
-                f"{self.var_name}.Tip = {var_name}"
+                f"{self.var_name}.Tip = {var_name}",
             ])
 
         if self.obj.Group:
@@ -71,6 +74,17 @@ class Body:
             raise RuntimeError(f"Unknown TypeId {obj.TypeId} at unparse")
 
         if text:
+            if 1:
+                self.group.append(var_name)
+                cnt = len(self.group)
+                grp = ', '.join(self.group)
+                text.extend([
+                    f"if {self.var_name}_debug:",
+                    f"    {self.var_name}.Tip = {var_name}",
+                    f"    {self.var_name}.Group = [{grp}]",
+                    f"    FreeCAD.ActiveDocument.recompute()",
+                    f"    App.ActiveDocument.saveAs('debug/plate-{self.obj.Label}-{cnt:03d}-{obj.Label}.FCStd')",
+                ])
             text.append("FreeCAD.ActiveDocument.recompute()")
             text.append(f"print('{obj.Label}')")
             text.append("")
