@@ -1,5 +1,4 @@
 from collections import Counter
-import sys
 
 import FreeCAD
 import Part
@@ -13,7 +12,7 @@ class Body:
         self.label = obj.Label
         self.tip = obj.Tip
         self.obj = obj
-        self.debug = True
+        self.debug = False
         self.group = []
 
     def unparse(self):
@@ -30,13 +29,6 @@ class Body:
             f"{self.var_name}.Label = '{self.label}'",
         ])
 
-        if self.tip:
-            var_name, sub_text = self.unparse_obj(self.tip)
-            text.extend(sub_text)
-            text.extend([
-                f"{self.var_name}.Tip = {var_name}",
-            ])
-
         if self.obj.Group:
             grp = []
             for obj in self.obj.Group:
@@ -50,11 +42,21 @@ class Body:
                 f"{self.var_name}.Group = [{grp}]"
             ])
 
+        if self.tip:
+            var_name, sub_text = self.unparse_obj(self.tip)
+            text.extend(sub_text)
+            text.extend([
+                f"{self.var_name}.Tip = {var_name}",
+            ])
+
         text.append("FreeCAD.ActiveDocument.recompute()")
 
         return text
 
     def unparse_obj(self, obj):
+        if obj in obj_to_var:
+            return obj_to_var[obj], []
+
         var_name = "obj_" + obj.Name.lower()
         obj_to_var[obj] = var_name
         if obj.TypeId == 'PartDesign::Pocket':
@@ -404,70 +406,71 @@ class Body:
         return start_point
 
 
-if __name__ == "__main__":
-    partname = sys.argv[1]
-    assert(partname)
-
-    d = FreeCAD.open(f'{partname}.FCStd')
-    for obj in d.Objects:
-        #print(obj.TypeId, obj.Name, obj.Label)
+#d = FreeCAD.open('left_y_motor_plate.FCStd')
+#d = FreeCAD.open('left_y_idler_plate.FCStd')
+d = FreeCAD.open('plate.FCStd')
+for obj in d.Objects:
+    #print(obj.TypeId, obj.Name, obj.Label)
+    #print(obj.PropertiesList)
+    if obj.TypeId == 'PartDesign::Body':
+        bodies.append(Body(obj))
+    elif obj.TypeId == 'App::Origin':
+        pass
+    elif obj.TypeId == 'App::Line':
+        pass
+    elif obj.TypeId == 'App::Plane':
+        pass
+    elif obj.TypeId == 'PartDesign::ShapeBinder':
         #print(obj.PropertiesList)
-        if obj.TypeId == 'PartDesign::Body':
-            bodies.append(Body(obj))
-        elif obj.TypeId == 'App::Origin':
-            pass
-        elif obj.TypeId == 'App::Line':
-            pass
-        elif obj.TypeId == 'App::Plane':
-            pass
-        elif obj.TypeId == 'PartDesign::ShapeBinder':
-            #print(obj.PropertiesList)
-            #print(obj.Placement)
-            pass
-        elif obj.TypeId == 'Sketcher::SketchObject':
-            #print(obj.PropertiesList)
-            pass
-        elif obj.TypeId == 'PartDesign::Pad':
-            #print(obj.PropertiesList)
-            pass
-        elif obj.TypeId == 'PartDesign::Pocket':
-            #print(obj.PropertiesList)
-            pass
-        elif obj.TypeId == 'PartDesign::Fillet':
-            # print(obj.PropertiesList)
-            pass
-        elif obj.TypeId == 'PartDesign::Chamfer':
-            # print(obj.PropertiesList)
-            pass
-        else:
-            raise RuntimeError(f"Unknown TypeId {obj.TypeId} on top-level")
+        #print(obj.Placement)
+        pass
+    elif obj.TypeId == 'Sketcher::SketchObject':
+        #print(obj.PropertiesList)
+        pass
+    elif obj.TypeId == 'PartDesign::Pad':
+        #print(obj.PropertiesList)
+        pass
+    elif obj.TypeId == 'PartDesign::Pocket':
+        #print(obj.PropertiesList)
+        pass
+    elif obj.TypeId == 'PartDesign::Fillet':
+        # print(obj.PropertiesList)
+        pass
+    elif obj.TypeId == 'PartDesign::Chamfer':
+        # print(obj.PropertiesList)
+        pass
+    else:
+        raise RuntimeError(f"Unknown TypeId {obj.TypeId} on top-level")
 
-    f = open("plate.py", "w")
-    f.write("""
-    import sys
-    import FreeCAD
-    import Part
-    import Sketcher
+f = open("left_y_carriage_plate.py", "w")
+f.write("""
+import sys
+import FreeCAD
+import Part
+import Sketcher
 
-    App = FreeCAD
+App = FreeCAD
 
-    FreeCAD.open("frame.FCStd")
-    App.setActiveDocument("frame")
-    FreeCAD.ActiveDocument.recompute()
+print(1)
+FreeCAD.open("frame.FCStd")
+App.setActiveDocument("frame")
+FreeCAD.ActiveDocument.recompute()
+print(2)
 
-    FreeCAD.newDocument("{partname}")
-    App.setActiveDocument("{partname}")
-    """)
+FreeCAD.newDocument("plate")
+App.setActiveDocument("plate")
+print(3)
+""")
 
-    for body in bodies:
-        text = body.unparse()
-        print("\n".join(text))
-        f.write("\n".join(text) + "\n")
+for body in bodies:
+    text = body.unparse()
+    print("\n".join(text))
+    f.write("\n".join(text) + "\n")
 
-    f.write("""
-    App.ActiveDocument.saveAs("{partname}.FCStd")
-    """)
-    f.close()
+f.write("""
+App.ActiveDocument.saveAs("plate.FCStd")
+""")
+f.close()
 
 
 
