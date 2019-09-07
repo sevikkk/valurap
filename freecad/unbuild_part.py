@@ -1,4 +1,5 @@
 from collections import Counter
+import sys
 
 import FreeCAD
 import Part
@@ -403,70 +404,70 @@ class Body:
         return start_point
 
 
-#d = FreeCAD.open('left_y_motor_plate.FCStd')
-d = FreeCAD.open('plate.FCStd')
-for obj in d.Objects:
-    #print(obj.TypeId, obj.Name, obj.Label)
-    #print(obj.PropertiesList)
-    if obj.TypeId == 'PartDesign::Body':
-        bodies.append(Body(obj))
-    elif obj.TypeId == 'App::Origin':
-        pass
-    elif obj.TypeId == 'App::Line':
-        pass
-    elif obj.TypeId == 'App::Plane':
-        pass
-    elif obj.TypeId == 'PartDesign::ShapeBinder':
+if __name__ == "__main__":
+    partname = sys.argv[1]
+    assert(partname)
+
+    d = FreeCAD.open(f'{partname}.FCStd')
+    for obj in d.Objects:
+        #print(obj.TypeId, obj.Name, obj.Label)
         #print(obj.PropertiesList)
-        #print(obj.Placement)
-        pass
-    elif obj.TypeId == 'Sketcher::SketchObject':
-        #print(obj.PropertiesList)
-        pass
-    elif obj.TypeId == 'PartDesign::Pad':
-        #print(obj.PropertiesList)
-        pass
-    elif obj.TypeId == 'PartDesign::Pocket':
-        #print(obj.PropertiesList)
-        pass
-    elif obj.TypeId == 'PartDesign::Fillet':
-        # print(obj.PropertiesList)
-        pass
-    elif obj.TypeId == 'PartDesign::Chamfer':
-        # print(obj.PropertiesList)
-        pass
-    else:
-        raise RuntimeError(f"Unknown TypeId {obj.TypeId} on top-level")
+        if obj.TypeId == 'PartDesign::Body':
+            bodies.append(Body(obj))
+        elif obj.TypeId == 'App::Origin':
+            pass
+        elif obj.TypeId == 'App::Line':
+            pass
+        elif obj.TypeId == 'App::Plane':
+            pass
+        elif obj.TypeId == 'PartDesign::ShapeBinder':
+            #print(obj.PropertiesList)
+            #print(obj.Placement)
+            pass
+        elif obj.TypeId == 'Sketcher::SketchObject':
+            #print(obj.PropertiesList)
+            pass
+        elif obj.TypeId == 'PartDesign::Pad':
+            #print(obj.PropertiesList)
+            pass
+        elif obj.TypeId == 'PartDesign::Pocket':
+            #print(obj.PropertiesList)
+            pass
+        elif obj.TypeId == 'PartDesign::Fillet':
+            # print(obj.PropertiesList)
+            pass
+        elif obj.TypeId == 'PartDesign::Chamfer':
+            # print(obj.PropertiesList)
+            pass
+        else:
+            raise RuntimeError(f"Unknown TypeId {obj.TypeId} on top-level")
 
-f = open("plate.py", "w")
-f.write("""
-import sys
-import FreeCAD
-import Part
-import Sketcher
+    f = open("plate.py", "w")
+    f.write("""
+    import sys
+    import FreeCAD
+    import Part
+    import Sketcher
 
-App = FreeCAD
+    App = FreeCAD
 
-print(1)
-FreeCAD.open("frame.FCStd")
-App.setActiveDocument("frame")
-FreeCAD.ActiveDocument.recompute()
-print(2)
+    FreeCAD.open("frame.FCStd")
+    App.setActiveDocument("frame")
+    FreeCAD.ActiveDocument.recompute()
 
-FreeCAD.newDocument("plate")
-App.setActiveDocument("plate")
-print(3)
-""")
+    FreeCAD.newDocument("{partname}")
+    App.setActiveDocument("{partname}")
+    """)
 
-for body in bodies:
-    text = body.unparse()
-    print("\n".join(text))
-    f.write("\n".join(text) + "\n")
+    for body in bodies:
+        text = body.unparse()
+        print("\n".join(text))
+        f.write("\n".join(text) + "\n")
 
-f.write("""
-App.ActiveDocument.saveAs("plate.FCStd")
-""")
-f.close()
+    f.write("""
+    App.ActiveDocument.saveAs("{partname}.FCStd")
+    """)
+    f.close()
 
 
 
