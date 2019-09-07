@@ -3,8 +3,14 @@ import FreeCAD
 
 App = FreeCAD
 
-FreeCAD.open("vitamins/vitamins.FCStd")
-App.setActiveDocument("vitamins")
+in_gui = False
+if App.ActiveDocument:
+    assert(App.ActiveDocument.Name == "frame")
+    in_gui = True
+
+if not in_gui:
+    FreeCAD.open("vitamins/vitamins.FCStd")
+    App.setActiveDocument("vitamins")
 
 Y = 400
 if 0:
@@ -12,14 +18,21 @@ if 0:
     X2 = 450 - 44
 elif 0:
     X1 = 0
-    X2 = 50
-elif 0:
-    X1 = 450 - 50 - 44
+    X2 = 42
+elif 1:
+    X1 = 450 - 42 - 44
     X2 = 450 - 44
 else:
     X1 = 180
     X2 = 280
 Z = 100
+
+frame_front_vslot_length = 530
+frame_x_vslot_length = 500
+frame_left_vslot_length = 1000
+frame_vertical_vslot_length = 500
+panel_left_vslot_length = 1000
+panel_front_vslot_length = 400
 
 X_plate_thickness = 5
 titan_motor_plate_thickness = 5
@@ -30,8 +43,8 @@ y_belt_offset_x = 17
 y_belt_offset_y = 42 / 2 + 5
 y_belt_offset_z = -12
 y_belt_end_offset_y = 25
-y_belt_length = 1000 + y_belt_offset_y + y_belt_end_offset_y
-x_belt_length = 450 - 50
+y_belt_length = frame_left_vslot_length + y_belt_offset_y + y_belt_end_offset_y
+x_belt_length = frame_front_vslot_length - 100
 
 pulley_r = 6
 
@@ -48,6 +61,8 @@ heated_plate = App.ActiveDocument.HeatedPlate
 vslot_20x20_1000 = App.ActiveDocument.VSLOT20x20_1000
 vslot_20x40_400 = App.ActiveDocument.VSLOT20x40_400
 vslot_20x20_500 = App.ActiveDocument.VSLOT20x20_500
+vslot_20x40_920 = App.ActiveDocument.VSLOT20x40_920
+vslot_20x40_530 = App.ActiveDocument.VSLOT20x40_530
 rod8_500 = App.ActiveDocument.Rod8
 nut8 = App.ActiveDocument.Nut8
 coupler5x8 = App.ActiveDocument.Coupler5x8
@@ -133,7 +148,7 @@ if 0:
 
 front_vslot = add(
     "FrontVSlot",
-    vslot_20x40_500,
+    vslot_20x40_530,
     App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 1, 0), 90)),
 )
 
@@ -151,14 +166,14 @@ right_vslot = add(
     vslot_20x40_1000,
     App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 1, 0), 90)),
     App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 0, 1), 90)),
-    App.Placement(App.Vector(510, -10, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
+    App.Placement(App.Vector(frame_front_vslot_length + 10, -10, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
 )
 
 back_vslot = add(
     "BackVSlot",
-    vslot_20x40_500,
+    vslot_20x40_530,
     App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 1, 0), 90)),
-    App.Placement(App.Vector(0, 980, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
+    App.Placement(App.Vector(0, frame_left_vslot_length - 20, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
 )
 
 left_rail = add(
@@ -196,7 +211,7 @@ x_vslot = add(
     App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)),
     App.Placement(left_mgn.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
     App.Placement(
-        App.Vector(10, 10 + 22, 13 + 10 + X_plate_thickness),
+        App.Vector(10 + (frame_front_vslot_length - frame_x_vslot_length)/2, 10 + 22, 13 + 10 + X_plate_thickness),
         App.Rotation(App.Vector(0, 0, 1), 0),
     ),
 )
@@ -389,7 +404,7 @@ x_left_motor = add(
     App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)),
     App.Placement(x_front_rail.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
     App.Placement(
-        App.Vector(-25 - 10 + 14 + 21 + 5, 47 + 5, -10 - 5 - 21),
+        App.Vector(-(frame_front_vslot_length - frame_x_vslot_length)/2 -25 - 10 + 14 + 21 + 5, 47 + 5, -10 - 5 - 21),
         App.Rotation(App.Vector(0, 0, 1), 0),
     ),
 )
@@ -401,7 +416,7 @@ x_right_motor = add(
     App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), -90)),
     App.Placement(x_back_rail.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
     App.Placement(
-        App.Vector(450 - (-25 - 10 + 14 + 21 + 5), -(47 + 5), -10 - 5 - 21),
+        App.Vector(450 - (-(frame_front_vslot_length - frame_x_vslot_length)/2 -25 - 10 + 14 + 21 + 5), -(47 + 5), -10 - 5 - 21),
         App.Rotation(App.Vector(0, 0, 1), 0),
     ),
 )
@@ -486,14 +501,14 @@ panel_left_vslot = add(
     vslot_20x20_1000,
     App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), -90)),
     App.Placement(left_vslot.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
-    App.Placement(App.Vector(50, 0, -Z - 20), App.Rotation(App.Vector(0, 0, 1), 0)),
+    App.Placement(App.Vector((frame_front_vslot_length - panel_front_vslot_length)/2, 0, -Z - 20), App.Rotation(App.Vector(0, 0, 1), 0)),
 )
 
 panel_right_vslot = add(
     "PanelRightVSlot",
     vslot_20x20_1000,
     panel_left_vslot.Placement,
-    App.Placement(App.Vector(400 + 20, 0, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
+    App.Placement(App.Vector(panel_front_vslot_length + 20, 0, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
 )
 
 panel_front_vslot = add(
@@ -551,37 +566,54 @@ frame_fr_vslot = add(
     "FrameFRVSlot",
     vslot_20x40_500,
     frame_fl_vslot.Placement,
-    App.Placement(App.Vector(500 + 20, 0, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
+    App.Placement(App.Vector(frame_front_vslot_length + 20, 0, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
 )
 
 frame_bl_vslot = add(
     "FrameBLVSlot",
     vslot_20x40_500,
     frame_fl_vslot.Placement,
-    App.Placement(App.Vector(0, 1000 - 40, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
+    App.Placement(App.Vector(0, frame_left_vslot_length - 40, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
 )
 
 frame_br_vslot = add(
     "FrameBRVSlot",
     vslot_20x40_500,
     frame_bl_vslot.Placement,
-    App.Placement(App.Vector(500 + 20, 0, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
+    App.Placement(App.Vector(frame_front_vslot_length + 20, 0, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
 )
 
 frame_front_vslot = add(
     "FrameFrontVSlot",
-    vslot_20x20_500,
+    vslot_20x40_530,
     App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 1, 0), 90)),
     App.Placement(front_vslot.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
-    App.Placement(App.Vector(0, 0, -490), App.Rotation(App.Vector(0, 0, 1), 0)),
+    App.Placement(App.Vector(0, 0, -(frame_vertical_vslot_length - 10)), App.Rotation(App.Vector(0, 0, 1), 0)),
 )
 
 frame_back_vslot = add(
     "FrameBackVSlot",
-    vslot_20x20_500,
+    vslot_20x40_530,
     frame_front_vslot.Placement,
-    App.Placement(App.Vector(0, 1000 - 20, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
+    App.Placement(App.Vector(0, frame_left_vslot_length - 20, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
 )
+
+frame_left_vslot = add(
+    "FrameLeftVSlot",
+    vslot_20x40_920,
+    App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 1, 0), 90)),
+    App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 0, 1), 90)),
+    App.Placement(front_vslot.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
+    App.Placement(App.Vector(-10, 30, -(frame_vertical_vslot_length - 10)), App.Rotation(App.Vector(0, 0, 1), 0)),
+)
+
+frame_right_vslot = add(
+    "FrameRightVSlot",
+    vslot_20x40_920,
+    frame_left_vslot.Placement,
+    App.Placement(App.Vector(frame_front_vslot_length+20, 00, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
+)
+
 
 frame_fl_rail = add(
     "FrameFLRail",
@@ -656,7 +688,7 @@ for i in range(4):
         base = front_vslot.Placement.Base
         k1 = -1
         k2 = 1
-        k3 = 500
+        k3 = frame_front_vslot_length
     if i == 2:
         p = "BL"
         base = back_vslot.Placement.Base
@@ -668,7 +700,7 @@ for i in range(4):
         base = back_vslot.Placement.Base
         k1 = -1
         k2 = -1
-        k3 = 500
+        k3 = frame_front_vslot_length
 
     frame_fl_motor = add(
         f"Frame{p}Motor",
@@ -733,12 +765,13 @@ for i in range(4):
         App.Placement(
             frame_fl_motor.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)
         ),
-        App.Placement(App.Vector(0, 0, -565), App.Rotation(App.Vector(0, 0, 1), 0)),
+        App.Placement(App.Vector(0, 0, -(frame_vertical_vslot_length + 65)), App.Rotation(App.Vector(0, 0, 1), 0)),
     )
 
 App.ActiveDocument.recompute()
 # Gui.SendMsgToActiveView("ViewFit")
-App.ActiveDocument.saveAs("frame.FCStd")
-print()
-print()
-print()
+if not in_gui:
+    App.ActiveDocument.saveAs("frame.FCStd")
+    print()
+    print()
+    print()
