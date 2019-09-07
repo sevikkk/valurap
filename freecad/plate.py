@@ -101,11 +101,14 @@ obj_sketch_vector_5 = App.Vector(-56.150, -20.000, 0.000)
 obj_sketch_vector_6 = App.Vector(-56.150, -13.250, 0.000)
 obj_sketch_vector_7 = App.Vector(-56.150, 91.150, 0.000)
 obj_sketch_vector_8 = App.Vector(0.000, -10.000, 0.000)
-obj_sketch_vector_9 = App.Vector(0.000, 12.000, 0.000)
-obj_sketch_vector_10 = App.Vector(0.000, 42.000, 0.000)
-obj_sketch_vector_11 = App.Vector(-20.000, 42.000, 0.000)
-obj_sketch_vector_12 = App.Vector(0.000, 88.150, 0.000)
-obj_sketch_vector_13 = App.Vector(-20.000, 88.150, 0.000)
+obj_sketch_vector_9 = App.Vector(0.000, 19.925, 0.000)
+obj_sketch_vector_10 = App.Vector(0.000, 49.850, 0.000)
+obj_sketch_vector_11 = App.Vector(-20.000, 49.850, 0.000)
+obj_sketch_vector_12 = App.Vector(0.000, 90.150, 0.000)
+obj_sketch_vector_13 = App.Vector(-20.000, 90.150, 0.000)
+obj_sketch_vector_14 = App.Vector(-8.850, 91.150, 0.000)
+obj_sketch_vector_15 = App.Vector(-8.850, 48.850, 0.000)
+obj_sketch_vector_16 = App.Vector(-0.000, 90.150, 0.000)
 obj_sketch_line_1 = Part.LineSegment(obj_sketch_vector_1, obj_sketch_vector_2)
 obj_sketch_line_2 = Part.LineSegment(obj_sketch_vector_3, obj_sketch_vector_1)
 obj_sketch_line_3 = Part.LineSegment(obj_sketch_vector_3, obj_sketch_vector_4)
@@ -119,7 +122,17 @@ obj_sketch_circle_3 = Part.Circle(obj_sketch_vector_10, App.Vector (0.0, 0.0, 1.
 obj_sketch_circle_4 = Part.Circle(obj_sketch_vector_11, App.Vector (0.0, 0.0, 1.0), 2.6)
 obj_sketch_circle_5 = Part.Circle(obj_sketch_vector_12, App.Vector (0.0, 0.0, 1.0), 2.6)
 obj_sketch_circle_6 = Part.Circle(obj_sketch_vector_13, App.Vector (0.0, 0.0, 1.0), 2.6)
-obj_sketch_all_geoms = [obj_sketch_line_1, obj_sketch_line_2, obj_sketch_line_3, obj_sketch_line_4, obj_sketch_line_5, obj_sketch_line_6, obj_sketch_line_7, obj_sketch_circle_1, obj_sketch_circle_2, obj_sketch_circle_3, obj_sketch_circle_4, obj_sketch_circle_5, obj_sketch_circle_6]
+obj_sketch_point_1 = Part.Point(obj_sketch_vector_14)
+obj_sketch_point_2 = Part.Point(obj_sketch_vector_15)
+obj_sketch_line_8 = Part.LineSegment(obj_sketch_vector_14, obj_sketch_vector_10)
+obj_sketch_line_8.Construction = True
+obj_sketch_line_9 = Part.LineSegment(obj_sketch_vector_16, obj_sketch_vector_15)
+obj_sketch_line_9.Construction = True
+obj_sketch_line_10 = Part.LineSegment(obj_sketch_vector_10, obj_sketch_vector_9)
+obj_sketch_line_10.Construction = True
+obj_sketch_line_11 = Part.LineSegment(obj_sketch_vector_9, obj_sketch_vector_8)
+obj_sketch_line_11.Construction = True
+obj_sketch_all_geoms = [obj_sketch_line_1, obj_sketch_line_2, obj_sketch_line_3, obj_sketch_line_4, obj_sketch_line_5, obj_sketch_line_6, obj_sketch_line_7, obj_sketch_circle_1, obj_sketch_circle_2, obj_sketch_circle_3, obj_sketch_circle_4, obj_sketch_circle_5, obj_sketch_circle_6, obj_sketch_point_1, obj_sketch_point_2, obj_sketch_line_8, obj_sketch_line_9, obj_sketch_line_10, obj_sketch_line_11]
 obj_sketch.addGeometry(obj_sketch_all_geoms, False)
 obj_sketch_all_ext_geoms = [[obj_framefltopbb_bind, 'Face8'], [obj_framefltopbb_bind, 'Face1'], [obj_framefltopbb_bind, 'Edge7'], [obj_leftmotor_bind, 'Face4'], [obj_leftrail_bind, 'Face430'], [obj_leftvslot_bind, 'Face25'], [obj_leftrail_bind, 'Face442'], [obj_leftmotor_bind, 'Face12'], [obj_leftmotor_bind, 'Face41'], [obj_frameflmotor_bind, 'Face41'], [obj_frameflmotor_bind, 'Face8'], [obj_frontvslot_bind, 'Face57'], [obj_frameflmotor_bind, 'Face12'], [obj_leftmotor_bind, 'Face8'], [obj_frameflmotor_bind, 'Face47']]
 for a, b in obj_sketch_all_ext_geoms:
@@ -287,7 +300,7 @@ obj_sketch_constraints = [
     Sketcher.Constraint('DistanceY',
         obj_sketch_all_geoms.index(obj_sketch_circle_5), 3,
         obj_sketch_all_geoms.index(obj_sketch_line_1), 1,
-        8.0,
+        6.0,
     ),
     # 34
     Sketcher.Constraint('DistanceY',
@@ -308,18 +321,76 @@ obj_sketch_constraints = [
         20.0,
     ),
     # 37
-    Sketcher.Constraint('DistanceY',
-        -1, 1,
-        obj_sketch_all_geoms.index(obj_sketch_circle_2), 3,
-        12.0,
+    Sketcher.Constraint('PointOnObject',
+        obj_sketch_all_geoms.index(obj_sketch_point_1), 1,
+        -obj_sketch_all_ext_geoms.index([obj_frameflmotor_bind, 'Face47'])-3,
     ),
     # 38
-    Sketcher.Constraint('DistanceY',
-        obj_sketch_all_geoms.index(obj_sketch_circle_2), 3,
-        obj_sketch_all_geoms.index(obj_sketch_circle_3), 3,
-        30.0,
+    Sketcher.Constraint('PointOnObject',
+        obj_sketch_all_geoms.index(obj_sketch_point_1), 1,
+        -obj_sketch_all_ext_geoms.index([obj_leftmotor_bind, 'Face4'])-3,
     ),
     # 39
+    Sketcher.Constraint('PointOnObject',
+        obj_sketch_all_geoms.index(obj_sketch_point_2), 1,
+        -obj_sketch_all_ext_geoms.index([obj_leftmotor_bind, 'Face4'])-3,
+    ),
+    # 40
+    Sketcher.Constraint('PointOnObject',
+        obj_sketch_all_geoms.index(obj_sketch_point_2), 1,
+        -obj_sketch_all_ext_geoms.index([obj_frameflmotor_bind, 'Face8'])-3,
+    ),
+    # 41
+    Sketcher.Constraint('Coincident',
+        obj_sketch_all_geoms.index(obj_sketch_point_1), 1,
+        obj_sketch_all_geoms.index(obj_sketch_line_8), 1,
+    ),
+    # 42
+    Sketcher.Constraint('Coincident',
+        obj_sketch_all_geoms.index(obj_sketch_point_2), 1,
+        obj_sketch_all_geoms.index(obj_sketch_line_9), 2,
+    ),
+    # 43
+    Sketcher.Constraint('Coincident',
+        obj_sketch_all_geoms.index(obj_sketch_line_9), 1,
+        obj_sketch_all_geoms.index(obj_sketch_circle_5), 3,
+    ),
+    # 44
+    Sketcher.Constraint('Coincident',
+        obj_sketch_all_geoms.index(obj_sketch_line_8), 2,
+        obj_sketch_all_geoms.index(obj_sketch_circle_3), 3,
+    ),
+    # 45
+    Sketcher.Constraint('Equal',
+        obj_sketch_all_geoms.index(obj_sketch_line_8),
+        obj_sketch_all_geoms.index(obj_sketch_line_9),
+    ),
+    # 46
+    Sketcher.Constraint('Coincident',
+        obj_sketch_all_geoms.index(obj_sketch_line_10), 1,
+        obj_sketch_all_geoms.index(obj_sketch_circle_3), 3,
+    ),
+    # 47
+    Sketcher.Constraint('Coincident',
+        obj_sketch_all_geoms.index(obj_sketch_line_10), 2,
+        obj_sketch_all_geoms.index(obj_sketch_circle_2), 3,
+    ),
+    # 48
+    Sketcher.Constraint('Coincident',
+        obj_sketch_all_geoms.index(obj_sketch_line_11), 1,
+        obj_sketch_all_geoms.index(obj_sketch_circle_2), 3,
+    ),
+    # 49
+    Sketcher.Constraint('Coincident',
+        obj_sketch_all_geoms.index(obj_sketch_line_11), 2,
+        obj_sketch_all_geoms.index(obj_sketch_circle_1), 3,
+    ),
+    # 50
+    Sketcher.Constraint('Equal',
+        obj_sketch_all_geoms.index(obj_sketch_line_10),
+        obj_sketch_all_geoms.index(obj_sketch_line_11),
+    ),
+    # 51
 ]
 obj_sketch.addConstraint(obj_sketch_constraints)
 if body_body_debug:
@@ -1225,7 +1296,7 @@ obj_fillet = body_body.newObject('PartDesign::Fillet', 'Fillet')
 obj_fillet.Label = 'Fillet'
 obj_fillet.BaseFeature = obj_pad003
 obj_fillet.Radius = '10 mm'
-obj_fillet.Base = (obj_pad003, ['Edge120', 'Edge123'])
+obj_fillet.Base = (obj_pad003, ['Edge123', 'Edge120'])
 if body_body_debug:
     body_body.Tip = obj_fillet
     body_body.Group = [obj_framefltopbb_bind, obj_leftmotor_bind, obj_leftrail_bind, obj_leftvslot_bind, obj_frameflmotor_bind, obj_frontvslot_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet]
@@ -1234,167 +1305,170 @@ if body_body_debug:
 FreeCAD.ActiveDocument.recompute()
 print('Fillet')
 
-obj_chamfer = body_body.newObject('PartDesign::Chamfer', 'Chamfer')
-obj_chamfer.Label = 'Chamfer'
-obj_chamfer.BaseFeature = obj_fillet
-obj_chamfer.Size = '3 mm'
-obj_chamfer.Base = (obj_fillet, ['Edge81'])
-if body_body_debug:
-    body_body.Tip = obj_chamfer
-    body_body.Group = [obj_framefltopbb_bind, obj_leftmotor_bind, obj_leftrail_bind, obj_leftvslot_bind, obj_frameflmotor_bind, obj_frontvslot_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_chamfer]
-    FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-Plate-022-Chamfer.FCStd')
-FreeCAD.ActiveDocument.recompute()
-print('Chamfer')
-
-obj_fillet001 = body_body.newObject('PartDesign::Fillet', 'Fillet001')
-obj_fillet001.Label = 'Fillet001'
-obj_fillet001.BaseFeature = obj_chamfer
-obj_fillet001.Radius = '1 mm'
-obj_fillet001.Base = (obj_chamfer, ['Edge9', 'Edge3', 'Edge16', 'Edge15'])
-if body_body_debug:
-    body_body.Tip = obj_fillet001
-    body_body.Group = [obj_framefltopbb_bind, obj_leftmotor_bind, obj_leftrail_bind, obj_leftvslot_bind, obj_frameflmotor_bind, obj_frontvslot_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_chamfer, obj_fillet001]
-    FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-Plate-023-Fillet001.FCStd')
-FreeCAD.ActiveDocument.recompute()
-print('Fillet001')
-
-body_body.Tip = obj_fillet001
-body_body.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_chamfer, obj_fillet001]
-FreeCAD.ActiveDocument.recompute()
-body_body001_debug = True
-body_body001 = App.activeDocument().addObject('PartDesign::Body', 'Body001')
-body_body001.Label = 'Body001'
-obj_sketch007 = body_body001.newObject('Sketcher::SketchObject', 'Sketch007')
-obj_xy_plane = App.activeDocument().XY_Plane
-if body_body001_debug:
-    body_body001.Tip = obj_xy_plane
-    body_body001.Group = [obj_xy_plane]
-    FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-Body001-001-XY_Plane.FCStd')
-FreeCAD.ActiveDocument.recompute()
-print('XY_Plane')
-
-obj_sketch007.Support = (obj_xy_plane, [''])
-obj_sketch007.MapMode = 'FlatFace'
-obj_sketch007_vector_1 = App.Vector(40.000, 30.000, 0.000)
-obj_sketch007_vector_2 = App.Vector(100.000, 30.000, 0.000)
-obj_sketch007_vector_3 = App.Vector(100.000, 10.000, 0.000)
-obj_sketch007_vector_4 = App.Vector(40.000, 10.000, 0.000)
-obj_sketch007_vector_5 = App.Vector(70.000, 20.000, 0.000)
-obj_sketch007_vector_6 = App.Vector(55.000, 25.000, 0.000)
-obj_sketch007_line_1 = Part.LineSegment(obj_sketch007_vector_1, obj_sketch007_vector_2)
-obj_sketch007_line_2 = Part.LineSegment(obj_sketch007_vector_2, obj_sketch007_vector_3)
-obj_sketch007_line_3 = Part.LineSegment(obj_sketch007_vector_3, obj_sketch007_vector_4)
-obj_sketch007_line_4 = Part.LineSegment(obj_sketch007_vector_4, obj_sketch007_vector_1)
-obj_sketch007_circle_1 = Part.Circle(obj_sketch007_vector_5, App.Vector (0.0, 0.0, 1.0), 5.0)
-obj_sketch007_point_1 = Part.Point(obj_sketch007_vector_6)
-obj_sketch007_all_geoms = [obj_sketch007_line_1, obj_sketch007_line_2, obj_sketch007_line_3, obj_sketch007_line_4, obj_sketch007_circle_1, obj_sketch007_point_1]
-obj_sketch007.addGeometry(obj_sketch007_all_geoms, False)
-obj_sketch007_constraints = [
-    Sketcher.Constraint('Coincident',
-        obj_sketch007_all_geoms.index(obj_sketch007_line_1), 2,
-        obj_sketch007_all_geoms.index(obj_sketch007_line_2), 1,
+obj_sketch008 = body_body.newObject('Sketcher::SketchObject', 'Sketch008')
+obj_sketch008.Support = (obj_fillet, ['Face8'])
+obj_sketch008.MapMode = 'FlatFace'
+obj_sketch008_vector_1 = App.Vector(36.000, 70.000, 0.000)
+obj_sketch008_vector_2 = App.Vector(15.000, 83.000, 0.000)
+obj_sketch008_vector_3 = App.Vector(15.000, 57.000, 0.000)
+obj_sketch008_circle_1 = Part.Circle(obj_sketch008_vector_1, App.Vector (0.0, 0.0, 1.0), 11.0)
+obj_sketch008_line_1 = Part.LineSegment(obj_sketch008_vector_2, obj_sketch008_vector_1)
+obj_sketch008_line_1.Construction = True
+obj_sketch008_line_2 = Part.LineSegment(obj_sketch008_vector_1, obj_sketch008_vector_3)
+obj_sketch008_line_2.Construction = True
+obj_sketch008_all_geoms = [obj_sketch008_circle_1, obj_sketch008_line_1, obj_sketch008_line_2]
+obj_sketch008.addGeometry(obj_sketch008_all_geoms, False)
+obj_sketch008_all_ext_geoms = [[obj_fillet, 'Edge23']]
+for a, b in obj_sketch008_all_ext_geoms:
+    obj_sketch008.addExternal(a.Name, b)
+obj_sketch008_constraints = [
+    Sketcher.Constraint('Radius',
+        obj_sketch008_all_geoms.index(obj_sketch008_circle_1), 11.0,
     ),
     # 1
     Sketcher.Constraint('Coincident',
-        obj_sketch007_all_geoms.index(obj_sketch007_line_2), 2,
-        obj_sketch007_all_geoms.index(obj_sketch007_line_3), 1,
+        -obj_sketch008_all_ext_geoms.index([obj_fillet, 'Edge23'])-3, 1,
+        obj_sketch008_all_geoms.index(obj_sketch008_line_2), 2,
     ),
     # 2
     Sketcher.Constraint('Coincident',
-        obj_sketch007_all_geoms.index(obj_sketch007_line_3), 2,
-        obj_sketch007_all_geoms.index(obj_sketch007_line_4), 1,
+        obj_sketch008_all_geoms.index(obj_sketch008_circle_1), 3,
+        obj_sketch008_all_geoms.index(obj_sketch008_line_2), 1,
     ),
     # 3
     Sketcher.Constraint('Coincident',
-        obj_sketch007_all_geoms.index(obj_sketch007_line_4), 2,
-        obj_sketch007_all_geoms.index(obj_sketch007_line_1), 1,
+        obj_sketch008_all_geoms.index(obj_sketch008_line_1), 2,
+        obj_sketch008_all_geoms.index(obj_sketch008_circle_1), 3,
     ),
     # 4
-    Sketcher.Constraint('Horizontal',
-        obj_sketch007_all_geoms.index(obj_sketch007_line_1),
+    Sketcher.Constraint('Coincident',
+        -obj_sketch008_all_ext_geoms.index([obj_fillet, 'Edge23'])-3, 2,
+        obj_sketch008_all_geoms.index(obj_sketch008_line_1), 1,
     ),
     # 5
-    Sketcher.Constraint('Horizontal',
-        obj_sketch007_all_geoms.index(obj_sketch007_line_3),
+    Sketcher.Constraint('Equal',
+        obj_sketch008_all_geoms.index(obj_sketch008_line_1),
+        obj_sketch008_all_geoms.index(obj_sketch008_line_2),
     ),
     # 6
-    Sketcher.Constraint('Vertical',
-        obj_sketch007_all_geoms.index(obj_sketch007_line_2),
+    Sketcher.Constraint('DistanceX',
+        obj_sketch008_all_geoms.index(obj_sketch008_line_1), 1,
+        obj_sketch008_all_geoms.index(obj_sketch008_circle_1), 3,
+        21.0,
     ),
     # 7
-    Sketcher.Constraint('Vertical',
-        obj_sketch007_all_geoms.index(obj_sketch007_line_4),
-    ),
-    # 8
-    Sketcher.Constraint('DistanceY',
-        obj_sketch007_all_geoms.index(obj_sketch007_line_3), 2,
-        10.0,
-    ),
-    # 9
-    Sketcher.Constraint('DistanceY',
-        obj_sketch007_all_geoms.index(obj_sketch007_line_1), 1,
-        30.0,
-    ),
-    # 10
-    Sketcher.Constraint('DistanceX',
-        obj_sketch007_all_geoms.index(obj_sketch007_line_1), 1,
-        40.0,
-    ),
-    # 11
-    Sketcher.Constraint('DistanceX',
-        obj_sketch007_all_geoms.index(obj_sketch007_line_1), 2,
-        100.0,
-    ),
-    # 12
-    Sketcher.Constraint('Symmetric',
-        obj_sketch007_all_geoms.index(obj_sketch007_line_1), 1,
-        obj_sketch007_all_geoms.index(obj_sketch007_line_2), 2,
-        obj_sketch007_all_geoms.index(obj_sketch007_circle_1), 3,
-    ),
-    # 13
-    Sketcher.Constraint('Radius',
-        obj_sketch007_all_geoms.index(obj_sketch007_circle_1), 5.0,
-    ),
-    # 14
-    Sketcher.Constraint('Symmetric',
-        obj_sketch007_all_geoms.index(obj_sketch007_line_1), 1,
-        obj_sketch007_all_geoms.index(obj_sketch007_circle_1), 3,
-        obj_sketch007_all_geoms.index(obj_sketch007_point_1), 1,
-    ),
-    # 15
 ]
-obj_sketch007.addConstraint(obj_sketch007_constraints)
-if body_body001_debug:
-    body_body001.Tip = obj_sketch007
-    body_body001.Group = [obj_xy_plane, obj_sketch007]
+obj_sketch008.addConstraint(obj_sketch008_constraints)
+if body_body_debug:
+    body_body.Tip = obj_sketch008
+    body_body.Group = [obj_framefltopbb_bind, obj_leftmotor_bind, obj_leftrail_bind, obj_leftvslot_bind, obj_frameflmotor_bind, obj_frontvslot_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-Body001-002-Sketch007.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-Plate-022-Sketch008.FCStd')
 FreeCAD.ActiveDocument.recompute()
-print('Sketch007')
+print('Sketch008')
 
-obj_pad004 = body_body001.newObject('PartDesign::Pad', 'Pad004')
-obj_pad004.Label = 'Pad004'
-obj_pad004.Profile = (obj_sketch007, [])
-obj_pad004.Length = '10 mm'
-obj_pad004.Length2 = '100 mm'
-obj_pad004.Type = 'Length'
-obj_pad004.UpToFace = None
-obj_pad004.Reversed = False
-obj_pad004.Midplane = False
-obj_pad004.Offset = '0 mm'
-if body_body001_debug:
-    body_body001.Tip = obj_pad004
-    body_body001.Group = [obj_xy_plane, obj_sketch007, obj_pad004]
+obj_pocket003 = body_body.newObject('PartDesign::Pocket', 'Pocket003')
+obj_pocket003.Label = 'Pocket003'
+obj_pocket003.Profile = (obj_sketch008, [])
+obj_pocket003.Length = '8 mm'
+obj_pocket003.Length2 = '100 mm'
+obj_pocket003.Type = 'Length'
+obj_pocket003.UpToFace = None
+obj_pocket003.Reversed = False
+obj_pocket003.Midplane = False
+obj_pocket003.Offset = '0 mm'
+obj_pocket003.BaseFeature = obj_fillet
+if body_body_debug:
+    body_body.Tip = obj_pocket003
+    body_body.Group = [obj_framefltopbb_bind, obj_leftmotor_bind, obj_leftrail_bind, obj_leftvslot_bind, obj_frameflmotor_bind, obj_frontvslot_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-Body001-003-Pad004.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-Plate-023-Pocket003.FCStd')
 FreeCAD.ActiveDocument.recompute()
-print('Pad004')
+print('Pocket003')
 
-body_body001.Tip = obj_pad004
-body_body001.Group = [obj_sketch007, obj_pad004]
+obj_sketch009 = body_body.newObject('Sketcher::SketchObject', 'Sketch009')
+obj_sketch009.Support = (obj_pocket003, ['Face1'])
+obj_sketch009.MapMode = 'FlatFace'
+obj_sketch009_vector_1 = App.Vector(-36.000, 70.000, 0.000)
+obj_sketch009_vector_2 = App.Vector(-15.000, 83.000, 0.000)
+obj_sketch009_vector_3 = App.Vector(-15.000, 57.000, 0.000)
+obj_sketch009_circle_1 = Part.Circle(obj_sketch009_vector_1, App.Vector (0.0, 0.0, 1.0), 8.0)
+obj_sketch009_line_1 = Part.LineSegment(obj_sketch009_vector_1, obj_sketch009_vector_2)
+obj_sketch009_line_1.Construction = True
+obj_sketch009_line_2 = Part.LineSegment(obj_sketch009_vector_1, obj_sketch009_vector_3)
+obj_sketch009_line_2.Construction = True
+obj_sketch009_all_geoms = [obj_sketch009_circle_1, obj_sketch009_line_1, obj_sketch009_line_2]
+obj_sketch009.addGeometry(obj_sketch009_all_geoms, False)
+obj_sketch009_all_ext_geoms = [[obj_pocket003, 'Edge23']]
+for a, b in obj_sketch009_all_ext_geoms:
+    obj_sketch009.addExternal(a.Name, b)
+obj_sketch009_constraints = [
+    Sketcher.Constraint('Radius',
+        obj_sketch009_all_geoms.index(obj_sketch009_circle_1), 8.0,
+    ),
+    # 1
+    Sketcher.Constraint('Coincident',
+        obj_sketch009_all_geoms.index(obj_sketch009_line_2), 1,
+        obj_sketch009_all_geoms.index(obj_sketch009_circle_1), 3,
+    ),
+    # 2
+    Sketcher.Constraint('Coincident',
+        obj_sketch009_all_geoms.index(obj_sketch009_line_1), 1,
+        obj_sketch009_all_geoms.index(obj_sketch009_circle_1), 3,
+    ),
+    # 3
+    Sketcher.Constraint('Coincident',
+        obj_sketch009_all_geoms.index(obj_sketch009_line_2), 2,
+        -obj_sketch009_all_ext_geoms.index([obj_pocket003, 'Edge23'])-3, 1,
+    ),
+    # 4
+    Sketcher.Constraint('Coincident',
+        obj_sketch009_all_geoms.index(obj_sketch009_line_1), 2,
+        -obj_sketch009_all_ext_geoms.index([obj_pocket003, 'Edge23'])-3, 2,
+    ),
+    # 5
+    Sketcher.Constraint('Equal',
+        obj_sketch009_all_geoms.index(obj_sketch009_line_2),
+        obj_sketch009_all_geoms.index(obj_sketch009_line_1),
+    ),
+    # 6
+    Sketcher.Constraint('DistanceX',
+        obj_sketch009_all_geoms.index(obj_sketch009_circle_1), 3,
+        obj_sketch009_all_geoms.index(obj_sketch009_line_2), 2,
+        21.0,
+    ),
+    # 7
+]
+obj_sketch009.addConstraint(obj_sketch009_constraints)
+if body_body_debug:
+    body_body.Tip = obj_sketch009
+    body_body.Group = [obj_framefltopbb_bind, obj_leftmotor_bind, obj_leftrail_bind, obj_leftvslot_bind, obj_frameflmotor_bind, obj_frontvslot_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009]
+    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.saveAs('debug/plate-Plate-024-Sketch009.FCStd')
+FreeCAD.ActiveDocument.recompute()
+print('Sketch009')
+
+obj_pocket004 = body_body.newObject('PartDesign::Pocket', 'Pocket004')
+obj_pocket004.Label = 'Pocket004'
+obj_pocket004.Profile = (obj_sketch009, [])
+obj_pocket004.Length = '5 mm'
+obj_pocket004.Length2 = '100 mm'
+obj_pocket004.Type = 'Length'
+obj_pocket004.UpToFace = None
+obj_pocket004.Reversed = False
+obj_pocket004.Midplane = False
+obj_pocket004.Offset = '0 mm'
+obj_pocket004.BaseFeature = obj_pocket003
+if body_body_debug:
+    body_body.Tip = obj_pocket004
+    body_body.Group = [obj_framefltopbb_bind, obj_leftmotor_bind, obj_leftrail_bind, obj_leftvslot_bind, obj_frameflmotor_bind, obj_frontvslot_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004]
+    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.saveAs('debug/plate-Plate-025-Pocket004.FCStd')
+FreeCAD.ActiveDocument.recompute()
+print('Pocket004')
+
+body_body.Tip = obj_pocket004
+body_body.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004]
 FreeCAD.ActiveDocument.recompute()
 
 App.ActiveDocument.saveAs("plate.FCStd")
