@@ -1267,16 +1267,16 @@ body_body001_debug = True
 body_body001 = App.activeDocument().addObject('PartDesign::Body', 'Body001')
 body_body001.Label = 'Body001'
 obj_sketch007 = body_body001.newObject('Sketcher::SketchObject', 'Sketch007')
-obj_xy_plane001 = App.activeDocument().XY_Plane
+obj_xy_plane = App.activeDocument().XY_Plane
 if body_body001_debug:
-    body_body001.Tip = obj_xy_plane001
-    body_body001.Group = [obj_xy_plane001]
+    body_body001.Tip = obj_xy_plane
+    body_body001.Group = [obj_xy_plane]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-Body001-001-XY_Plane001.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-Body001-001-XY_Plane.FCStd')
 FreeCAD.ActiveDocument.recompute()
-print('XY_Plane001')
+print('XY_Plane')
 
-obj_sketch007.Support = (obj_xy_plane001, [''])
+obj_sketch007.Support = (obj_xy_plane, [''])
 obj_sketch007.MapMode = 'FlatFace'
 obj_sketch007_vector_1 = App.Vector(40.000, 30.000, 0.000)
 obj_sketch007_vector_2 = App.Vector(100.000, 30.000, 0.000)
@@ -1369,7 +1369,7 @@ obj_sketch007_constraints = [
 obj_sketch007.addConstraint(obj_sketch007_constraints)
 if body_body001_debug:
     body_body001.Tip = obj_sketch007
-    body_body001.Group = [obj_xy_plane001, obj_sketch007]
+    body_body001.Group = [obj_xy_plane, obj_sketch007]
     FreeCAD.ActiveDocument.recompute()
     App.ActiveDocument.saveAs('debug/plate-Body001-002-Sketch007.FCStd')
 FreeCAD.ActiveDocument.recompute()
@@ -1387,7 +1387,7 @@ obj_pad004.Midplane = False
 obj_pad004.Offset = '0 mm'
 if body_body001_debug:
     body_body001.Tip = obj_pad004
-    body_body001.Group = [obj_xy_plane001, obj_sketch007, obj_pad004]
+    body_body001.Group = [obj_xy_plane, obj_sketch007, obj_pad004]
     FreeCAD.ActiveDocument.recompute()
     App.ActiveDocument.saveAs('debug/plate-Body001-003-Pad004.FCStd')
 FreeCAD.ActiveDocument.recompute()
