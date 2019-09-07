@@ -57,6 +57,10 @@ class Body:
             text = self.unparse_pad_or_pocket(var_name, obj)
         elif obj.TypeId == 'PartDesign::Pad':
             text = self.unparse_pad_or_pocket(var_name, obj)
+        elif obj.TypeId == 'PartDesign::Chamfer':
+            text = self.unparse_chamfer_or_fillet(var_name, obj)
+        elif obj.TypeId == 'PartDesign::Fillet':
+            text = self.unparse_chamfer_or_fillet(var_name, obj)
         elif obj.TypeId == 'Sketcher::SketchObject':
             text = self.unparse_sketch(var_name, obj)
         elif obj.TypeId == 'PartDesign::ShapeBinder':
@@ -100,6 +104,41 @@ class Body:
             f"{var_name}.Support = [({var_name}_orig, '')]"
         ]
 
+    def unparse_chamfer_or_fillet(self, var_name, obj):
+        print(f"----------- {obj.Label} ------------")
+
+        for prop in obj.PropertiesList:
+            print(prop, getattr(obj, prop))
+
+        text = []
+        assert(obj.BaseFeature)
+        base_var_name, base_text = self.unparse_obj(obj.BaseFeature)
+        text.extend(base_text)
+
+        text.extend([
+            f"{var_name} = {self.var_name}.newObject('{obj.TypeId}', '{obj.Name}')",
+            f"{var_name}.Label = '{obj.Label}'",
+            f"{var_name}.BaseFeature = {base_var_name}",
+        ])
+        if obj.TypeId == "PartDesign::Fillet":
+            text.extend([
+                f"{var_name}.Radius = '{obj.Radius}'",
+            ])
+        else:
+            text.extend([
+                f"{var_name}.Size = '{obj.Size}'",
+            ])
+
+        assert(obj.Base)
+        assert(obj.Base[0] == obj.BaseFeature)
+        edges = [f"'{a}'" for a in obj.Base[1]]
+        edges = ', '.join(edges)
+
+        text.extend([
+            f"{var_name}.Base = ({base_var_name}, [{edges}])",
+        ])
+        return text
+
     def unparse_pad_or_pocket(self, var_name, obj):
         print(f"----------- {obj.Label} ------------")
         for prop in obj.PropertiesList:
@@ -134,43 +173,6 @@ class Body:
         return text
 
     def unparse_sketch(self, var_name, obj):
-        """
->>> App.activeDocument().Body.newObject('Sketcher::SketchObject','Sketch006')
->>> App.activeDocument().Sketch006.Support = (App.ActiveDocument.Pocket002,["Face5"])
->>> App.activeDocument().Sketch006.MapMode = 'FlatFace'
-
->>> geoList = []
->>> geoList.append(Part.LineSegment(App.Vector(-6.205385,81.502983,0),App.Vector(13.953376,81.502983,0)))
->>> geoList.append(Part.LineSegment(App.Vector(13.953376,81.502983,0),App.Vector(13.953376,50.348553,0)))
->>> geoList.append(Part.LineSegment(App.Vector(13.953376,50.348553,0),App.Vector(-6.205385,50.348553,0)))
->>> geoList.append(Part.LineSegment(App.Vector(-6.205385,50.348553,0),App.Vector(-6.205385,81.502983,0)))
->>> App.ActiveDocument.Sketch007.addGeometry(Part.Circle(App.Vector(52.265846,24.476919,0),App.Vector(0,0,1),11.189683),False)
->>> App.ActiveDocument.Sketch006.addGeometry(geoList,False)
-
->>> conList = []
->>> conList.append(Sketcher.Constraint('Coincident',0,2,1,1))
->>> conList.append(Sketcher.Constraint('Coincident',1,2,2,1))
->>> conList.append(Sketcher.Constraint('Coincident',2,2,3,1))
->>> conList.append(Sketcher.Constraint('Coincident',3,2,0,1))
->>> conList.append(Sketcher.Constraint('Horizontal',0))
->>> conList.append(Sketcher.Constraint('Horizontal',2))
->>> conList.append(Sketcher.Constraint('Vertical',1))
->>> conList.append(Sketcher.Constraint('Vertical',3))
->>> App.ActiveDocument.Sketch007.addConstraint(Sketcher.Constraint('Symmetric',0,1,1,2,4,3))
-
->>> App.ActiveDocument.Sketch006.addConstraint(conList)
->>>
->>> App.ActiveDocument.Sketch006.addExternal("Pocket002","Edge4")
->>> App.ActiveDocument.Sketch006.addExternal("FrontVSlot_bind","Edge211")
-
->>> App.ActiveDocument.Sketch006.addConstraint(Sketcher.Constraint('PointOnObject',0,2,-4))
-
->>> App.ActiveDocument.Sketch007.addConstraint(Sketcher.Constraint('Radius',4,11.189683))
->>> App.ActiveDocument.Sketch007.setDatum(13,App.Units.Quantity('5.000000 mm'))
-
->>> App.ActiveDocument.Sketch006.addConstraint(Sketcher.Constraint('DistanceX',0,1,0,2,16.205385))
->>> App.ActiveDocument.Sketch006.setDatum(9,App.Units.Quantity('11.000000 mm'))
-        """
         text = []
         print(f"----------- {obj.Label} ------------")
         for prop in obj.PropertiesList:
@@ -410,6 +412,12 @@ for obj in d.Objects:
         pass
     elif obj.TypeId == 'PartDesign::Pocket':
         #print(obj.PropertiesList)
+        pass
+    elif obj.TypeId == 'PartDesign::Fillet':
+        # print(obj.PropertiesList)
+        pass
+    elif obj.TypeId == 'PartDesign::Chamfer':
+        # print(obj.PropertiesList)
         pass
     else:
         raise RuntimeError(f"Unknown TypeId {obj.TypeId} on top-level")
