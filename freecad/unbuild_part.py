@@ -68,6 +68,7 @@ class Body:
 
         if text:
             text.append("FreeCAD.ActiveDocument.recompute()")
+            text.append(f"print('{obj.Label}')")
             text.append("")
 
         return var_name, text
@@ -258,10 +259,10 @@ class Body:
                 f"{var_name}_all_ext_geoms = [{ext_geoms_text}]",
                 f"for a, b in {var_name}_all_ext_geoms:",
                 f"    {var_name}.addExternal(a.Name, b)",
-                f"{var_name}_all_geoms = ({var_name}_all_geoms + {var_name}_all_ext_geoms)",
             ])
 
         constraints = []
+        i = 1
         if obj.Constraints:
             text.append(f"{var_name}_constraints = [")
             for constr in obj.Constraints:
@@ -273,33 +274,10 @@ class Body:
                     constr.Third,
                     constr.ThirdPos,
                     constr.Value)
-                if constr.First != -2000:
-                    first = (geom_names + ext_geom_names)[constr.First]
-                    if type(first) is list:
-                        first = "[{}, '{}']".format(*first)
 
-                    first_text = f"{var_name}_all_geoms.index({first})"
-                    print(first_text)
-                else:
-                    first = None
-
-                if constr.Second != -2000:
-                    second = (geom_names + ext_geom_names)[constr.Second]
-                    if type(second) is list:
-                        second = "[{}, '{}']".format(*second)
-                    second_text = f"{var_name}_all_geoms.index({second})"
-                    print(second_text)
-                else:
-                    second = None
-
-                if constr.Third != -2000:
-                    third = (geom_names + ext_geom_names)[constr.Third]
-                    if type(third) is list:
-                        third = "[{}, '{}']".format(*third)
-                    third_text = f"{var_name}_all_geoms.index({third})"
-                    print(third_text)
-                else:
-                    third = None
+                first_text = self.convert_geoindex(ext_geom_names, constr.First, geom_names, var_name)
+                second_text = self.convert_geoindex(ext_geom_names, constr.Second, geom_names, var_name)
+                third_text = self.convert_geoindex(ext_geom_names, constr.Third, geom_names, var_name)
 
                 if constr.Type == "Coincident":
                     text.extend([
@@ -309,19 +287,35 @@ class Body:
                         f"    ),"
                     ])
                 elif constr.Type in ("Horizontal", "Vertical"):
-                    text.extend([
-                        f"    Sketcher.Constraint('{constr.Type}',",
-                        f"        {first_text},",
-                        f"    ),"
-                    ])
+                    if second_text is None:
+                        text.extend([
+                            f"    Sketcher.Constraint('{constr.Type}',",
+                            f"        {first_text},",
+                            f"    ),"
+                        ])
+                    else:
+                        text.extend([
+                            f"    Sketcher.Constraint('{constr.Type}',",
+                            f"        {first_text}, {constr.FirstPos},",
+                            f"        {second_text}, {constr.SecondPos},",
+                            f"    ),"
+                        ])
                 elif constr.Type in ("DistanceX", "DistanceY"):
-                    text.extend([
-                        f"    Sketcher.Constraint('{constr.Type}',",
-                        f"        {first_text}, {constr.FirstPos},",
-                        f"        {second_text}, {constr.SecondPos},",
-                        f"        {constr.Value},",
-                        f"    ),"
-                    ])
+                    if second_text is None:
+                        text.extend([
+                            f"    Sketcher.Constraint('{constr.Type}',",
+                            f"        {first_text}, {constr.FirstPos},",
+                            f"        {constr.Value},",
+                            f"    ),"
+                        ])
+                    else:
+                        text.extend([
+                            f"    Sketcher.Constraint('{constr.Type}',",
+                            f"        {first_text}, {constr.FirstPos},",
+                            f"        {second_text}, {constr.SecondPos},",
+                            f"        {constr.Value},",
+                            f"    ),"
+                        ])
                 elif constr.Type == "Symmetric":
                     text.extend([
                         f"    Sketcher.Constraint('{constr.Type}',",
@@ -340,19 +334,21 @@ class Body:
                     text.extend([
                         f"    Sketcher.Constraint('{constr.Type}',",
                         f"        {first_text}, {constr.FirstPos},",
-                        f"        {second_text}, {constr.SecondPos},",
+                        f"        {second_text},",
                         f"    ),"
                     ])
                 elif constr.Type == "Equal":
                     text.extend([
                         f"    Sketcher.Constraint('{constr.Type}',",
-                        f"        {first_text}, {constr.FirstPos},",
-                        f"        {second_text}, {constr.SecondPos},",
+                        f"        {first_text},",
+                        f"        {second_text},",
                         f"    ),"
                     ])
                 else:
                     print(constr.Type)
                     raise RuntimeError(f"Unknown constraint type {constr.Type} at sketch unparse")
+                text.append(f"    # {i}")
+                i += 1
             text.extend([
                 f"]",
                 f"{var_name}.addConstraint({var_name}_constraints)",
@@ -360,6 +356,23 @@ class Body:
 
 
         return text
+
+    def convert_geoindex(self, ext_geom_names, first, geom_names, var_name):
+        if first != -2000:
+            if first in [-1, -2]:
+                first_text = f"{first}"
+            elif first >= 0:
+                first = geom_names[first]
+                first_text = f"{var_name}_all_geoms.index({first})"
+            else:
+                first = ext_geom_names[-first - 3]
+                first = "[{}, '{}']".format(*first)
+                first_text = f"-{var_name}_all_ext_geoms.index({first})-3"
+            print(first_text)
+        else:
+            first_text = None
+
+        return first_text
 
     def get_vector(self, vector, numbers, var_name, vectors, vectors_text):
         start_point = vectors.get(str(vector), None)
@@ -401,9 +414,35 @@ for obj in d.Objects:
     else:
         raise RuntimeError(f"Unknown TypeId {obj.TypeId} on top-level")
 
+f = open("plate.py", "w")
+f.write("""
+import sys
+import FreeCAD
+import Part
+import Sketcher
+
+App = FreeCAD
+
+print(1)
+FreeCAD.open("frame.FCStd")
+App.setActiveDocument("frame")
+FreeCAD.ActiveDocument.recompute()
+print(2)
+
+FreeCAD.newDocument("plate")
+App.setActiveDocument("plate")
+print(3)
+""")
+
 for body in bodies:
     text = body.unparse()
     print("\n".join(text))
+    f.write("\n".join(text) + "\n")
+
+f.write("""
+App.ActiveDocument.saveAs("plate.FCStd")
+""")
+f.close()
 
 
 
