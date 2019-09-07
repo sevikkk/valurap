@@ -403,8 +403,8 @@ class Body:
         return start_point
 
 
-d = FreeCAD.open('left_y_motor_plate.FCStd')
-#d = FreeCAD.open('plate.FCStd')
+#d = FreeCAD.open('left_y_motor_plate.FCStd')
+d = FreeCAD.open('plate.FCStd')
 for obj in d.Objects:
     #print(obj.TypeId, obj.Name, obj.Label)
     #print(obj.PropertiesList)
