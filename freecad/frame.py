@@ -676,7 +676,7 @@ for i in range(4):
         App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 1, 0), 180)),
         App.Placement(base, App.Rotation(App.Vector(0, 0, 1), 0)),
         App.Placement(
-            App.Vector(65 * k1 + k3, -(21 + 5 + 10) * k2, 47 + 35),
+            App.Vector(70 * k1 + k3, -(21 + 5 + 10) * k2, 47 + 35),
             App.Rotation(App.Vector(0, 0, 1), 0),
         ),
     )
