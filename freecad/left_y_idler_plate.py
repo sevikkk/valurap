@@ -1875,5 +1875,6 @@ print('Pocket006')
 body_left_y_idler_plate.Group = [obj_backvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftidler_bind, obj_frameblmotor_bind, obj_framebltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_sketch007, obj_pocket003, obj_sketch008, obj_pocket004, obj_sketch009, obj_pocket005, obj_sketch010, obj_pad004, obj_sketch011, obj_pocket006]
 body_left_y_idler_plate.Tip = obj_pocket006
 FreeCAD.ActiveDocument.recompute()
+Part.export([body_left_y_idler_plate], 'left_y_idler_plate.brep')
 
 App.ActiveDocument.saveAs("plate.FCStd")

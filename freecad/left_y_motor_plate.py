@@ -1469,5 +1469,7 @@ print('Pocket004')
 body_leftymotorplate.Tip = obj_pocket004
 body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004]
 FreeCAD.ActiveDocument.recompute()
+Part.export([body_leftymotorplate], 'left_y_motor_plate.brep')
+
 
 App.ActiveDocument.saveAs("plate.FCStd")
