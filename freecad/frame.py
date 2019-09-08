@@ -1,5 +1,7 @@
 import sys
 import FreeCAD
+import os
+import Part
 
 App = FreeCAD
 
@@ -67,7 +69,7 @@ rod8_500 = App.ActiveDocument.Rod8
 nut8 = App.ActiveDocument.Nut8
 coupler5x8 = App.ActiveDocument.Coupler5x8
 bb608zz = App.ActiveDocument.BB608ZZ
-
+tcst = App.ActiveDocument.TCST2103
 
 def remove(name):
     old = App.ActiveDocument.getObject(name)
@@ -91,9 +93,46 @@ def add(name, base, placement, *moves):
     new.Placement = p
     new.Group = [new_f]
     new.Tip = new_f
-    print(new.supportedProperties())
+    #print(new.supportedProperties())
     return new
 
+
+remove("LeftMotorPlate")
+remove("RightMotorPlate")
+remove("LeftIdlerPlate")
+remove("RightIdlerPlate")
+remove("LeftYCarriagePlate")
+remove("RightYCarriagePlate")
+
+printed_parts = {}
+workdir = os.path.dirname(__file__)
+for part, make_mirror in [
+    ('left_y_idler_plate', True),
+    ('left_y_motor_plate', True),
+    ('left_y_carriage_plate', False)
+]:
+    remove(part)
+
+    if os.path.exists(f'{workdir}/{part}.brep'):
+        print("file found")
+        Part.insert(f'{workdir}/{part}.brep', App.ActiveDocument.Name)
+        p = App.ActiveDocument.getObject(part)
+        if p.ViewObject:
+            p.ViewObject.Visibility = False
+        printed_parts[part] = p
+
+        if make_mirror and part.startswith('left'):
+            right_part = 'right' + part[4:]
+            remove(right_part)
+
+            rp = App.ActiveDocument.addObject("Part::Mirroring", right_part)
+            rp.Source = p
+            rp.Label = right_part
+            rp.Normal = (1, 0, 0)
+            rp.Base = (frame_front_vslot_length/2, 0, 0)
+            if rp.ViewObject:
+                rp.ViewObject.Visibility = False
+            printed_parts[right_part] = rp
 
 remove("LeftTopBelt")
 remove("RightTopBelt")
@@ -197,11 +236,27 @@ left_mgn = add(
     App.Placement(App.Vector(0, Y, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
 )
 
+left_opto = add(
+    "LeftOpto",
+    tcst,
+    App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 1, 0), 90)),
+    App.Placement(left_mgn.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
+    App.Placement(App.Vector(-25, 22, -25), App.Rotation(App.Vector(0, 0, 1), 0)),
+)
+
 right_mgn = add(
     "RightMGN",
     mgn_12,
     App.Placement(right_rail.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
     App.Placement(App.Vector(0, Y, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
+)
+
+right_opto = add(
+    "RightOpto",
+    tcst,
+    App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 1, 0), -90)),
+    App.Placement(right_mgn.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
+    App.Placement(App.Vector(25, 22, -25), App.Rotation(App.Vector(0, 0, 1), 0)),
 )
 
 x_vslot = add(
@@ -767,6 +822,87 @@ for i in range(4):
         ),
         App.Placement(App.Vector(0, 0, -(frame_vertical_vslot_length + 65)), App.Rotation(App.Vector(0, 0, 1), 0)),
     )
+
+part_left_y_idler_plate = printed_parts.get("left_y_idler_plate")
+if part_left_y_idler_plate:
+    left_idler_plate = add(
+        "LeftIdlerPlate",
+        part_left_y_idler_plate,
+        App.Placement(
+            App.Vector(0,0,0), App.Rotation(App.Vector(0, 0, 1), 0)
+        ),
+    )
+
+part_right_y_idler_plate = printed_parts.get("right_y_idler_plate")
+if part_right_y_idler_plate:
+    left_idler_plate = add(
+        "RightIdlerPlate",
+        part_right_y_idler_plate,
+        App.Placement(
+            App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 0, 1), 0)
+        ),
+    )
+
+part_left_y_motor_plate = printed_parts.get("left_y_motor_plate")
+if part_left_y_motor_plate:
+    left_motor_plate = add(
+        "LeftMotorPlate",
+        part_left_y_motor_plate,
+        App.Placement(
+            App.Vector(0,0,0), App.Rotation(App.Vector(0, 0, 1), 0)
+        ),
+    )
+
+part_right_y_motor_plate = printed_parts.get("right_y_motor_plate")
+if part_right_y_motor_plate:
+    left_motor_plate = add(
+        "RightMotorPlate",
+        part_right_y_motor_plate,
+        App.Placement(
+            App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 0, 1), 0)
+        ),
+    )
+
+part_left_y_carriage_plate = printed_parts.get("left_y_carriage_plate")
+if part_left_y_carriage_plate:
+    base_y = 400
+
+    left_y_carriage_plate = add(
+        "LeftYCarriagePlate",
+        part_left_y_carriage_plate,
+        App.Placement(
+            App.Vector(0, Y-base_y, 0), App.Rotation(App.Vector(0, 0, 1), 0)
+        ),
+    )
+    corr_y = 12
+    right_y_carriage_plate = add(
+        "RightYCarriagePlate",
+        part_left_y_carriage_plate,
+        App.Placement(
+            App.Vector(-frame_front_vslot_length/2, -base_y - corr_y, 0), App.Rotation(App.Vector(0, 0, 1), 0)
+        ),
+        App.Placement(
+            App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 0, 1), 180)
+        ),
+        App.Placement(
+            App.Vector(frame_front_vslot_length / 2, base_y + corr_y + (Y - base_y), 0), App.Rotation(App.Vector(0, 0, 1), 0)
+        ),
+    )
+
+if 0:
+    if "left_y_motor_plate" in printed_parts:
+        right_y_idler_plate = App.ActiveDocument.addObject("Part::Mirroring", "right_y_motor_plate")
+        right_y_idler_plate.Source = printed_parts["left_y_motor_plate"]
+        right_y_idler_plate.Label = u"right_y_motor_plate"
+        right_y_idler_plate.Normal = (1, 0, 0)
+        right_y_idler_plate.Base = (frame_front_vslot_length/2, 0, 0)
+
+    if "left_y_carriage_plate" in printed_parts:
+        right_y_idler_plate = App.ActiveDocument.addObject("Part::Mirroring", "right_y_motor_plate")
+        right_y_idler_plate.Source = printed_parts["left_y_motor_plate"]
+        right_y_idler_plate.Label = u"right_y_motor_plate"
+        right_y_idler_plate.Normal = (1, 0, 0)
+        right_y_idler_plate.Base = (frame_front_vslot_length/2, 0, 0)
 
 App.ActiveDocument.recompute()
 # Gui.SendMsgToActiveView("ViewFit")
