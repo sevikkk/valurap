@@ -50,6 +50,7 @@ class Body:
             ])
 
         text.append("FreeCAD.ActiveDocument.recompute()")
+        text.append(f"Part.export([{self.var_name}], '{self.name}.brep')")
 
         return text
 
@@ -249,6 +250,16 @@ class Body:
                         geoms_text.append(f"{geom_var_name}.Construction = {geom.Construction}")
                     if geom.Continuity != "CN":
                         geoms_text.append(f"{geom_var_name}.Continuity = {geom.Continuity}")
+                elif isinstance(geom, Part.ArcOfCircle):
+                    numbers["circle"] += 1
+                    n = numbers["circle"]
+                    geom_var_name = f"{var_name}_circle_{n}"
+                    center = self.get_vector(geom.Center, numbers, var_name, vectors, vectors_text)
+                    geoms_text.append(f"{geom_var_name} = Part.ArcOfCircle(Part.Circle({center}, App.{geom.Axis}, {geom.Radius}), {geom.FirstParameter}, {geom.LastParameter})")
+                    if geom.Construction:
+                        geoms_text.append(f"{geom_var_name}.Construction = {geom.Construction}")
+                    if geom.Continuity != "CN":
+                        geoms_text.append(f"{geom_var_name}.Continuity = {geom.Continuity}")
                 elif isinstance(geom, Part.Point):
                     numbers["point"] += 1
                     n = numbers["point"]
@@ -298,7 +309,7 @@ class Body:
                 second_text = self.convert_geoindex(ext_geom_names, constr.Second, geom_names, var_name)
                 third_text = self.convert_geoindex(ext_geom_names, constr.Third, geom_names, var_name)
 
-                if constr.Type == "Coincident":
+                if constr.Type in ("Coincident", "Tangent"):
                     text.extend([
                         f"    Sketcher.Constraint('{constr.Type}',",
                         f"        {first_text}, {constr.FirstPos},",
@@ -319,7 +330,7 @@ class Body:
                             f"        {second_text}, {constr.SecondPos},",
                             f"    ),"
                         ])
-                elif constr.Type in ("DistanceX", "DistanceY"):
+                elif constr.Type in ("DistanceX", "DistanceY", "Angle"):
                     if second_text is None:
                         text.extend([
                             f"    Sketcher.Constraint('{constr.Type}',",
