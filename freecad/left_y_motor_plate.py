@@ -15,7 +15,7 @@ print(2)
 FreeCAD.newDocument("plate")
 App.setActiveDocument("plate")
 print(3)
-body_leftymotorplate_debug = True
+body_leftymotorplate_debug = False
 body_leftymotorplate = App.activeDocument().addObject('PartDesign::Body', 'LeftYMotorPlate')
 body_leftymotorplate.Label = 'LeftYMotorPlate'
 obj_framefltopbb_bind = body_leftymotorplate.newObject('PartDesign::ShapeBinder', 'FrameFLTopBB_bind')
