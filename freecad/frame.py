@@ -460,7 +460,7 @@ x_left_motor = add(
     App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)),
     App.Placement(x_front_rail.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
     App.Placement(
-        App.Vector(-(frame_front_vslot_length - frame_x_vslot_length)/2 -25 - 10 + 14 + 21 + 5, 47 + 5, -10 - 5 - 21),
+        App.Vector(-(frame_front_vslot_length - frame_x_vslot_length)/2 -25 - 10 + 14 + 21 + 5, 47 + 5, -10 - X_plate_thickness - 21),
         App.Rotation(App.Vector(0, 0, 1), 0),
     ),
 )
@@ -472,7 +472,7 @@ x_right_motor = add(
     App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), -90)),
     App.Placement(x_back_rail.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
     App.Placement(
-        App.Vector(450 - (-(frame_front_vslot_length - frame_x_vslot_length)/2 -25 - 10 + 14 + 21 + 5), -(47 + 5), -10 - 5 - 21),
+        App.Vector(450 - (-(frame_front_vslot_length - frame_x_vslot_length)/2 -25 - 10 + 14 + 21 + 5), -(47 + 5), -10 - X_plate_thickness - 21),
         App.Rotation(App.Vector(0, 0, 1), 0),
     ),
 )
