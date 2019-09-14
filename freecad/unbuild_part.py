@@ -169,6 +169,12 @@ class Body:
             base_var_name, base_text = self.unparse_obj(obj.BaseFeature)
             text.extend(base_text)
 
+        up_var_name = None
+        if obj.UpToFace:
+            up_var_name, up_text = self.unparse_obj(obj.UpToFace[0])
+            assert not up_text
+
+
         sketch_var_name, sketch_text = self.unparse_obj(obj.Profile[0])
         text.extend(sketch_text)
         text.extend([
@@ -178,7 +184,6 @@ class Body:
             f"{var_name}.Length = '{obj.Length}'",
             f"{var_name}.Length2 = '{obj.Length2}'",
             f"{var_name}.Type = '{obj.Type}'",
-            f"{var_name}.UpToFace = {obj.UpToFace}",
             f"{var_name}.Reversed = {obj.Reversed}",
             f"{var_name}.Midplane = {obj.Midplane}",
             f"{var_name}.Offset = '{obj.Offset}'",
@@ -186,6 +191,11 @@ class Body:
         if base_var_name:
             text.extend([
                 f"{var_name}.BaseFeature = {base_var_name}",
+            ])
+
+        if up_var_name:
+            text.extend([
+                f"{var_name}.UpToFace = ({up_var_name}, {obj.UpToFace[1]})",
             ])
 
         return text
@@ -417,9 +427,9 @@ class Body:
         return start_point
 
 
-#d = FreeCAD.open('left_y_motor_plate.FCStd')
+d = FreeCAD.open('left_y_motor_plate.FCStd')
 #d = FreeCAD.open('left_y_idler_plate.FCStd')
-d = FreeCAD.open('plate.FCStd')
+#d = FreeCAD.open('plate.FCStd')
 for obj in d.Objects:
     #print(obj.TypeId, obj.Name, obj.Label)
     #print(obj.PropertiesList)
@@ -453,7 +463,7 @@ for obj in d.Objects:
     else:
         raise RuntimeError(f"Unknown TypeId {obj.TypeId} on top-level")
 
-f = open("left_y_carriage_plate.py", "w")
+f = open("left_y_motor_plate.py", "w")
 f.write("""
 import sys
 import FreeCAD
