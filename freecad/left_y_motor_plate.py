@@ -403,7 +403,7 @@ print('Sketch')
 obj_pad = body_leftymotorplate.newObject('PartDesign::Pad', 'Pad')
 obj_pad.Label = 'Pad'
 obj_pad.Profile = (obj_sketch, [])
-obj_pad.Length = '5 mm'
+obj_pad.Length = '6 mm'
 obj_pad.Length2 = '100 mm'
 obj_pad.Type = 'Length'
 obj_pad.Reversed = False
@@ -634,11 +634,11 @@ print('Pad001')
 obj_sketch002 = body_leftymotorplate.newObject('Sketcher::SketchObject', 'Sketch002')
 obj_sketch002.Support = (obj_pad001, ['Face17'])
 obj_sketch002.MapMode = 'FlatFace'
-obj_sketch002_vector_1 = App.Vector(-30.150, 36.000, 0.000)
-obj_sketch002_vector_2 = App.Vector(-45.650, 51.500, 0.000)
-obj_sketch002_vector_3 = App.Vector(-14.650, 51.500, 0.000)
-obj_sketch002_vector_4 = App.Vector(-45.650, 20.500, 0.000)
-obj_sketch002_vector_5 = App.Vector(-14.650, 20.500, 0.000)
+obj_sketch002_vector_1 = App.Vector(-30.150, 37.000, 0.000)
+obj_sketch002_vector_2 = App.Vector(-45.650, 52.500, 0.000)
+obj_sketch002_vector_3 = App.Vector(-14.650, 52.500, 0.000)
+obj_sketch002_vector_4 = App.Vector(-45.650, 21.500, 0.000)
+obj_sketch002_vector_5 = App.Vector(-14.650, 21.500, 0.000)
 obj_sketch002_circle_1 = Part.Circle(obj_sketch002_vector_1, App.Vector (0.0, 0.0, 1.0), 15.0)
 obj_sketch002_circle_2 = Part.Circle(obj_sketch002_vector_2, App.Vector (0.0, 0.0, 1.0), 1.6)
 obj_sketch002_circle_3 = Part.Circle(obj_sketch002_vector_3, App.Vector (0.0, 0.0, 1.0), 1.6)
@@ -754,9 +754,9 @@ print('Pocket')
 obj_sketch003 = body_leftymotorplate.newObject('Sketcher::SketchObject', 'Sketch003')
 obj_sketch003.Support = (obj_pocket, ['Face19'])
 obj_sketch003.MapMode = 'FlatFace'
-obj_sketch003_vector_1 = App.Vector(-57.000, -13.250, 0.000)
-obj_sketch003_vector_2 = App.Vector(-57.000, 11.750, 0.000)
-obj_sketch003_vector_3 = App.Vector(-20.000, 11.750, 0.000)
+obj_sketch003_vector_1 = App.Vector(-58.000, -13.250, 0.000)
+obj_sketch003_vector_2 = App.Vector(-58.000, 11.750, 0.000)
+obj_sketch003_vector_3 = App.Vector(-21.000, 11.750, 0.000)
 obj_sketch003_line_1 = Part.LineSegment(obj_sketch003_vector_1, obj_sketch003_vector_2)
 obj_sketch003_line_2 = Part.LineSegment(obj_sketch003_vector_2, obj_sketch003_vector_3)
 obj_sketch003_line_3 = Part.LineSegment(obj_sketch003_vector_3, obj_sketch003_vector_1)
@@ -1056,11 +1056,11 @@ print('Pad002')
 obj_sketch005 = body_leftymotorplate.newObject('Sketcher::SketchObject', 'Sketch005')
 obj_sketch005.Support = (obj_pad002, ['Face28'])
 obj_sketch005.MapMode = 'FlatFace'
-obj_sketch005_vector_1 = App.Vector(-36.000, 70.000, 0.000)
-obj_sketch005_vector_2 = App.Vector(-51.500, 54.500, 0.000)
-obj_sketch005_vector_3 = App.Vector(-51.500, 85.500, 0.000)
-obj_sketch005_vector_4 = App.Vector(-20.500, 54.500, 0.000)
-obj_sketch005_vector_5 = App.Vector(-20.500, 85.500, 0.000)
+obj_sketch005_vector_1 = App.Vector(-37.000, 70.000, 0.000)
+obj_sketch005_vector_2 = App.Vector(-52.500, 54.500, 0.000)
+obj_sketch005_vector_3 = App.Vector(-52.500, 85.500, 0.000)
+obj_sketch005_vector_4 = App.Vector(-21.500, 54.500, 0.000)
+obj_sketch005_vector_5 = App.Vector(-21.500, 85.500, 0.000)
 obj_sketch005_circle_1 = Part.Circle(obj_sketch005_vector_1, App.Vector (0.0, 0.0, 1.0), 15.0)
 obj_sketch005_circle_2 = Part.Circle(obj_sketch005_vector_2, App.Vector (0.0, 0.0, 1.0), 1.6)
 obj_sketch005_circle_3 = Part.Circle(obj_sketch005_vector_3, App.Vector (0.0, 0.0, 1.0), 1.6)
@@ -1175,10 +1175,10 @@ print('Pocket002')
 obj_sketch006 = body_leftymotorplate.newObject('Sketcher::SketchObject', 'Sketch006')
 obj_sketch006.Support = (obj_pocket002, ['Face5'])
 obj_sketch006.MapMode = 'FlatFace'
-obj_sketch006_vector_1 = App.Vector(-1.000, 83.000, 0.000)
-obj_sketch006_vector_2 = App.Vector(10.000, 83.000, 0.000)
-obj_sketch006_vector_3 = App.Vector(10.000, 57.000, 0.000)
-obj_sketch006_vector_4 = App.Vector(-1.000, 57.000, 0.000)
+obj_sketch006_vector_1 = App.Vector(-5.000, 85.000, 0.000)
+obj_sketch006_vector_2 = App.Vector(10.000, 85.000, 0.000)
+obj_sketch006_vector_3 = App.Vector(10.000, 55.000, 0.000)
+obj_sketch006_vector_4 = App.Vector(-5.000, 55.000, 0.000)
 obj_sketch006_vector_5 = App.Vector(-30.000, 70.000, 0.000)
 obj_sketch006_line_1 = Part.LineSegment(obj_sketch006_vector_1, obj_sketch006_vector_2)
 obj_sketch006_line_2 = Part.LineSegment(obj_sketch006_vector_2, obj_sketch006_vector_3)
@@ -1235,7 +1235,7 @@ obj_sketch006_constraints = [
     Sketcher.Constraint('DistanceX',
         obj_sketch006_all_geoms.index(obj_sketch006_line_1), 1,
         obj_sketch006_all_geoms.index(obj_sketch006_line_1), 2,
-        11.0,
+        15.0,
     ),
     # 10
     Sketcher.Constraint('Symmetric',
@@ -1247,13 +1247,13 @@ obj_sketch006_constraints = [
     Sketcher.Constraint('DistanceY',
         obj_sketch006_all_geoms.index(obj_sketch006_point_1), 1,
         obj_sketch006_all_geoms.index(obj_sketch006_line_1), 1,
-        13.0,
+        15.0,
     ),
     # 12
     Sketcher.Constraint('DistanceY',
         obj_sketch006_all_geoms.index(obj_sketch006_line_3), 2,
         obj_sketch006_all_geoms.index(obj_sketch006_point_1), 1,
-        13.0,
+        15.0,
     ),
     # 13
 ]
@@ -1300,10 +1300,10 @@ print('Fillet')
 obj_sketch008 = body_leftymotorplate.newObject('Sketcher::SketchObject', 'Sketch008')
 obj_sketch008.Support = (obj_fillet, ['Face8'])
 obj_sketch008.MapMode = 'FlatFace'
-obj_sketch008_vector_1 = App.Vector(36.000, 70.000, 0.000)
-obj_sketch008_vector_2 = App.Vector(15.000, 83.000, 0.000)
-obj_sketch008_vector_3 = App.Vector(15.000, 57.000, 0.000)
-obj_sketch008_circle_1 = Part.Circle(obj_sketch008_vector_1, App.Vector (0.0, 0.0, 1.0), 11.0)
+obj_sketch008_vector_1 = App.Vector(37.000, 70.000, 0.000)
+obj_sketch008_vector_2 = App.Vector(16.000, 85.000, 0.000)
+obj_sketch008_vector_3 = App.Vector(16.000, 55.000, 0.000)
+obj_sketch008_circle_1 = Part.Circle(obj_sketch008_vector_1, App.Vector (0.0, 0.0, 1.0), 11.5)
 obj_sketch008_line_1 = Part.LineSegment(obj_sketch008_vector_2, obj_sketch008_vector_1)
 obj_sketch008_line_1.Construction = True
 obj_sketch008_line_2 = Part.LineSegment(obj_sketch008_vector_1, obj_sketch008_vector_3)
@@ -1315,7 +1315,7 @@ for a, b in obj_sketch008_all_ext_geoms:
     obj_sketch008.addExternal(a.Name, b)
 obj_sketch008_constraints = [
     Sketcher.Constraint('Radius',
-        obj_sketch008_all_geoms.index(obj_sketch008_circle_1), 11.0,
+        obj_sketch008_all_geoms.index(obj_sketch008_circle_1), 11.5,
     ),
     # 1
     Sketcher.Constraint('Coincident',
@@ -1380,9 +1380,9 @@ print('Pocket003')
 obj_sketch009 = body_leftymotorplate.newObject('Sketcher::SketchObject', 'Sketch009')
 obj_sketch009.Support = (obj_pocket003, ['Face1'])
 obj_sketch009.MapMode = 'FlatFace'
-obj_sketch009_vector_1 = App.Vector(-36.000, 70.000, 0.000)
-obj_sketch009_vector_2 = App.Vector(-15.000, 83.000, 0.000)
-obj_sketch009_vector_3 = App.Vector(-15.000, 57.000, 0.000)
+obj_sketch009_vector_1 = App.Vector(-37.000, 70.000, 0.000)
+obj_sketch009_vector_2 = App.Vector(-16.000, 85.000, 0.000)
+obj_sketch009_vector_3 = App.Vector(-16.000, 55.000, 0.000)
 obj_sketch009_circle_1 = Part.Circle(obj_sketch009_vector_1, App.Vector (0.0, 0.0, 1.0), 8.0)
 obj_sketch009_line_1 = Part.LineSegment(obj_sketch009_vector_1, obj_sketch009_vector_2)
 obj_sketch009_line_1.Construction = True
@@ -1442,7 +1442,7 @@ print('Sketch009')
 obj_pocket004 = body_leftymotorplate.newObject('PartDesign::Pocket', 'Pocket004')
 obj_pocket004.Label = 'Pocket004'
 obj_pocket004.Profile = (obj_sketch009, [])
-obj_pocket004.Length = '5 mm'
+obj_pocket004.Length = '8 mm'
 obj_pocket004.Length2 = '100 mm'
 obj_pocket004.Type = 'Length'
 obj_pocket004.Reversed = False
@@ -1458,7 +1458,7 @@ FreeCAD.ActiveDocument.recompute()
 print('Pocket004')
 
 obj_sketch010 = body_leftymotorplate.newObject('Sketcher::SketchObject', 'Sketch010')
-obj_sketch010.Support = (obj_pocket004, ['Face53'])
+obj_sketch010.Support = (obj_pocket004, ['Face42'])
 obj_sketch010.MapMode = 'FlatFace'
 obj_sketch010_vector_1 = App.Vector(-51.850, 11.750, 0.000)
 obj_sketch010_vector_2 = App.Vector(-8.150, 11.750, 0.000)
@@ -1564,9 +1564,9 @@ print('Pocket005')
 obj_sketch011 = body_leftymotorplate.newObject('Sketcher::SketchObject', 'Sketch011')
 obj_sketch011.Support = (obj_pocket005, ['Face40'])
 obj_sketch011.MapMode = 'FlatFace'
-obj_sketch011_vector_1 = App.Vector(-35.000, -57.000, 0.000)
-obj_sketch011_vector_2 = App.Vector(-56.150, -57.000, 0.000)
-obj_sketch011_vector_3 = App.Vector(-56.150, -15.000, 0.000)
+obj_sketch011_vector_1 = App.Vector(-35.000, -58.000, 0.000)
+obj_sketch011_vector_2 = App.Vector(-56.150, -58.000, 0.000)
+obj_sketch011_vector_3 = App.Vector(-56.150, -16.000, 0.000)
 obj_sketch011_line_1 = Part.LineSegment(obj_sketch011_vector_1, obj_sketch011_vector_2)
 obj_sketch011_line_2 = Part.LineSegment(obj_sketch011_vector_2, obj_sketch011_vector_3)
 obj_sketch011_line_3 = Part.LineSegment(obj_sketch011_vector_3, obj_sketch011_vector_1)
@@ -1745,8 +1745,80 @@ if body_leftymotorplate_debug:
 FreeCAD.ActiveDocument.recompute()
 print('Pocket007')
 
-body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004, obj_sketch010, obj_pocket005, obj_sketch011, obj_pocket006, obj_sketch012, obj_pocket007]
-body_leftymotorplate.Tip = obj_pocket007
+obj_sketch013 = body_leftymotorplate.newObject('Sketcher::SketchObject', 'Sketch013')
+obj_sketch013.Support = (obj_pocket007, ['Face10'])
+obj_sketch013.MapMode = 'FlatFace'
+obj_sketch013_vector_1 = App.Vector(-0.000, 90.150, 0.000)
+obj_sketch013_vector_2 = App.Vector(-0.000, 49.850, 0.000)
+obj_sketch013_vector_3 = App.Vector(0.000, -10.000, 0.000)
+obj_sketch013_circle_1 = Part.Circle(obj_sketch013_vector_1, App.Vector (0.0, 0.0, 1.0), 6.5)
+obj_sketch013_circle_2 = Part.Circle(obj_sketch013_vector_2, App.Vector (0.0, 0.0, 1.0), 6.5)
+obj_sketch013_circle_3 = Part.Circle(obj_sketch013_vector_3, App.Vector (0.0, 0.0, 1.0), 6.5)
+obj_sketch013_all_geoms = [obj_sketch013_circle_1, obj_sketch013_circle_2, obj_sketch013_circle_3]
+obj_sketch013.addGeometry(obj_sketch013_all_geoms, False)
+obj_sketch013_all_ext_geoms = [[obj_pocket007, 'Edge48'], [obj_pocket007, 'Edge47'], [obj_pocket007, 'Edge52']]
+for a, b in obj_sketch013_all_ext_geoms:
+    obj_sketch013.addExternal(a.Name, b)
+obj_sketch013_constraints = [
+    Sketcher.Constraint('Radius',
+        obj_sketch013_all_geoms.index(obj_sketch013_circle_1), 6.5,
+    ),
+    # 1
+    Sketcher.Constraint('Equal',
+        obj_sketch013_all_geoms.index(obj_sketch013_circle_1),
+        obj_sketch013_all_geoms.index(obj_sketch013_circle_2),
+    ),
+    # 2
+    Sketcher.Constraint('Equal',
+        obj_sketch013_all_geoms.index(obj_sketch013_circle_1),
+        obj_sketch013_all_geoms.index(obj_sketch013_circle_3),
+    ),
+    # 3
+    Sketcher.Constraint('Coincident',
+        obj_sketch013_all_geoms.index(obj_sketch013_circle_1), 3,
+        -obj_sketch013_all_ext_geoms.index([obj_pocket007, 'Edge48'])-3, 3,
+    ),
+    # 4
+    Sketcher.Constraint('Coincident',
+        obj_sketch013_all_geoms.index(obj_sketch013_circle_2), 3,
+        -obj_sketch013_all_ext_geoms.index([obj_pocket007, 'Edge47'])-3, 3,
+    ),
+    # 5
+    Sketcher.Constraint('Coincident',
+        obj_sketch013_all_geoms.index(obj_sketch013_circle_3), 3,
+        -obj_sketch013_all_ext_geoms.index([obj_pocket007, 'Edge52'])-3, 3,
+    ),
+    # 6
+]
+obj_sketch013.addConstraint(obj_sketch013_constraints)
+if body_leftymotorplate_debug:
+    body_leftymotorplate.Tip = obj_sketch013
+    body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004, obj_sketch010, obj_pocket005, obj_sketch011, obj_pocket006, obj_sketch012, obj_pocket007, obj_sketch013]
+    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-032-Sketch013.FCStd')
+FreeCAD.ActiveDocument.recompute()
+print('Sketch013')
+
+obj_pocket008 = body_leftymotorplate.newObject('PartDesign::Pocket', 'Pocket008')
+obj_pocket008.Label = 'Pocket008'
+obj_pocket008.Profile = (obj_sketch013, [])
+obj_pocket008.Length = '15 mm'
+obj_pocket008.Length2 = '100 mm'
+obj_pocket008.Type = 'Length'
+obj_pocket008.Reversed = True
+obj_pocket008.Midplane = False
+obj_pocket008.Offset = '0 mm'
+obj_pocket008.BaseFeature = obj_pocket007
+if body_leftymotorplate_debug:
+    body_leftymotorplate.Tip = obj_pocket008
+    body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004, obj_sketch010, obj_pocket005, obj_sketch011, obj_pocket006, obj_sketch012, obj_pocket007, obj_sketch013, obj_pocket008]
+    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-033-Pocket008.FCStd')
+FreeCAD.ActiveDocument.recompute()
+print('Pocket008')
+
+body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004, obj_sketch010, obj_pocket005, obj_sketch011, obj_pocket006, obj_sketch012, obj_pocket007, obj_sketch013, obj_pocket008]
+body_leftymotorplate.Tip = obj_pocket008
 FreeCAD.ActiveDocument.recompute()
 Part.export([body_leftymotorplate], 'left_y_motor_plate.brep')
 
