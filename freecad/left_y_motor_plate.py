@@ -17,7 +17,7 @@ App.setActiveDocument("plate")
 print(3)
 body_leftymotorplate_debug = False
 body_leftymotorplate = App.activeDocument().addObject('PartDesign::Body', 'LeftYMotorPlate')
-body_leftymotorplate.Label = 'LeftYMotorPlate'
+body_leftymotorplate.Label = 'left_y_motor_plate'
 obj_frontvslot_bind = body_leftymotorplate.newObject('PartDesign::ShapeBinder', 'FrontVSlot_bind')
 obj_frontvslot_bind_orig = App.getDocument('frame').getObject('FrontVSlot')
 obj_frontvslot_bind.TraceSupport = False
@@ -26,7 +26,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_frontvslot_bind
     body_leftymotorplate.Group = [obj_frontvslot_bind]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-001-FrontVSlot_bind.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-001-FrontVSlot_bind.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('FrontVSlot_bind')
 
@@ -38,7 +38,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_leftvslot_bind
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-002-LeftVSlot_bind.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-002-LeftVSlot_bind.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('LeftVSlot_bind')
 
@@ -50,7 +50,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_leftrail_bind
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-003-LeftRail_bind.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-003-LeftRail_bind.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('LeftRail_bind')
 
@@ -62,7 +62,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_leftmotor_bind
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-004-LeftMotor_bind.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-004-LeftMotor_bind.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('LeftMotor_bind')
 
@@ -74,7 +74,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_frameflmotor_bind
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-005-FrameFLMotor_bind.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-005-FrameFLMotor_bind.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('FrameFLMotor_bind')
 
@@ -86,7 +86,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_framefltopbb_bind
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-006-FrameFLTopBB_bind.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-006-FrameFLTopBB_bind.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('FrameFLTopBB_bind')
 
@@ -396,7 +396,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_sketch
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-007-Sketch.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-007-Sketch.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Sketch')
 
@@ -413,7 +413,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_pad
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-008-Pad.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-008-Pad.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Pad')
 
@@ -609,7 +609,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_sketch001
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-009-Sketch001.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-009-Sketch001.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Sketch001')
 
@@ -627,7 +627,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_pad001
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-010-Pad001.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-010-Pad001.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Pad001')
 
@@ -729,7 +729,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_sketch002
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-011-Sketch002.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-011-Sketch002.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Sketch002')
 
@@ -747,7 +747,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_pocket
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-012-Pocket.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-012-Pocket.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Pocket')
 
@@ -817,7 +817,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_sketch003
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-013-Sketch003.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-013-Sketch003.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Sketch003')
 
@@ -835,7 +835,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_pocket001
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-014-Pocket001.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-014-Pocket001.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Pocket001')
 
@@ -1031,7 +1031,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_sketch004
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-015-Sketch004.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-015-Sketch004.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Sketch004')
 
@@ -1049,7 +1049,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_pad002
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-016-Pad002.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-016-Pad002.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Pad002')
 
@@ -1150,7 +1150,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_sketch005
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-017-Sketch005.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-017-Sketch005.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Sketch005')
 
@@ -1168,7 +1168,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_pocket002
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-018-Pocket002.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-018-Pocket002.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Pocket002')
 
@@ -1262,7 +1262,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_sketch006
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-019-Sketch006.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-019-Sketch006.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Sketch006')
 
@@ -1280,7 +1280,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_pad003
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-020-Pad003.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-020-Pad003.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Pad003')
 
@@ -1293,7 +1293,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_fillet
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-021-Fillet.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-021-Fillet.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Fillet')
 
@@ -1355,7 +1355,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_sketch008
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-022-Sketch008.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-022-Sketch008.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Sketch008')
 
@@ -1373,7 +1373,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_pocket003
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-023-Pocket003.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-023-Pocket003.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Pocket003')
 
@@ -1435,7 +1435,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_sketch009
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-024-Sketch009.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-024-Sketch009.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Sketch009')
 
@@ -1453,32 +1453,24 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_pocket004
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-025-Pocket004.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-025-Pocket004.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Pocket004')
 
 obj_sketch010 = body_leftymotorplate.newObject('Sketcher::SketchObject', 'Sketch010')
 obj_sketch010.Support = (obj_pocket004, ['Face53'])
 obj_sketch010.MapMode = 'FlatFace'
-obj_sketch010_vector_1 = App.Vector(-56.150, 91.650, 0.000)
-obj_sketch010_vector_2 = App.Vector(-35.000, 91.650, 0.000)
-obj_sketch010_vector_3 = App.Vector(-35.000, 48.350, 0.000)
-obj_sketch010_vector_4 = App.Vector(-56.150, 48.350, 0.000)
-obj_sketch010_vector_5 = App.Vector(-51.850, 11.750, 0.000)
-obj_sketch010_vector_6 = App.Vector(-8.150, 11.750, 0.000)
-obj_sketch010_vector_7 = App.Vector(-8.150, -13.250, 0.000)
-obj_sketch010_vector_8 = App.Vector(-51.850, -13.250, 0.000)
+obj_sketch010_vector_1 = App.Vector(-51.850, 11.750, 0.000)
+obj_sketch010_vector_2 = App.Vector(-8.150, 11.750, 0.000)
+obj_sketch010_vector_3 = App.Vector(-8.150, -13.250, 0.000)
+obj_sketch010_vector_4 = App.Vector(-51.850, -13.250, 0.000)
 obj_sketch010_line_1 = Part.LineSegment(obj_sketch010_vector_1, obj_sketch010_vector_2)
 obj_sketch010_line_2 = Part.LineSegment(obj_sketch010_vector_2, obj_sketch010_vector_3)
 obj_sketch010_line_3 = Part.LineSegment(obj_sketch010_vector_3, obj_sketch010_vector_4)
 obj_sketch010_line_4 = Part.LineSegment(obj_sketch010_vector_4, obj_sketch010_vector_1)
-obj_sketch010_line_5 = Part.LineSegment(obj_sketch010_vector_5, obj_sketch010_vector_6)
-obj_sketch010_line_6 = Part.LineSegment(obj_sketch010_vector_6, obj_sketch010_vector_7)
-obj_sketch010_line_7 = Part.LineSegment(obj_sketch010_vector_7, obj_sketch010_vector_8)
-obj_sketch010_line_8 = Part.LineSegment(obj_sketch010_vector_8, obj_sketch010_vector_5)
-obj_sketch010_all_geoms = [obj_sketch010_line_1, obj_sketch010_line_2, obj_sketch010_line_3, obj_sketch010_line_4, obj_sketch010_line_5, obj_sketch010_line_6, obj_sketch010_line_7, obj_sketch010_line_8]
+obj_sketch010_all_geoms = [obj_sketch010_line_1, obj_sketch010_line_2, obj_sketch010_line_3, obj_sketch010_line_4]
 obj_sketch010.addGeometry(obj_sketch010_all_geoms, False)
-obj_sketch010_all_ext_geoms = [[obj_pocket004, 'Edge150'], [obj_pocket004, 'Edge152'], [obj_pocket004, 'Edge100'], [obj_pocket004, 'Edge91']]
+obj_sketch010_all_ext_geoms = [[obj_pocket004, 'Edge100'], [obj_pocket004, 'Edge91']]
 for a, b in obj_sketch010_all_ext_geoms:
     obj_sketch010.addExternal(a.Name, b)
 obj_sketch010_constraints = [
@@ -1519,92 +1511,34 @@ obj_sketch010_constraints = [
     ),
     # 8
     Sketcher.Constraint('PointOnObject',
-        -obj_sketch010_all_ext_geoms.index([obj_pocket004, 'Edge150'])-3, 1,
-        obj_sketch010_all_geoms.index(obj_sketch010_line_4),
+        -obj_sketch010_all_ext_geoms.index([obj_pocket004, 'Edge100'])-3, 1,
+        obj_sketch010_all_geoms.index(obj_sketch010_line_3),
     ),
     # 9
     Sketcher.Constraint('PointOnObject',
-        -obj_sketch010_all_ext_geoms.index([obj_pocket004, 'Edge150'])-3, 2,
-        obj_sketch010_all_geoms.index(obj_sketch010_line_2),
+        -obj_sketch010_all_ext_geoms.index([obj_pocket004, 'Edge100'])-3, 2,
+        obj_sketch010_all_geoms.index(obj_sketch010_line_1),
     ),
     # 10
-    Sketcher.Constraint('DistanceY',
-        -obj_sketch010_all_ext_geoms.index([obj_pocket004, 'Edge150'])-3, 1,
-        obj_sketch010_all_geoms.index(obj_sketch010_line_1), 1,
-        0.5,
-    ),
-    # 11
-    Sketcher.Constraint('DistanceY',
-        obj_sketch010_all_geoms.index(obj_sketch010_line_3), 2,
-        -obj_sketch010_all_ext_geoms.index([obj_pocket004, 'Edge152'])-3, 2,
-        0.5,
-    ),
-    # 12
-    Sketcher.Constraint('Coincident',
-        obj_sketch010_all_geoms.index(obj_sketch010_line_5), 2,
-        obj_sketch010_all_geoms.index(obj_sketch010_line_6), 1,
-    ),
-    # 13
-    Sketcher.Constraint('Coincident',
-        obj_sketch010_all_geoms.index(obj_sketch010_line_6), 2,
-        obj_sketch010_all_geoms.index(obj_sketch010_line_7), 1,
-    ),
-    # 14
-    Sketcher.Constraint('Coincident',
-        obj_sketch010_all_geoms.index(obj_sketch010_line_7), 2,
-        obj_sketch010_all_geoms.index(obj_sketch010_line_8), 1,
-    ),
-    # 15
-    Sketcher.Constraint('Coincident',
-        obj_sketch010_all_geoms.index(obj_sketch010_line_8), 2,
-        obj_sketch010_all_geoms.index(obj_sketch010_line_5), 1,
-    ),
-    # 16
-    Sketcher.Constraint('Horizontal',
-        obj_sketch010_all_geoms.index(obj_sketch010_line_5),
-    ),
-    # 17
-    Sketcher.Constraint('Horizontal',
-        obj_sketch010_all_geoms.index(obj_sketch010_line_7),
-    ),
-    # 18
-    Sketcher.Constraint('Vertical',
-        obj_sketch010_all_geoms.index(obj_sketch010_line_6),
-    ),
-    # 19
-    Sketcher.Constraint('Vertical',
-        obj_sketch010_all_geoms.index(obj_sketch010_line_8),
-    ),
-    # 20
-    Sketcher.Constraint('PointOnObject',
-        -obj_sketch010_all_ext_geoms.index([obj_pocket004, 'Edge100'])-3, 1,
-        obj_sketch010_all_geoms.index(obj_sketch010_line_7),
-    ),
-    # 21
-    Sketcher.Constraint('PointOnObject',
-        -obj_sketch010_all_ext_geoms.index([obj_pocket004, 'Edge100'])-3, 2,
-        obj_sketch010_all_geoms.index(obj_sketch010_line_5),
-    ),
-    # 22
     Sketcher.Constraint('DistanceX',
         -obj_sketch010_all_ext_geoms.index([obj_pocket004, 'Edge91'])-3, 2,
-        obj_sketch010_all_geoms.index(obj_sketch010_line_6), 2,
+        obj_sketch010_all_geoms.index(obj_sketch010_line_2), 2,
         0.7,
     ),
-    # 23
+    # 11
     Sketcher.Constraint('DistanceX',
-        obj_sketch010_all_geoms.index(obj_sketch010_line_7), 2,
+        obj_sketch010_all_geoms.index(obj_sketch010_line_3), 2,
         -obj_sketch010_all_ext_geoms.index([obj_pocket004, 'Edge100'])-3, 1,
         0.7,
     ),
-    # 24
+    # 12
 ]
 obj_sketch010.addConstraint(obj_sketch010_constraints)
 if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_sketch010
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004, obj_sketch010]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-026-Sketch010.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-026-Sketch010.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Sketch010')
 
@@ -1623,7 +1557,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_pocket005
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004, obj_sketch010, obj_pocket005]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-027-Pocket005.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-027-Pocket005.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Pocket005')
 
@@ -1684,7 +1618,7 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_sketch011
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004, obj_sketch010, obj_pocket005, obj_sketch011]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-028-Sketch011.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-028-Sketch011.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Sketch011')
 
@@ -1703,13 +1637,117 @@ if body_leftymotorplate_debug:
     body_leftymotorplate.Tip = obj_pocket006
     body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004, obj_sketch010, obj_pocket005, obj_sketch011, obj_pocket006]
     FreeCAD.ActiveDocument.recompute()
-    App.ActiveDocument.saveAs('debug/plate-LeftYMotorPlate-029-Pocket006.FCStd')
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-029-Pocket006.FCStd')
 FreeCAD.ActiveDocument.recompute()
 print('Pocket006')
 
-body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004, obj_sketch010, obj_pocket005, obj_sketch011, obj_pocket006]
-body_leftymotorplate.Tip = obj_pocket006
+obj_sketch012 = body_leftymotorplate.newObject('Sketcher::SketchObject', 'Sketch012')
+obj_sketch012.Support = (obj_pocket006, ['Face58'])
+obj_sketch012.MapMode = 'FlatFace'
+obj_sketch012_vector_1 = App.Vector(-56.150, 91.650, 0.000)
+obj_sketch012_vector_2 = App.Vector(-35.000, 91.650, 0.000)
+obj_sketch012_vector_3 = App.Vector(-35.000, 48.350, 0.000)
+obj_sketch012_vector_4 = App.Vector(-56.150, 48.350, 0.000)
+obj_sketch012_line_1 = Part.LineSegment(obj_sketch012_vector_1, obj_sketch012_vector_2)
+obj_sketch012_line_2 = Part.LineSegment(obj_sketch012_vector_2, obj_sketch012_vector_3)
+obj_sketch012_line_3 = Part.LineSegment(obj_sketch012_vector_3, obj_sketch012_vector_4)
+obj_sketch012_line_4 = Part.LineSegment(obj_sketch012_vector_4, obj_sketch012_vector_1)
+obj_sketch012_all_geoms = [obj_sketch012_line_1, obj_sketch012_line_2, obj_sketch012_line_3, obj_sketch012_line_4]
+obj_sketch012.addGeometry(obj_sketch012_all_geoms, False)
+obj_sketch012_all_ext_geoms = [[obj_pocket006, 'Edge172'], [obj_pocket006, 'Edge155']]
+for a, b in obj_sketch012_all_ext_geoms:
+    obj_sketch012.addExternal(a.Name, b)
+obj_sketch012_constraints = [
+    Sketcher.Constraint('Coincident',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_1), 2,
+        obj_sketch012_all_geoms.index(obj_sketch012_line_2), 1,
+    ),
+    # 1
+    Sketcher.Constraint('Coincident',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_2), 2,
+        obj_sketch012_all_geoms.index(obj_sketch012_line_3), 1,
+    ),
+    # 2
+    Sketcher.Constraint('Coincident',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_3), 2,
+        obj_sketch012_all_geoms.index(obj_sketch012_line_4), 1,
+    ),
+    # 3
+    Sketcher.Constraint('Coincident',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_4), 2,
+        obj_sketch012_all_geoms.index(obj_sketch012_line_1), 1,
+    ),
+    # 4
+    Sketcher.Constraint('Horizontal',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_1),
+    ),
+    # 5
+    Sketcher.Constraint('Horizontal',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_3),
+    ),
+    # 6
+    Sketcher.Constraint('Vertical',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_2),
+    ),
+    # 7
+    Sketcher.Constraint('Vertical',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_4),
+    ),
+    # 8
+    Sketcher.Constraint('PointOnObject',
+        -obj_sketch012_all_ext_geoms.index([obj_pocket006, 'Edge172'])-3, 1,
+        obj_sketch012_all_geoms.index(obj_sketch012_line_4),
+    ),
+    # 9
+    Sketcher.Constraint('PointOnObject',
+        -obj_sketch012_all_ext_geoms.index([obj_pocket006, 'Edge172'])-3, 2,
+        obj_sketch012_all_geoms.index(obj_sketch012_line_2),
+    ),
+    # 10
+    Sketcher.Constraint('DistanceY',
+        -obj_sketch012_all_ext_geoms.index([obj_pocket006, 'Edge172'])-3, 1,
+        obj_sketch012_all_geoms.index(obj_sketch012_line_1), 1,
+        0.5,
+    ),
+    # 11
+    Sketcher.Constraint('DistanceY',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_3), 2,
+        -obj_sketch012_all_ext_geoms.index([obj_pocket006, 'Edge155'])-3, 2,
+        0.5,
+    ),
+    # 12
+]
+obj_sketch012.addConstraint(obj_sketch012_constraints)
+if body_leftymotorplate_debug:
+    body_leftymotorplate.Tip = obj_sketch012
+    body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004, obj_sketch010, obj_pocket005, obj_sketch011, obj_pocket006, obj_sketch012]
+    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-030-Sketch012.FCStd')
 FreeCAD.ActiveDocument.recompute()
-Part.export([body_leftymotorplate], 'LeftYMotorPlate.brep')
+print('Sketch012')
+
+obj_pocket007 = body_leftymotorplate.newObject('PartDesign::Pocket', 'Pocket007')
+obj_pocket007.Label = 'Pocket007'
+obj_pocket007.Profile = (obj_sketch012, [])
+obj_pocket007.Length = '0 mm'
+obj_pocket007.Length2 = '100 mm'
+obj_pocket007.Type = 'UpToFace'
+obj_pocket007.Reversed = False
+obj_pocket007.Midplane = False
+obj_pocket007.Offset = '0 mm'
+obj_pocket007.BaseFeature = obj_pocket006
+obj_pocket007.UpToFace = (obj_pocket006, ['Face10'])
+if body_leftymotorplate_debug:
+    body_leftymotorplate.Tip = obj_pocket007
+    body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004, obj_sketch010, obj_pocket005, obj_sketch011, obj_pocket006, obj_sketch012, obj_pocket007]
+    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.saveAs('debug/plate-left_y_motor_plate-031-Pocket007.FCStd')
+FreeCAD.ActiveDocument.recompute()
+print('Pocket007')
+
+body_leftymotorplate.Group = [obj_frontvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftmotor_bind, obj_frameflmotor_bind, obj_framefltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_fillet, obj_sketch008, obj_pocket003, obj_sketch009, obj_pocket004, obj_sketch010, obj_pocket005, obj_sketch011, obj_pocket006, obj_sketch012, obj_pocket007]
+body_leftymotorplate.Tip = obj_pocket007
+FreeCAD.ActiveDocument.recompute()
+Part.export([body_leftymotorplate], 'left_y_motor_plate.brep')
 
 App.ActiveDocument.saveAs("plate.FCStd")
