@@ -36,14 +36,15 @@ frame_vertical_vslot_length = 500
 panel_left_vslot_length = 1000
 panel_front_vslot_length = 400
 
-X_plate_thickness = 5
+X_plate_thickness = 6
+Y_plate_thickness = 6
 titan_motor_plate_thickness = 5
 front_titan_placement = App.Vector(30, -60, -30)
 back_titan_placement = App.Vector(-30 + 44, 60, -30)
 
 y_belt_offset_x = 17
-y_belt_offset_y = 42 / 2 + 5
-y_belt_offset_z = -12
+y_belt_offset_y = 42 / 2 + Y_plate_thickness
+y_belt_offset_z = -13
 y_belt_end_offset_y = 25
 y_belt_length = frame_left_vslot_length + y_belt_offset_y + y_belt_end_offset_y
 x_belt_length = frame_front_vslot_length - 100
@@ -763,7 +764,7 @@ for i in range(4):
         App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 1, 0), 180)),
         App.Placement(base, App.Rotation(App.Vector(0, 0, 1), 0)),
         App.Placement(
-            App.Vector(70 * k1 + k3, -(21 + 5 + 10) * k2, 47 + 35),
+            App.Vector(70 * k1 + k3, -(21 + Y_plate_thickness + 10) * k2, 47 + 35),
             App.Rotation(App.Vector(0, 0, 1), 0),
         ),
     )
