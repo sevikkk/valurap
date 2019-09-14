@@ -261,10 +261,9 @@ print('Sketch')
 obj_pad = body_left_y_idler_plate.newObject('PartDesign::Pad', 'Pad')
 obj_pad.Label = 'Pad'
 obj_pad.Profile = (obj_sketch, [])
-obj_pad.Length = '5 mm'
+obj_pad.Length = '6 mm'
 obj_pad.Length2 = '100 mm'
 obj_pad.Type = 'Length'
-obj_pad.UpToFace = None
 obj_pad.Reversed = False
 obj_pad.Midplane = False
 obj_pad.Offset = '0 mm'
@@ -400,7 +399,6 @@ obj_pad001.Profile = (obj_sketch001, [])
 obj_pad001.Length = '40 mm'
 obj_pad001.Length2 = '100 mm'
 obj_pad001.Type = 'Length'
-obj_pad001.UpToFace = None
 obj_pad001.Reversed = False
 obj_pad001.Midplane = False
 obj_pad001.Offset = '0 mm'
@@ -540,7 +538,6 @@ obj_pocket.Profile = (obj_sketch002, [])
 obj_pocket.Length = '70 mm'
 obj_pocket.Length2 = '100 mm'
 obj_pocket.Type = 'Length'
-obj_pocket.UpToFace = None
 obj_pocket.Reversed = False
 obj_pocket.Midplane = False
 obj_pocket.Offset = '0 mm'
@@ -556,13 +553,13 @@ print('Pocket')
 obj_sketch003 = body_left_y_idler_plate.newObject('Sketcher::SketchObject', 'Sketch003')
 obj_sketch003.Support = (obj_pocket, ['Face14'])
 obj_sketch003.MapMode = 'FlatFace'
-obj_sketch003_vector_1 = App.Vector(-30.000, -20.000, 0.000)
-obj_sketch003_vector_2 = App.Vector(-30.000, -15.000, 0.000)
-obj_sketch003_vector_3 = App.Vector(-30.000, -55.000, 0.000)
-obj_sketch003_vector_4 = App.Vector(-30.000, -40.000, 0.000)
-obj_sketch003_vector_5 = App.Vector(-30.000, -25.000, 0.000)
-obj_sketch003_vector_6 = App.Vector(-30.000, -30.000, 0.000)
-obj_sketch003_vector_7 = App.Vector(-30.000, -35.000, 0.000)
+obj_sketch003_vector_1 = App.Vector(-30.000, -21.000, 0.000)
+obj_sketch003_vector_2 = App.Vector(-30.000, -16.000, 0.000)
+obj_sketch003_vector_3 = App.Vector(-30.000, -56.000, 0.000)
+obj_sketch003_vector_4 = App.Vector(-30.000, -41.000, 0.000)
+obj_sketch003_vector_5 = App.Vector(-30.000, -26.000, 0.000)
+obj_sketch003_vector_6 = App.Vector(-30.000, -31.000, 0.000)
+obj_sketch003_vector_7 = App.Vector(-30.000, -36.000, 0.000)
 obj_sketch003_circle_1 = Part.Circle(obj_sketch003_vector_1, App.Vector (0.0, 0.0, 1.0), 1.6)
 obj_sketch003_line_1 = Part.LineSegment(obj_sketch003_vector_2, obj_sketch003_vector_3)
 obj_sketch003_line_1.Construction = True
@@ -738,7 +735,6 @@ obj_pocket001.Profile = (obj_sketch003, [])
 obj_pocket001.Length = '50 mm'
 obj_pocket001.Length2 = '100 mm'
 obj_pocket001.Type = 'Length'
-obj_pocket001.UpToFace = None
 obj_pocket001.Reversed = False
 obj_pocket001.Midplane = False
 obj_pocket001.Offset = '0 mm'
@@ -920,7 +916,6 @@ obj_pad002.Profile = (obj_sketch004, [])
 obj_pad002.Length = '42 mm'
 obj_pad002.Length2 = '100 mm'
 obj_pad002.Type = 'Length'
-obj_pad002.UpToFace = None
 obj_pad002.Reversed = False
 obj_pad002.Midplane = False
 obj_pad002.Offset = '0 mm'
@@ -936,15 +931,15 @@ print('Pad002')
 obj_sketch005 = body_left_y_idler_plate.newObject('Sketcher::SketchObject', 'Sketch005')
 obj_sketch005.Support = (obj_pad002, ['Face15'])
 obj_sketch005.MapMode = 'FlatFace'
-obj_sketch005_vector_1 = App.Vector(57.000, 96.150, 0.000)
-obj_sketch005_vector_2 = App.Vector(15.000, 43.850, 0.000)
-obj_sketch005_vector_3 = App.Vector(57.000, 43.850, 0.000)
-obj_sketch005_vector_4 = App.Vector(15.000, 96.150, 0.000)
-obj_sketch005_vector_5 = App.Vector(36.000, 70.000, 0.000)
-obj_sketch005_vector_6 = App.Vector(51.500, 85.500, 0.000)
-obj_sketch005_vector_7 = App.Vector(20.500, 85.500, 0.000)
-obj_sketch005_vector_8 = App.Vector(20.500, 54.500, 0.000)
-obj_sketch005_vector_9 = App.Vector(51.500, 54.500, 0.000)
+obj_sketch005_vector_1 = App.Vector(58.000, 96.150, 0.000)
+obj_sketch005_vector_2 = App.Vector(16.000, 43.850, 0.000)
+obj_sketch005_vector_3 = App.Vector(58.000, 43.850, 0.000)
+obj_sketch005_vector_4 = App.Vector(16.000, 96.150, 0.000)
+obj_sketch005_vector_5 = App.Vector(37.000, 70.000, 0.000)
+obj_sketch005_vector_6 = App.Vector(52.500, 85.500, 0.000)
+obj_sketch005_vector_7 = App.Vector(21.500, 85.500, 0.000)
+obj_sketch005_vector_8 = App.Vector(21.500, 54.500, 0.000)
+obj_sketch005_vector_9 = App.Vector(52.500, 54.500, 0.000)
 obj_sketch005_line_1 = Part.LineSegment(obj_sketch005_vector_1, obj_sketch005_vector_2)
 obj_sketch005_line_1.Construction = True
 obj_sketch005_line_2 = Part.LineSegment(obj_sketch005_vector_3, obj_sketch005_vector_4)
@@ -1116,7 +1111,6 @@ obj_pocket002.Profile = (obj_sketch005, [])
 obj_pocket002.Length = '7 mm'
 obj_pocket002.Length2 = '100 mm'
 obj_pocket002.Type = 'Length'
-obj_pocket002.UpToFace = None
 obj_pocket002.Reversed = False
 obj_pocket002.Midplane = False
 obj_pocket002.Offset = '0 mm'
@@ -1134,10 +1128,10 @@ obj_sketch006.Support = (obj_pocket002, ['Face6'])
 obj_sketch006.MapMode = 'FlatFace'
 obj_sketch006_vector_1 = App.Vector(-10.000, 70.000, 0.000)
 obj_sketch006_vector_2 = App.Vector(30.000, 70.000, 0.000)
-obj_sketch006_vector_3 = App.Vector(2.000, 84.000, 0.000)
-obj_sketch006_vector_4 = App.Vector(-10.000, 84.000, 0.000)
-obj_sketch006_vector_5 = App.Vector(-10.000, 56.000, 0.000)
-obj_sketch006_vector_6 = App.Vector(2.000, 56.000, 0.000)
+obj_sketch006_vector_3 = App.Vector(5.000, 85.000, 0.000)
+obj_sketch006_vector_4 = App.Vector(-10.000, 85.000, 0.000)
+obj_sketch006_vector_5 = App.Vector(-10.000, 55.000, 0.000)
+obj_sketch006_vector_6 = App.Vector(5.000, 55.000, 0.000)
 obj_sketch006_line_1 = Part.LineSegment(obj_sketch006_vector_1, obj_sketch006_vector_2)
 obj_sketch006_line_1.Construction = True
 obj_sketch006_line_2 = Part.LineSegment(obj_sketch006_vector_3, obj_sketch006_vector_4)
@@ -1212,13 +1206,13 @@ obj_sketch006_constraints = [
     Sketcher.Constraint('DistanceX',
         obj_sketch006_all_geoms.index(obj_sketch006_line_2), 2,
         obj_sketch006_all_geoms.index(obj_sketch006_line_2), 1,
-        12.0,
+        15.0,
     ),
     # 13
     Sketcher.Constraint('DistanceY',
         obj_sketch006_all_geoms.index(obj_sketch006_line_4), 2,
         obj_sketch006_all_geoms.index(obj_sketch006_line_2), 1,
-        28.0,
+        30.0,
     ),
     # 14
 ]
@@ -1237,7 +1231,6 @@ obj_pad003.Profile = (obj_sketch006, [])
 obj_pad003.Length = '40 mm'
 obj_pad003.Length2 = '100 mm'
 obj_pad003.Type = 'Length'
-obj_pad003.UpToFace = None
 obj_pad003.Reversed = False
 obj_pad003.Midplane = False
 obj_pad003.Offset = '0 mm'
@@ -1253,11 +1246,11 @@ print('Pad003')
 obj_sketch007 = body_left_y_idler_plate.newObject('Sketcher::SketchObject', 'Sketch007')
 obj_sketch007.Support = (obj_pad003, ['Face22'])
 obj_sketch007.MapMode = 'FlatFace'
-obj_sketch007_vector_1 = App.Vector(-36.000, 70.000, 0.000)
-obj_sketch007_vector_2 = App.Vector(-15.000, 70.000, 0.000)
+obj_sketch007_vector_1 = App.Vector(-37.000, 70.000, 0.000)
+obj_sketch007_vector_2 = App.Vector(-16.000, 70.000, 0.000)
 obj_sketch007_line_1 = Part.LineSegment(obj_sketch007_vector_1, obj_sketch007_vector_2)
 obj_sketch007_line_1.Construction = True
-obj_sketch007_circle_1 = Part.Circle(obj_sketch007_vector_1, App.Vector (0.0, 0.0, 1.0), 11.0)
+obj_sketch007_circle_1 = Part.Circle(obj_sketch007_vector_1, App.Vector (0.0, 0.0, 1.0), 11.5)
 obj_sketch007_all_geoms = [obj_sketch007_line_1, obj_sketch007_circle_1]
 obj_sketch007.addGeometry(obj_sketch007_all_geoms, False)
 obj_sketch007_all_ext_geoms = [[obj_pad003, 'Edge30']]
@@ -1281,7 +1274,7 @@ obj_sketch007_constraints = [
     ),
     # 3
     Sketcher.Constraint('Radius',
-        obj_sketch007_all_geoms.index(obj_sketch007_circle_1), 11.0,
+        obj_sketch007_all_geoms.index(obj_sketch007_circle_1), 11.5,
     ),
     # 4
     Sketcher.Constraint('Coincident',
@@ -1305,7 +1298,6 @@ obj_pocket003.Profile = (obj_sketch007, [])
 obj_pocket003.Length = '8 mm'
 obj_pocket003.Length2 = '100 mm'
 obj_pocket003.Type = 'Length'
-obj_pocket003.UpToFace = None
 obj_pocket003.Reversed = False
 obj_pocket003.Midplane = False
 obj_pocket003.Offset = '0 mm'
@@ -1321,8 +1313,8 @@ print('Pocket003')
 obj_sketch008 = body_left_y_idler_plate.newObject('Sketcher::SketchObject', 'Sketch008')
 obj_sketch008.Support = (obj_pocket003, ['Face11'])
 obj_sketch008.MapMode = 'FlatFace'
-obj_sketch008_vector_1 = App.Vector(36.000, 70.000, 0.000)
-obj_sketch008_vector_2 = App.Vector(15.000, 70.000, 0.000)
+obj_sketch008_vector_1 = App.Vector(37.000, 70.000, 0.000)
+obj_sketch008_vector_2 = App.Vector(16.000, 70.000, 0.000)
 obj_sketch008_line_1 = Part.LineSegment(obj_sketch008_vector_1, obj_sketch008_vector_2)
 obj_sketch008_line_1.Construction = True
 obj_sketch008_circle_1 = Part.Circle(obj_sketch008_vector_1, App.Vector (0.0, 0.0, 1.0), 8.0)
@@ -1370,10 +1362,9 @@ print('Sketch008')
 obj_pocket004 = body_left_y_idler_plate.newObject('PartDesign::Pocket', 'Pocket004')
 obj_pocket004.Label = 'Pocket004'
 obj_pocket004.Profile = (obj_sketch008, [])
-obj_pocket004.Length = '5 mm'
+obj_pocket004.Length = '8 mm'
 obj_pocket004.Length2 = '100 mm'
 obj_pocket004.Type = 'Length'
-obj_pocket004.UpToFace = None
 obj_pocket004.Reversed = False
 obj_pocket004.Midplane = False
 obj_pocket004.Offset = '0 mm'
@@ -1393,20 +1384,20 @@ obj_sketch009_vector_1 = App.Vector(0.000, 96.150, 0.000)
 obj_sketch009_vector_2 = App.Vector(0.000, -39.750, 0.000)
 obj_sketch009_vector_3 = App.Vector(20.000, 96.150, 0.000)
 obj_sketch009_vector_4 = App.Vector(20.000, -20.000, 0.000)
-obj_sketch009_vector_5 = App.Vector(0.000, 84.000, 0.000)
-obj_sketch009_vector_6 = App.Vector(0.000, 56.000, 0.000)
-obj_sketch009_vector_7 = App.Vector(0.000, 90.075, 0.000)
-obj_sketch009_vector_8 = App.Vector(0.000, 49.925, 0.000)
-obj_sketch009_vector_9 = App.Vector(20.000, 90.075, 0.000)
-obj_sketch009_vector_10 = App.Vector(20.000, 49.925, 0.000)
+obj_sketch009_vector_5 = App.Vector(0.000, 85.000, 0.000)
+obj_sketch009_vector_6 = App.Vector(0.000, 55.000, 0.000)
+obj_sketch009_vector_7 = App.Vector(0.000, 90.575, 0.000)
+obj_sketch009_vector_8 = App.Vector(0.000, 49.425, 0.000)
+obj_sketch009_vector_9 = App.Vector(20.000, 90.575, 0.000)
+obj_sketch009_vector_10 = App.Vector(20.000, 49.425, 0.000)
 obj_sketch009_vector_11 = App.Vector(-10.000, -10.000, 0.000)
 obj_sketch009_vector_12 = App.Vector(30.000, -10.000, 0.000)
 obj_sketch009_vector_13 = App.Vector(0.000, -20.000, 0.000)
 obj_sketch009_vector_14 = App.Vector(0.000, -10.000, 0.000)
 obj_sketch009_vector_15 = App.Vector(0.000, 0.000, 0.000)
 obj_sketch009_vector_16 = App.Vector(20.000, -10.000, 0.000)
-obj_sketch009_vector_17 = App.Vector(0.000, 19.963, 0.000)
-obj_sketch009_vector_18 = App.Vector(20.000, 19.963, 0.000)
+obj_sketch009_vector_17 = App.Vector(0.000, 19.713, 0.000)
+obj_sketch009_vector_18 = App.Vector(20.000, 19.713, 0.000)
 obj_sketch009_line_1 = Part.LineSegment(obj_sketch009_vector_1, obj_sketch009_vector_2)
 obj_sketch009_line_1.Construction = True
 obj_sketch009_line_2 = Part.LineSegment(obj_sketch009_vector_3, obj_sketch009_vector_4)
@@ -1680,10 +1671,9 @@ print('Sketch009')
 obj_pocket005 = body_left_y_idler_plate.newObject('PartDesign::Pocket', 'Pocket005')
 obj_pocket005.Label = 'Pocket005'
 obj_pocket005.Profile = (obj_sketch009, [])
-obj_pocket005.Length = '5 mm'
+obj_pocket005.Length = '6 mm'
 obj_pocket005.Length2 = '100 mm'
 obj_pocket005.Type = 'Length'
-obj_pocket005.UpToFace = None
 obj_pocket005.Reversed = False
 obj_pocket005.Midplane = False
 obj_pocket005.Offset = '0 mm'
@@ -1709,7 +1699,7 @@ obj_sketch010_line_3 = Part.LineSegment(obj_sketch010_vector_3, obj_sketch010_ve
 obj_sketch010_line_4 = Part.LineSegment(obj_sketch010_vector_4, obj_sketch010_vector_1)
 obj_sketch010_all_geoms = [obj_sketch010_line_1, obj_sketch010_line_2, obj_sketch010_line_3, obj_sketch010_line_4]
 obj_sketch010.addGeometry(obj_sketch010_all_geoms, False)
-obj_sketch010_all_ext_geoms = [[obj_pocket005, 'Edge103'], [obj_pocket005, 'Edge105']]
+obj_sketch010_all_ext_geoms = [[obj_pocket005, 'Edge105']]
 for a, b in obj_sketch010_all_ext_geoms:
     obj_sketch010.addExternal(a.Name, b)
 obj_sketch010_constraints = [
@@ -1749,21 +1739,21 @@ obj_sketch010_constraints = [
         obj_sketch010_all_geoms.index(obj_sketch010_line_4),
     ),
     # 8
-    Sketcher.Constraint('Coincident',
-        obj_sketch010_all_geoms.index(obj_sketch010_line_2), 2,
-        -obj_sketch010_all_ext_geoms.index([obj_pocket005, 'Edge105'])-3, 2,
-    ),
-    # 9
     Sketcher.Constraint('DistanceX',
         obj_sketch010_all_geoms.index(obj_sketch010_line_1), 1,
         obj_sketch010_all_geoms.index(obj_sketch010_line_1), 2,
         5.0,
     ),
-    # 10
+    # 9
     Sketcher.Constraint('DistanceY',
         obj_sketch010_all_geoms.index(obj_sketch010_line_2), 2,
         obj_sketch010_all_geoms.index(obj_sketch010_line_1), 2,
         20.0,
+    ),
+    # 10
+    Sketcher.Constraint('Coincident',
+        obj_sketch010_all_geoms.index(obj_sketch010_line_2), 2,
+        -obj_sketch010_all_ext_geoms.index([obj_pocket005, 'Edge105'])-3, 2,
     ),
     # 11
 ]
@@ -1782,7 +1772,6 @@ obj_pad004.Profile = (obj_sketch010, [])
 obj_pad004.Length = '40 mm'
 obj_pad004.Length2 = '100 mm'
 obj_pad004.Type = 'Length'
-obj_pad004.UpToFace = None
 obj_pad004.Reversed = False
 obj_pad004.Midplane = False
 obj_pad004.Offset = '0 mm'
@@ -1798,9 +1787,9 @@ print('Pad004')
 obj_sketch011 = body_left_y_idler_plate.newObject('Sketcher::SketchObject', 'Sketch011')
 obj_sketch011.Support = (obj_pad004, ['Face26'])
 obj_sketch011.MapMode = 'FlatFace'
-obj_sketch011_vector_1 = App.Vector(-55.000, -20.750, 0.000)
-obj_sketch011_vector_2 = App.Vector(-55.000, -0.750, 0.000)
-obj_sketch011_vector_3 = App.Vector(-15.000, -0.750, 0.000)
+obj_sketch011_vector_1 = App.Vector(-56.000, -20.750, 0.000)
+obj_sketch011_vector_2 = App.Vector(-56.000, -0.750, 0.000)
+obj_sketch011_vector_3 = App.Vector(-16.000, -0.750, 0.000)
 obj_sketch011_line_1 = Part.LineSegment(obj_sketch011_vector_1, obj_sketch011_vector_2)
 obj_sketch011_line_2 = Part.LineSegment(obj_sketch011_vector_2, obj_sketch011_vector_3)
 obj_sketch011_line_3 = Part.LineSegment(obj_sketch011_vector_3, obj_sketch011_vector_1)
@@ -1856,14 +1845,14 @@ print('Sketch011')
 obj_pocket006 = body_left_y_idler_plate.newObject('PartDesign::Pocket', 'Pocket006')
 obj_pocket006.Label = 'Pocket006'
 obj_pocket006.Profile = (obj_sketch011, [])
-obj_pocket006.Length = '7 mm'
+obj_pocket006.Length = '0 mm'
 obj_pocket006.Length2 = '100 mm'
-obj_pocket006.Type = 'Length'
-obj_pocket006.UpToFace = None
+obj_pocket006.Type = 'UpToFace'
 obj_pocket006.Reversed = False
 obj_pocket006.Midplane = False
 obj_pocket006.Offset = '0 mm'
 obj_pocket006.BaseFeature = obj_pad004
+obj_pocket006.UpToFace = (obj_pad004, ['Face28'])
 if body_left_y_idler_plate_debug:
     body_left_y_idler_plate.Tip = obj_pocket006
     body_left_y_idler_plate.Group = [obj_backvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftidler_bind, obj_frameblmotor_bind, obj_framebltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_sketch007, obj_pocket003, obj_sketch008, obj_pocket004, obj_sketch009, obj_pocket005, obj_sketch010, obj_pad004, obj_sketch011, obj_pocket006]
@@ -1872,8 +1861,161 @@ if body_left_y_idler_plate_debug:
 FreeCAD.ActiveDocument.recompute()
 print('Pocket006')
 
-body_left_y_idler_plate.Group = [obj_backvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftidler_bind, obj_frameblmotor_bind, obj_framebltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_sketch007, obj_pocket003, obj_sketch008, obj_pocket004, obj_sketch009, obj_pocket005, obj_sketch010, obj_pad004, obj_sketch011, obj_pocket006]
-body_left_y_idler_plate.Tip = obj_pocket006
+obj_fillet = body_left_y_idler_plate.newObject('PartDesign::Fillet', 'Fillet')
+obj_fillet.Label = 'Fillet'
+obj_fillet.BaseFeature = obj_pocket006
+obj_fillet.Radius = '10 mm'
+obj_fillet.Base = (obj_pocket006, ['Edge125', 'Edge121'])
+if body_left_y_idler_plate_debug:
+    body_left_y_idler_plate.Tip = obj_fillet
+    body_left_y_idler_plate.Group = [obj_backvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftidler_bind, obj_frameblmotor_bind, obj_framebltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_sketch007, obj_pocket003, obj_sketch008, obj_pocket004, obj_sketch009, obj_pocket005, obj_sketch010, obj_pad004, obj_sketch011, obj_pocket006, obj_fillet]
+    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.saveAs('debug/plate-left_y_idler_plate-031-Fillet.FCStd')
+FreeCAD.ActiveDocument.recompute()
+print('Fillet')
+
+obj_sketch012 = body_left_y_idler_plate.newObject('Sketcher::SketchObject', 'Sketch012')
+obj_sketch012.Support = (obj_fillet, ['Face33'])
+obj_sketch012.MapMode = 'FlatFace'
+obj_sketch012_vector_1 = App.Vector(-35.000, 58.000, 0.000)
+obj_sketch012_vector_2 = App.Vector(-55.000, 58.000, 0.000)
+obj_sketch012_vector_3 = App.Vector(-55.000, 16.000, 0.000)
+obj_sketch012_line_1 = Part.LineSegment(obj_sketch012_vector_1, obj_sketch012_vector_2)
+obj_sketch012_line_2 = Part.LineSegment(obj_sketch012_vector_2, obj_sketch012_vector_3)
+obj_sketch012_line_3 = Part.LineSegment(obj_sketch012_vector_3, obj_sketch012_vector_1)
+obj_sketch012_all_geoms = [obj_sketch012_line_1, obj_sketch012_line_2, obj_sketch012_line_3]
+obj_sketch012.addGeometry(obj_sketch012_all_geoms, False)
+obj_sketch012_all_ext_geoms = [[obj_fillet, 'Edge107'], [obj_fillet, 'Edge106']]
+for a, b in obj_sketch012_all_ext_geoms:
+    obj_sketch012.addExternal(a.Name, b)
+obj_sketch012_constraints = [
+    Sketcher.Constraint('Coincident',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_1), 2,
+        obj_sketch012_all_geoms.index(obj_sketch012_line_2), 1,
+    ),
+    # 1
+    Sketcher.Constraint('Coincident',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_2), 2,
+        obj_sketch012_all_geoms.index(obj_sketch012_line_3), 1,
+    ),
+    # 2
+    Sketcher.Constraint('Coincident',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_1), 1,
+        obj_sketch012_all_geoms.index(obj_sketch012_line_3), 2,
+    ),
+    # 3
+    Sketcher.Constraint('PointOnObject',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_1), 1,
+        -obj_sketch012_all_ext_geoms.index([obj_fillet, 'Edge107'])-3,
+    ),
+    # 4
+    Sketcher.Constraint('Coincident',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_1), 2,
+        -obj_sketch012_all_ext_geoms.index([obj_fillet, 'Edge106'])-3, 2,
+    ),
+    # 5
+    Sketcher.Constraint('Coincident',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_2), 2,
+        -obj_sketch012_all_ext_geoms.index([obj_fillet, 'Edge106'])-3, 1,
+    ),
+    # 6
+    Sketcher.Constraint('DistanceX',
+        obj_sketch012_all_geoms.index(obj_sketch012_line_1), 1,
+        -obj_sketch012_all_ext_geoms.index([obj_fillet, 'Edge107'])-3, 2,
+        5.0,
+    ),
+    # 7
+]
+obj_sketch012.addConstraint(obj_sketch012_constraints)
+if body_left_y_idler_plate_debug:
+    body_left_y_idler_plate.Tip = obj_sketch012
+    body_left_y_idler_plate.Group = [obj_backvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftidler_bind, obj_frameblmotor_bind, obj_framebltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_sketch007, obj_pocket003, obj_sketch008, obj_pocket004, obj_sketch009, obj_pocket005, obj_sketch010, obj_pad004, obj_sketch011, obj_pocket006, obj_fillet, obj_sketch012]
+    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.saveAs('debug/plate-left_y_idler_plate-032-Sketch012.FCStd')
+FreeCAD.ActiveDocument.recompute()
+print('Sketch012')
+
+obj_pocket007 = body_left_y_idler_plate.newObject('PartDesign::Pocket', 'Pocket007')
+obj_pocket007.Label = 'Pocket007'
+obj_pocket007.Profile = (obj_sketch012, [])
+obj_pocket007.Length = '0 mm'
+obj_pocket007.Length2 = '100 mm'
+obj_pocket007.Type = 'UpToFace'
+obj_pocket007.Reversed = False
+obj_pocket007.Midplane = False
+obj_pocket007.Offset = '0 mm'
+obj_pocket007.BaseFeature = obj_fillet
+obj_pocket007.UpToFace = (obj_fillet, ['Face23'])
+if body_left_y_idler_plate_debug:
+    body_left_y_idler_plate.Tip = obj_pocket007
+    body_left_y_idler_plate.Group = [obj_backvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftidler_bind, obj_frameblmotor_bind, obj_framebltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_sketch007, obj_pocket003, obj_sketch008, obj_pocket004, obj_sketch009, obj_pocket005, obj_sketch010, obj_pad004, obj_sketch011, obj_pocket006, obj_fillet, obj_sketch012, obj_pocket007]
+    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.saveAs('debug/plate-left_y_idler_plate-033-Pocket007.FCStd')
+FreeCAD.ActiveDocument.recompute()
+print('Pocket007')
+
+obj_sketch013 = body_left_y_idler_plate.newObject('Sketcher::SketchObject', 'Sketch013')
+obj_sketch013.Support = (obj_pocket007, ['Face10'])
+obj_sketch013.MapMode = 'FlatFace'
+obj_sketch013_vector_1 = App.Vector(0.000, 90.575, 0.000)
+obj_sketch013_vector_2 = App.Vector(0.000, 49.425, 0.000)
+obj_sketch013_circle_1 = Part.Circle(obj_sketch013_vector_1, App.Vector (0.0, 0.0, 1.0), 6.5)
+obj_sketch013_circle_2 = Part.Circle(obj_sketch013_vector_2, App.Vector (0.0, 0.0, 1.0), 6.5)
+obj_sketch013_all_geoms = [obj_sketch013_circle_1, obj_sketch013_circle_2]
+obj_sketch013.addGeometry(obj_sketch013_all_geoms, False)
+obj_sketch013_all_ext_geoms = [[obj_pocket007, 'Edge46'], [obj_pocket007, 'Edge42']]
+for a, b in obj_sketch013_all_ext_geoms:
+    obj_sketch013.addExternal(a.Name, b)
+obj_sketch013_constraints = [
+    Sketcher.Constraint('Radius',
+        obj_sketch013_all_geoms.index(obj_sketch013_circle_1), 6.5,
+    ),
+    # 1
+    Sketcher.Constraint('Equal',
+        obj_sketch013_all_geoms.index(obj_sketch013_circle_1),
+        obj_sketch013_all_geoms.index(obj_sketch013_circle_2),
+    ),
+    # 2
+    Sketcher.Constraint('Coincident',
+        -obj_sketch013_all_ext_geoms.index([obj_pocket007, 'Edge46'])-3, 3,
+        obj_sketch013_all_geoms.index(obj_sketch013_circle_1), 3,
+    ),
+    # 3
+    Sketcher.Constraint('Coincident',
+        -obj_sketch013_all_ext_geoms.index([obj_pocket007, 'Edge42'])-3, 3,
+        obj_sketch013_all_geoms.index(obj_sketch013_circle_2), 3,
+    ),
+    # 4
+]
+obj_sketch013.addConstraint(obj_sketch013_constraints)
+if body_left_y_idler_plate_debug:
+    body_left_y_idler_plate.Tip = obj_sketch013
+    body_left_y_idler_plate.Group = [obj_backvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftidler_bind, obj_frameblmotor_bind, obj_framebltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_sketch007, obj_pocket003, obj_sketch008, obj_pocket004, obj_sketch009, obj_pocket005, obj_sketch010, obj_pad004, obj_sketch011, obj_pocket006, obj_fillet, obj_sketch012, obj_pocket007, obj_sketch013]
+    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.saveAs('debug/plate-left_y_idler_plate-034-Sketch013.FCStd')
+FreeCAD.ActiveDocument.recompute()
+print('Sketch013')
+
+obj_pocket008 = body_left_y_idler_plate.newObject('PartDesign::Pocket', 'Pocket008')
+obj_pocket008.Label = 'Pocket008'
+obj_pocket008.Profile = (obj_sketch013, [])
+obj_pocket008.Length = '15 mm'
+obj_pocket008.Length2 = '100 mm'
+obj_pocket008.Type = 'Length'
+obj_pocket008.Reversed = True
+obj_pocket008.Midplane = False
+obj_pocket008.Offset = '0 mm'
+obj_pocket008.BaseFeature = obj_pocket007
+if body_left_y_idler_plate_debug:
+    body_left_y_idler_plate.Tip = obj_pocket008
+    body_left_y_idler_plate.Group = [obj_backvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftidler_bind, obj_frameblmotor_bind, obj_framebltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_sketch007, obj_pocket003, obj_sketch008, obj_pocket004, obj_sketch009, obj_pocket005, obj_sketch010, obj_pad004, obj_sketch011, obj_pocket006, obj_fillet, obj_sketch012, obj_pocket007, obj_sketch013, obj_pocket008]
+    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.saveAs('debug/plate-left_y_idler_plate-035-Pocket008.FCStd')
+FreeCAD.ActiveDocument.recompute()
+print('Pocket008')
+
+body_left_y_idler_plate.Group = [obj_backvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftidler_bind, obj_frameblmotor_bind, obj_framebltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_sketch007, obj_pocket003, obj_sketch008, obj_pocket004, obj_sketch009, obj_pocket005, obj_sketch010, obj_pad004, obj_sketch011, obj_pocket006, obj_fillet, obj_sketch012, obj_pocket007, obj_sketch013, obj_pocket008]
+body_left_y_idler_plate.Tip = obj_pocket008
 FreeCAD.ActiveDocument.recompute()
 Part.export([body_left_y_idler_plate], 'left_y_idler_plate.brep')
 
