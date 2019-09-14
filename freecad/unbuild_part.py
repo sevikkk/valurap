@@ -50,7 +50,7 @@ class Body:
             ])
 
         text.append("FreeCAD.ActiveDocument.recompute()")
-        text.append(f"Part.export([{self.var_name}], '{self.name}.brep')")
+        text.append(f"Part.export([{self.var_name}], '{self.obj.Label}.brep')")
 
         return text
 
