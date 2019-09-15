@@ -2014,8 +2014,112 @@ if body_left_y_idler_plate_debug:
 FreeCAD.ActiveDocument.recompute()
 print('Pocket008')
 
-body_left_y_idler_plate.Group = [obj_backvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftidler_bind, obj_frameblmotor_bind, obj_framebltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_sketch007, obj_pocket003, obj_sketch008, obj_pocket004, obj_sketch009, obj_pocket005, obj_sketch010, obj_pad004, obj_sketch011, obj_pocket006, obj_fillet, obj_sketch012, obj_pocket007, obj_sketch013, obj_pocket008]
-body_left_y_idler_plate.Tip = obj_pocket008
+obj_sketch014 = body_left_y_idler_plate.newObject('Sketcher::SketchObject', 'Sketch014')
+obj_sketch014.Support = (obj_pocket008, ['Face54'])
+obj_sketch014.MapMode = 'FlatFace'
+obj_sketch014_vector_1 = App.Vector(35.000, 91.650, 0.000)
+obj_sketch014_vector_2 = App.Vector(55.000, 91.650, 0.000)
+obj_sketch014_vector_3 = App.Vector(55.000, 48.350, 0.000)
+obj_sketch014_vector_4 = App.Vector(35.000, 48.350, 0.000)
+obj_sketch014_line_1 = Part.LineSegment(obj_sketch014_vector_1, obj_sketch014_vector_2)
+obj_sketch014_line_2 = Part.LineSegment(obj_sketch014_vector_2, obj_sketch014_vector_3)
+obj_sketch014_line_3 = Part.LineSegment(obj_sketch014_vector_3, obj_sketch014_vector_4)
+obj_sketch014_line_4 = Part.LineSegment(obj_sketch014_vector_4, obj_sketch014_vector_1)
+obj_sketch014_all_geoms = [obj_sketch014_line_1, obj_sketch014_line_2, obj_sketch014_line_3, obj_sketch014_line_4]
+obj_sketch014.addGeometry(obj_sketch014_all_geoms, False)
+obj_sketch014_all_ext_geoms = [[obj_pocket008, 'Edge172'], [obj_pocket008, 'Edge171']]
+for a, b in obj_sketch014_all_ext_geoms:
+    obj_sketch014.addExternal(a.Name, b)
+obj_sketch014_constraints = [
+    Sketcher.Constraint('Coincident',
+        obj_sketch014_all_geoms.index(obj_sketch014_line_1), 2,
+        obj_sketch014_all_geoms.index(obj_sketch014_line_2), 1,
+    ),
+    # 1
+    Sketcher.Constraint('Coincident',
+        obj_sketch014_all_geoms.index(obj_sketch014_line_2), 2,
+        obj_sketch014_all_geoms.index(obj_sketch014_line_3), 1,
+    ),
+    # 2
+    Sketcher.Constraint('Coincident',
+        obj_sketch014_all_geoms.index(obj_sketch014_line_3), 2,
+        obj_sketch014_all_geoms.index(obj_sketch014_line_4), 1,
+    ),
+    # 3
+    Sketcher.Constraint('Coincident',
+        obj_sketch014_all_geoms.index(obj_sketch014_line_4), 2,
+        obj_sketch014_all_geoms.index(obj_sketch014_line_1), 1,
+    ),
+    # 4
+    Sketcher.Constraint('Horizontal',
+        obj_sketch014_all_geoms.index(obj_sketch014_line_1),
+    ),
+    # 5
+    Sketcher.Constraint('Horizontal',
+        obj_sketch014_all_geoms.index(obj_sketch014_line_3),
+    ),
+    # 6
+    Sketcher.Constraint('Vertical',
+        obj_sketch014_all_geoms.index(obj_sketch014_line_2),
+    ),
+    # 7
+    Sketcher.Constraint('Vertical',
+        obj_sketch014_all_geoms.index(obj_sketch014_line_4),
+    ),
+    # 8
+    Sketcher.Constraint('PointOnObject',
+        -obj_sketch014_all_ext_geoms.index([obj_pocket008, 'Edge171'])-3, 1,
+        obj_sketch014_all_geoms.index(obj_sketch014_line_4),
+    ),
+    # 9
+    Sketcher.Constraint('PointOnObject',
+        -obj_sketch014_all_ext_geoms.index([obj_pocket008, 'Edge172'])-3, 1,
+        obj_sketch014_all_geoms.index(obj_sketch014_line_2),
+    ),
+    # 10
+    Sketcher.Constraint('DistanceY',
+        -obj_sketch014_all_ext_geoms.index([obj_pocket008, 'Edge172'])-3, 1,
+        obj_sketch014_all_geoms.index(obj_sketch014_line_1), 2,
+        0.5,
+    ),
+    # 11
+    Sketcher.Constraint('DistanceY',
+        obj_sketch014_all_geoms.index(obj_sketch014_line_2), 2,
+        -obj_sketch014_all_ext_geoms.index([obj_pocket008, 'Edge171'])-3, 2,
+        0.5,
+    ),
+    # 12
+]
+obj_sketch014.addConstraint(obj_sketch014_constraints)
+if body_left_y_idler_plate_debug:
+    body_left_y_idler_plate.Tip = obj_sketch014
+    body_left_y_idler_plate.Group = [obj_backvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftidler_bind, obj_frameblmotor_bind, obj_framebltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_sketch007, obj_pocket003, obj_sketch008, obj_pocket004, obj_sketch009, obj_pocket005, obj_sketch010, obj_pad004, obj_sketch011, obj_pocket006, obj_fillet, obj_sketch012, obj_pocket007, obj_sketch013, obj_pocket008, obj_sketch014]
+    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.saveAs('debug/plate-left_y_idler_plate-036-Sketch014.FCStd')
+FreeCAD.ActiveDocument.recompute()
+print('Sketch014')
+
+obj_pocket009 = body_left_y_idler_plate.newObject('PartDesign::Pocket', 'Pocket009')
+obj_pocket009.Label = 'Pocket009'
+obj_pocket009.Profile = (obj_sketch014, [])
+obj_pocket009.Length = '0 mm'
+obj_pocket009.Length2 = '100 mm'
+obj_pocket009.Type = 'UpToFace'
+obj_pocket009.Reversed = False
+obj_pocket009.Midplane = False
+obj_pocket009.Offset = '0 mm'
+obj_pocket009.BaseFeature = obj_pocket008
+obj_pocket009.UpToFace = (obj_pocket008, ['Face62'])
+if body_left_y_idler_plate_debug:
+    body_left_y_idler_plate.Tip = obj_pocket009
+    body_left_y_idler_plate.Group = [obj_backvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftidler_bind, obj_frameblmotor_bind, obj_framebltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_sketch007, obj_pocket003, obj_sketch008, obj_pocket004, obj_sketch009, obj_pocket005, obj_sketch010, obj_pad004, obj_sketch011, obj_pocket006, obj_fillet, obj_sketch012, obj_pocket007, obj_sketch013, obj_pocket008, obj_sketch014, obj_pocket009]
+    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.saveAs('debug/plate-left_y_idler_plate-037-Pocket009.FCStd')
+FreeCAD.ActiveDocument.recompute()
+print('Pocket009')
+
+body_left_y_idler_plate.Group = [obj_backvslot_bind, obj_leftvslot_bind, obj_leftrail_bind, obj_leftidler_bind, obj_frameblmotor_bind, obj_framebltopbb_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pad003, obj_sketch007, obj_pocket003, obj_sketch008, obj_pocket004, obj_sketch009, obj_pocket005, obj_sketch010, obj_pad004, obj_sketch011, obj_pocket006, obj_fillet, obj_sketch012, obj_pocket007, obj_sketch013, obj_pocket008, obj_sketch014, obj_pocket009]
+body_left_y_idler_plate.Tip = obj_pocket009
 FreeCAD.ActiveDocument.recompute()
 Part.export([body_left_y_idler_plate], 'left_y_idler_plate.brep')
 
