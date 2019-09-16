@@ -1324,10 +1324,10 @@ obj_sketch007_line_1.Construction = True
 obj_sketch007_line_2 = Part.LineSegment(obj_sketch007_vector_3, obj_sketch007_vector_4)
 obj_sketch007_line_2.Construction = True
 obj_sketch007_point_1 = Part.Point(obj_sketch007_vector_5)
-obj_sketch007_circle_1 = Part.Circle(obj_sketch007_vector_6, App.Vector (0.0, 0.0, 1.0), 2.0)
-obj_sketch007_circle_2 = Part.Circle(obj_sketch007_vector_7, App.Vector (0.0, 0.0, 1.0), 2.0)
-obj_sketch007_circle_3 = Part.Circle(obj_sketch007_vector_8, App.Vector (0.0, 0.0, 1.0), 2.0)
-obj_sketch007_circle_4 = Part.Circle(obj_sketch007_vector_9, App.Vector (0.0, 0.0, 1.0), 2.0)
+obj_sketch007_circle_1 = Part.Circle(obj_sketch007_vector_6, App.Vector (0.0, 0.0, 1.0), 1.6)
+obj_sketch007_circle_2 = Part.Circle(obj_sketch007_vector_7, App.Vector (0.0, 0.0, 1.0), 1.6)
+obj_sketch007_circle_3 = Part.Circle(obj_sketch007_vector_8, App.Vector (0.0, 0.0, 1.0), 1.6)
+obj_sketch007_circle_4 = Part.Circle(obj_sketch007_vector_9, App.Vector (0.0, 0.0, 1.0), 1.6)
 obj_sketch007_all_geoms = [obj_sketch007_line_1, obj_sketch007_line_2, obj_sketch007_point_1, obj_sketch007_circle_1, obj_sketch007_circle_2, obj_sketch007_circle_3, obj_sketch007_circle_4]
 obj_sketch007.addGeometry(obj_sketch007_all_geoms, False)
 obj_sketch007_all_ext_geoms = [[obj_xvslot_bind, 'Face36'], [obj_pocket003, 'Face6'], [obj_pocket003, 'Edge106']]
@@ -1385,7 +1385,7 @@ obj_sketch007_constraints = [
     ),
     # 10
     Sketcher.Constraint('Radius',
-        obj_sketch007_all_geoms.index(obj_sketch007_circle_3), 2.0,
+        obj_sketch007_all_geoms.index(obj_sketch007_circle_3), 1.6,
     ),
     # 11
     Sketcher.Constraint('Equal',
@@ -1990,8 +1990,177 @@ if body_left_y_carriage_plate_debug:
 FreeCAD.ActiveDocument.recompute()
 print('Pocket006')
 
-body_left_y_carriage_plate.Group = [obj_leftvslot_bind, obj_leftrail_bind, obj_leftmgn_bind, obj_lefttopbelt_bind, obj_leftbottombelt_bind, obj_xleftmotor_bind, obj_xleftidler_bind, obj_xvslot_bind, obj_xfrontrail_bind, obj_xbackrail_bind, obj_xleftpulley_bind, obj_leftopto_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pocket003, obj_sketch007, obj_pocket004, obj_sketch008, obj_pocket005, obj_sketch009, obj_pad003, obj_sketch010, obj_pocket006]
-body_left_y_carriage_plate.Tip = obj_pocket006
+obj_sketch011 = body_left_y_carriage_plate.newObject('Sketcher::SketchObject', 'Sketch011')
+obj_sketch011.Support = (obj_pocket006, ['Face34'])
+obj_sketch011.MapMode = 'FlatFace'
+obj_sketch011_vector_1 = App.Vector(18.350, -7.000, 0.000)
+obj_sketch011_vector_2 = App.Vector(61.650, -7.000, 0.000)
+obj_sketch011_vector_3 = App.Vector(61.650, -63.500, 0.000)
+obj_sketch011_vector_4 = App.Vector(18.350, -63.500, 0.000)
+obj_sketch011_vector_5 = App.Vector(-13.795, 6.000, 0.000)
+obj_sketch011_vector_6 = App.Vector(13.795, 6.000, 0.000)
+obj_sketch011_vector_7 = App.Vector(13.795, -63.500, 0.000)
+obj_sketch011_vector_8 = App.Vector(-13.795, -63.500, 0.000)
+obj_sketch011_line_1 = Part.LineSegment(obj_sketch011_vector_1, obj_sketch011_vector_2)
+obj_sketch011_line_2 = Part.LineSegment(obj_sketch011_vector_2, obj_sketch011_vector_3)
+obj_sketch011_line_3 = Part.LineSegment(obj_sketch011_vector_3, obj_sketch011_vector_4)
+obj_sketch011_line_4 = Part.LineSegment(obj_sketch011_vector_4, obj_sketch011_vector_1)
+obj_sketch011_line_5 = Part.LineSegment(obj_sketch011_vector_5, obj_sketch011_vector_6)
+obj_sketch011_line_6 = Part.LineSegment(obj_sketch011_vector_6, obj_sketch011_vector_7)
+obj_sketch011_line_7 = Part.LineSegment(obj_sketch011_vector_7, obj_sketch011_vector_8)
+obj_sketch011_line_8 = Part.LineSegment(obj_sketch011_vector_8, obj_sketch011_vector_5)
+obj_sketch011_all_geoms = [obj_sketch011_line_1, obj_sketch011_line_2, obj_sketch011_line_3, obj_sketch011_line_4, obj_sketch011_line_5, obj_sketch011_line_6, obj_sketch011_line_7, obj_sketch011_line_8]
+obj_sketch011.addGeometry(obj_sketch011_all_geoms, False)
+obj_sketch011_all_ext_geoms = [[obj_pocket006, 'Edge130'], [obj_pocket006, 'Edge128'], [obj_pocket006, 'Edge132'], [obj_pocket006, 'Edge159']]
+for a, b in obj_sketch011_all_ext_geoms:
+    obj_sketch011.addExternal(a.Name, b)
+obj_sketch011_constraints = [
+    Sketcher.Constraint('Coincident',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_1), 2,
+        obj_sketch011_all_geoms.index(obj_sketch011_line_2), 1,
+    ),
+    # 1
+    Sketcher.Constraint('Coincident',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_2), 2,
+        obj_sketch011_all_geoms.index(obj_sketch011_line_3), 1,
+    ),
+    # 2
+    Sketcher.Constraint('Coincident',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_3), 2,
+        obj_sketch011_all_geoms.index(obj_sketch011_line_4), 1,
+    ),
+    # 3
+    Sketcher.Constraint('Coincident',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_4), 2,
+        obj_sketch011_all_geoms.index(obj_sketch011_line_1), 1,
+    ),
+    # 4
+    Sketcher.Constraint('Horizontal',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_1),
+    ),
+    # 5
+    Sketcher.Constraint('Horizontal',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_3),
+    ),
+    # 6
+    Sketcher.Constraint('Vertical',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_2),
+    ),
+    # 7
+    Sketcher.Constraint('Vertical',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_4),
+    ),
+    # 8
+    Sketcher.Constraint('Coincident',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_5), 2,
+        obj_sketch011_all_geoms.index(obj_sketch011_line_6), 1,
+    ),
+    # 9
+    Sketcher.Constraint('Coincident',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_6), 2,
+        obj_sketch011_all_geoms.index(obj_sketch011_line_7), 1,
+    ),
+    # 10
+    Sketcher.Constraint('Coincident',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_7), 2,
+        obj_sketch011_all_geoms.index(obj_sketch011_line_8), 1,
+    ),
+    # 11
+    Sketcher.Constraint('Coincident',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_8), 2,
+        obj_sketch011_all_geoms.index(obj_sketch011_line_5), 1,
+    ),
+    # 12
+    Sketcher.Constraint('Horizontal',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_5),
+    ),
+    # 13
+    Sketcher.Constraint('Horizontal',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_7),
+    ),
+    # 14
+    Sketcher.Constraint('Vertical',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_6),
+    ),
+    # 15
+    Sketcher.Constraint('Vertical',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_8),
+    ),
+    # 16
+    Sketcher.Constraint('PointOnObject',
+        -obj_sketch011_all_ext_geoms.index([obj_pocket006, 'Edge159'])-3, 1,
+        obj_sketch011_all_geoms.index(obj_sketch011_line_5),
+    ),
+    # 17
+    Sketcher.Constraint('PointOnObject',
+        -obj_sketch011_all_ext_geoms.index([obj_pocket006, 'Edge159'])-3, 2,
+        obj_sketch011_all_geoms.index(obj_sketch011_line_7),
+    ),
+    # 18
+    Sketcher.Constraint('PointOnObject',
+        -obj_sketch011_all_ext_geoms.index([obj_pocket006, 'Edge130'])-3, 1,
+        obj_sketch011_all_geoms.index(obj_sketch011_line_1),
+    ),
+    # 19
+    Sketcher.Constraint('PointOnObject',
+        -obj_sketch011_all_ext_geoms.index([obj_pocket006, 'Edge128'])-3, 1,
+        obj_sketch011_all_geoms.index(obj_sketch011_line_3),
+    ),
+    # 20
+    Sketcher.Constraint('DistanceX',
+        -obj_sketch011_all_ext_geoms.index([obj_pocket006, 'Edge128'])-3, 2,
+        obj_sketch011_all_geoms.index(obj_sketch011_line_1), 2,
+        0.5,
+    ),
+    # 21
+    Sketcher.Constraint('DistanceX',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_1), 1,
+        -obj_sketch011_all_ext_geoms.index([obj_pocket006, 'Edge130'])-3, 1,
+        0.5,
+    ),
+    # 22
+    Sketcher.Constraint('DistanceX',
+        -obj_sketch011_all_ext_geoms.index([obj_pocket006, 'Edge132'])-3, 2,
+        obj_sketch011_all_geoms.index(obj_sketch011_line_5), 2,
+        0.5,
+    ),
+    # 23
+    Sketcher.Constraint('DistanceX',
+        obj_sketch011_all_geoms.index(obj_sketch011_line_5), 1,
+        -obj_sketch011_all_ext_geoms.index([obj_pocket006, 'Edge159'])-3, 1,
+        0.5,
+    ),
+    # 24
+]
+obj_sketch011.addConstraint(obj_sketch011_constraints)
+if body_left_y_carriage_plate_debug:
+    body_left_y_carriage_plate.Tip = obj_sketch011
+    body_left_y_carriage_plate.Group = [obj_leftvslot_bind, obj_leftrail_bind, obj_leftmgn_bind, obj_lefttopbelt_bind, obj_leftbottombelt_bind, obj_xleftmotor_bind, obj_xleftidler_bind, obj_xvslot_bind, obj_xfrontrail_bind, obj_xbackrail_bind, obj_xleftpulley_bind, obj_leftopto_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pocket003, obj_sketch007, obj_pocket004, obj_sketch008, obj_pocket005, obj_sketch009, obj_pad003, obj_sketch010, obj_pocket006, obj_sketch011]
+    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.saveAs('debug/plate-left_y_carriage_plate-035-Sketch011.FCStd')
+FreeCAD.ActiveDocument.recompute()
+print('Sketch011')
+
+obj_pocket007 = body_left_y_carriage_plate.newObject('PartDesign::Pocket', 'Pocket007')
+obj_pocket007.Label = 'Pocket007'
+obj_pocket007.Profile = (obj_sketch011, [])
+obj_pocket007.Length = '42 mm'
+obj_pocket007.Length2 = '100 mm'
+obj_pocket007.Type = 'Length'
+obj_pocket007.Reversed = False
+obj_pocket007.Midplane = False
+obj_pocket007.Offset = '0 mm'
+obj_pocket007.BaseFeature = obj_pocket006
+if body_left_y_carriage_plate_debug:
+    body_left_y_carriage_plate.Tip = obj_pocket007
+    body_left_y_carriage_plate.Group = [obj_leftvslot_bind, obj_leftrail_bind, obj_leftmgn_bind, obj_lefttopbelt_bind, obj_leftbottombelt_bind, obj_xleftmotor_bind, obj_xleftidler_bind, obj_xvslot_bind, obj_xfrontrail_bind, obj_xbackrail_bind, obj_xleftpulley_bind, obj_leftopto_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pocket003, obj_sketch007, obj_pocket004, obj_sketch008, obj_pocket005, obj_sketch009, obj_pad003, obj_sketch010, obj_pocket006, obj_sketch011, obj_pocket007]
+    FreeCAD.ActiveDocument.recompute()
+    App.ActiveDocument.saveAs('debug/plate-left_y_carriage_plate-036-Pocket007.FCStd')
+FreeCAD.ActiveDocument.recompute()
+print('Pocket007')
+
+body_left_y_carriage_plate.Group = [obj_leftvslot_bind, obj_leftrail_bind, obj_leftmgn_bind, obj_lefttopbelt_bind, obj_leftbottombelt_bind, obj_xleftmotor_bind, obj_xleftidler_bind, obj_xvslot_bind, obj_xfrontrail_bind, obj_xbackrail_bind, obj_xleftpulley_bind, obj_leftopto_bind, obj_sketch, obj_pad, obj_sketch001, obj_pad001, obj_sketch002, obj_pocket, obj_sketch003, obj_pocket001, obj_sketch004, obj_pad002, obj_sketch005, obj_pocket002, obj_sketch006, obj_pocket003, obj_sketch007, obj_pocket004, obj_sketch008, obj_pocket005, obj_sketch009, obj_pad003, obj_sketch010, obj_pocket006, obj_sketch011, obj_pocket007]
+body_left_y_carriage_plate.Tip = obj_pocket007
 FreeCAD.ActiveDocument.recompute()
 Part.export([body_left_y_carriage_plate], 'left_y_carriage_plate.brep')
 
