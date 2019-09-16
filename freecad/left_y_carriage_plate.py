@@ -890,7 +890,7 @@ print('Sketch003')
 obj_pocket001 = body_left_y_carriage_plate.newObject('PartDesign::Pocket', 'Pocket001')
 obj_pocket001.Label = 'Pocket001'
 obj_pocket001.Profile = (obj_sketch003, [])
-obj_pocket001.Length = '5 mm'
+obj_pocket001.Length = '23 mm'
 obj_pocket001.Length2 = '100 mm'
 obj_pocket001.Type = 'Length'
 obj_pocket001.Reversed = False
@@ -1652,12 +1652,12 @@ obj_sketch009 = body_left_y_carriage_plate.newObject('Sketcher::SketchObject', '
 obj_sketch009.Support = (obj_pocket005, ['Face4'])
 obj_sketch009.MapMode = 'FlatFace'
 obj_sketch009_vector_1 = App.Vector(-22.000, -34.500, 0.000)
-obj_sketch009_vector_2 = App.Vector(-17.400, -34.500, 0.000)
-obj_sketch009_vector_3 = App.Vector(-17.400, -3.000, 0.000)
-obj_sketch009_vector_4 = App.Vector(-26.600, -34.500, 0.000)
-obj_sketch009_vector_5 = App.Vector(-26.600, -3.000, 0.000)
-obj_sketch009_vector_6 = App.Vector(-11.400, 3.000, 0.000)
-obj_sketch009_vector_7 = App.Vector(-32.600, 3.000, 0.000)
+obj_sketch009_vector_2 = App.Vector(-15.400, -34.500, 0.000)
+obj_sketch009_vector_3 = App.Vector(-15.400, -3.000, 0.000)
+obj_sketch009_vector_4 = App.Vector(-28.600, -34.500, 0.000)
+obj_sketch009_vector_5 = App.Vector(-28.600, -3.000, 0.000)
+obj_sketch009_vector_6 = App.Vector(-9.400, 3.000, 0.000)
+obj_sketch009_vector_7 = App.Vector(-34.600, 3.000, 0.000)
 obj_sketch009_vector_8 = App.Vector(-22.000, 3.000, 0.000)
 obj_sketch009_vector_9 = App.Vector(-22.000, -15.500, 0.000)
 obj_sketch009_vector_10 = App.Vector(-24.270, -20.000, 0.000)
@@ -1665,7 +1665,7 @@ obj_sketch009_vector_11 = App.Vector(-19.730, -20.000, 0.000)
 obj_sketch009_vector_12 = App.Vector(-19.730, -30.000, 0.000)
 obj_sketch009_vector_13 = App.Vector(-24.270, -30.000, 0.000)
 obj_sketch009_vector_14 = App.Vector(-22.000, -25.000, 0.000)
-obj_sketch009_circle_1 = Part.ArcOfCircle(Part.Circle(obj_sketch009_vector_1, App.Vector (0.0, 0.0, 1.0), 4.6000000000000245), 3.141592653589794, 6.283185307179587)
+obj_sketch009_circle_1 = Part.ArcOfCircle(Part.Circle(obj_sketch009_vector_1, App.Vector (0.0, 0.0, 1.0), 6.600000000000023), 3.1415926535897936, 6.283185307179586)
 obj_sketch009_line_1 = Part.LineSegment(obj_sketch009_vector_2, obj_sketch009_vector_3)
 obj_sketch009_line_2 = Part.LineSegment(obj_sketch009_vector_4, obj_sketch009_vector_5)
 obj_sketch009_line_3 = Part.LineSegment(obj_sketch009_vector_3, obj_sketch009_vector_6)
@@ -1673,8 +1673,8 @@ obj_sketch009_line_4 = Part.LineSegment(obj_sketch009_vector_6, obj_sketch009_ve
 obj_sketch009_line_5 = Part.LineSegment(obj_sketch009_vector_7, obj_sketch009_vector_5)
 obj_sketch009_line_6 = Part.LineSegment(obj_sketch009_vector_8, obj_sketch009_vector_1)
 obj_sketch009_line_6.Construction = True
-obj_sketch009_circle_2 = Part.Circle(obj_sketch009_vector_9, App.Vector (0.0, 0.0, 1.0), 1.6)
-obj_sketch009_circle_3 = Part.Circle(obj_sketch009_vector_1, App.Vector (0.0, 0.0, 1.0), 1.6)
+obj_sketch009_circle_2 = Part.Circle(obj_sketch009_vector_9, App.Vector (0.0, 0.0, 1.0), 1.2)
+obj_sketch009_circle_3 = Part.Circle(obj_sketch009_vector_1, App.Vector (0.0, 0.0, 1.0), 1.2)
 obj_sketch009_line_7 = Part.LineSegment(obj_sketch009_vector_10, obj_sketch009_vector_11)
 obj_sketch009_line_8 = Part.LineSegment(obj_sketch009_vector_11, obj_sketch009_vector_12)
 obj_sketch009_line_9 = Part.LineSegment(obj_sketch009_vector_12, obj_sketch009_vector_13)
@@ -1709,7 +1709,7 @@ obj_sketch009_constraints = [
     Sketcher.Constraint('DistanceX',
         -obj_sketch009_all_ext_geoms.index([obj_leftopto_bind, 'Edge39'])-3, 2,
         obj_sketch009_all_geoms.index(obj_sketch009_circle_1), 2,
-        1.5,
+        3.5,
     ),
     # 5
     Sketcher.Constraint('Coincident',
@@ -1783,7 +1783,7 @@ obj_sketch009_constraints = [
     ),
     # 18
     Sketcher.Constraint('Radius',
-        obj_sketch009_all_geoms.index(obj_sketch009_circle_2), 1.6,
+        obj_sketch009_all_geoms.index(obj_sketch009_circle_2), 1.2,
     ),
     # 19
     Sketcher.Constraint('Coincident',
