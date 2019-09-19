@@ -111,7 +111,7 @@ for part, make_mirror in [
     ('left_y_idler_plate', True),
     ('left_y_motor_plate', True),
     ('left_y_carriage_plate', False),
-    ('left_z_rod_support', False)
+    ('left_z_rod_support', True)
 ]:
     remove(part)
 
@@ -733,8 +733,6 @@ frame_br_mgn = add(
     App.Placement(App.Vector(0, 0, -Z), App.Rotation(App.Vector(0, 0, 1), 0)),
 )
 
-part_left_z_rod_support = printed_parts.get("left_z_rod_support")
-
 for i in range(4):
     if i == 0:
         p = "FL"
@@ -744,6 +742,7 @@ for i in range(4):
         k3 = 0
         k4 = 0
         k5 = 0
+        part = "left"
     elif i == 1:
         p = "FR"
         base = front_vslot.Placement.Base
@@ -752,6 +751,7 @@ for i in range(4):
         k3 = frame_front_vslot_length
         k4 = 0
         k5 = 1
+        part = "right"
     if i == 2:
         p = "BL"
         base = back_vslot.Placement.Base
@@ -760,6 +760,7 @@ for i in range(4):
         k3 = 0
         k4 = 1
         k5 = 1
+        part = "right"
     if i == 3:
         p = "BR"
         base = back_vslot.Placement.Base
@@ -768,6 +769,9 @@ for i in range(4):
         k3 = frame_front_vslot_length
         k4 = 1
         k5 = 0
+        part = "left"
+
+    part_left_z_rod_support = printed_parts.get(f"{part}_z_rod_support")
 
     frame_fl_motor = add(
         f"Frame{p}Motor",
@@ -840,13 +844,10 @@ for i in range(4):
             f"Frame{p}Support",
             part_left_z_rod_support,
             App.Placement(
-                App.Vector(-70,37,frame_vertical_vslot_length-30), App.Rotation(App.Vector(0, 0, 1), 0)
+                App.Vector(-70 - k5 * 390, 37,frame_vertical_vslot_length-30), App.Rotation(App.Vector(0, 0, 1), 0)
             ),
             App.Placement(
                 App.Vector(0,0,0), App.Rotation(App.Vector(0, 0, 1), 180*k4)
-            ),
-            App.Placement(
-                App.Vector(0,0,0), App.Rotation(App.Vector(0, 1, 0), 180*k5)
             ),
             App.Placement(
                 frame_fl_bottombb.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)
