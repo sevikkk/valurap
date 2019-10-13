@@ -118,7 +118,7 @@ class Body:
         return [
             f"{var_name} = {self.var_name}.newObject('PartDesign::ShapeBinder', '{obj.Name}')",
             f"{var_name}_orig = App.getDocument('frame').getObject('{orig_name}')",
-            f"{var_name}.TraceSupport = False",
+            f"{var_name}.TraceSupport = True",
             f"{var_name}.Support = [({var_name}_orig, '')]"
         ]
 
@@ -134,9 +134,21 @@ class Body:
         text.extend(base_text)
 
         text.extend([
+            f"{self.var_name} = App.ActiveDocument.getObject('{self.obj.Name}')",
+            f"{base_var_name} = App.ActiveDocument.getObject('{obj.BaseFeature.Name}')",
+        ])
+        text.extend([
             f"{var_name} = {self.var_name}.newObject('{obj.TypeId}', '{obj.Name}')",
             f"{var_name}.Label = '{obj.Label}'",
-            f"{var_name}.BaseFeature = {base_var_name}",
+            #f"{var_name}.BaseFeature = {base_var_name}",
+        ])
+        assert(obj.Base)
+        assert(obj.Base[0] == obj.BaseFeature)
+        edges = [f"'{a}'" for a in obj.Base[1]]
+        edges = ', '.join(edges)
+
+        text.extend([
+            f"{var_name}.Base = ({base_var_name}, [{edges}])",
         ])
         if obj.TypeId == "PartDesign::Fillet":
             text.extend([
@@ -147,14 +159,6 @@ class Body:
                 f"{var_name}.Size = '{obj.Size}'",
             ])
 
-        assert(obj.Base)
-        assert(obj.Base[0] == obj.BaseFeature)
-        edges = [f"'{a}'" for a in obj.Base[1]]
-        edges = ', '.join(edges)
-
-        text.extend([
-            f"{var_name}.Base = ({base_var_name}, [{edges}])",
-        ])
         return text
 
     def unparse_pad_or_pocket(self, var_name, obj):
@@ -298,6 +302,7 @@ class Body:
             text.extend([
                 f"{var_name}_all_ext_geoms = [{ext_geoms_text}]",
                 f"for a, b in {var_name}_all_ext_geoms:",
+                 "    print(f' Ext: {a.Name}, {b}')",
                 f"    {var_name}.addExternal(a.Name, b)",
             ])
 
@@ -427,8 +432,9 @@ class Body:
         return start_point
 
 
-d = FreeCAD.open('left_y_motor_plate.FCStd')
+#d = FreeCAD.open('left_y_motor_plate.FCStd')
 #d = FreeCAD.open('left_y_idler_plate.FCStd')
+d = FreeCAD.open('x_carriage_plate.FCStd')
 #d = FreeCAD.open('plate.FCStd')
 for obj in d.Objects:
     #print(obj.TypeId, obj.Name, obj.Label)
@@ -463,7 +469,7 @@ for obj in d.Objects:
     else:
         raise RuntimeError(f"Unknown TypeId {obj.TypeId} on top-level")
 
-f = open("left_y_motor_plate.py", "w")
+f = open("x_carriage_plate.py", "w")
 f.write("""
 import sys
 import FreeCAD
