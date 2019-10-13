@@ -14,20 +14,35 @@ if not in_gui:
     FreeCAD.open("vitamins/vitamins.FCStd")
     App.setActiveDocument("vitamins")
 
+base_x = 450 - 42 - 44
+base_x2 = 450 - 44
+base_y = 400
+base_z = 100
+
 Y = 400
-if 0:
+Z = 100
+
+if 1: #DEFAULT FOR BUILD
+    X1 = base_x
+    X2 = base_x2
+    Y = base_y
+    Z = base_z
+elif 0:
     X1 = 450 - 44
     X2 = 450 - 44
-elif 0:
-    X1 = 0
-    X2 = 42
-elif 1:
-    X1 = 450 - 42 - 44
-    X2 = 450 - 44
+    Y = 900
+    Z = 0
 else:
     X1 = 180
     X2 = 280
-Z = 100
+    Y = 0
+    Z = 0
+
+if not in_gui:
+    X1 = base_x
+    X2 = base_x2
+    Y = base_y
+    Z = base_z
 
 frame_front_vslot_length = 530
 frame_x_vslot_length = 500
@@ -104,6 +119,14 @@ remove("LeftIdlerPlate")
 remove("RightIdlerPlate")
 remove("LeftYCarriagePlate")
 remove("RightYCarriagePlate")
+remove("XFrontCarriage")
+remove("XBackCarriage")
+remove("XFrontTitanMount")
+remove("XBackTitanMount")
+remove("FrameFLZRodPlate")
+remove("FrameFRZRodPlate")
+remove("FrameBLZRodPlate")
+remove("FrameBRZRodPlate")
 
 printed_parts = {}
 workdir = os.path.dirname(__file__)
@@ -111,7 +134,10 @@ for part, make_mirror in [
     ('left_y_idler_plate', True),
     ('left_y_motor_plate', True),
     ('left_y_carriage_plate', False),
-    ('left_z_rod_support', True)
+    ('left_z_rod_support', True),
+    ('left_z_rod_plate', True),
+    ('x_carriage_plate', False),
+    ('titan_mount_plate', False),
 ]:
     remove(part)
 
@@ -347,6 +373,43 @@ x_back_motor = add(
     ),
 )
 
+x_carriage_plate = printed_parts.get("x_carriage_plate")
+if x_carriage_plate:
+    x_front_carriage = add(
+        "XFrontCarriage",
+        x_carriage_plate,
+        App.Placement(App.Vector(-base_x-40, -base_y + 8, -59), App.Rotation(App.Vector(0, 0, 1), 0)),
+        App.Placement(x_front_mgn.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
+        App.Placement(App.Vector(0,0,0), App.Rotation(App.Vector(0, 0, 1), 0)),
+    )
+
+    x_back_carriage = add(
+        "XBackCarriage",
+        x_carriage_plate,
+        App.Placement(App.Vector(-base_x-40, -base_y + 8, -59), App.Rotation(App.Vector(0, 0, 1), 0)),
+        App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 0, 1), 180)),
+        App.Placement(x_back_mgn.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
+        App.Placement(App.Vector(44.4, 0,0), App.Rotation(App.Vector(0, 0, 1), 0)),
+    )
+
+titan_mount_plate = printed_parts.get("titan_mount_plate")
+if titan_mount_plate:
+    x_front_tm = add(
+        "XFrontTitanMount",
+        titan_mount_plate,
+        App.Placement(App.Vector(-base_x-40, -base_y + 8, -59), App.Rotation(App.Vector(0, 0, 1), 0)),
+        App.Placement(x_front_mgn.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
+        App.Placement(App.Vector(0,0,0), App.Rotation(App.Vector(0, 0, 1), 0)),
+    )
+
+    x_back_titan_mount = add(
+        "XBackTitanMount",
+        titan_mount_plate,
+        App.Placement(App.Vector(-base_x-40, -base_y + 8, -59), App.Rotation(App.Vector(0, 0, 1), 0)),
+        App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 0, 1), 180)),
+        App.Placement(x_back_mgn.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
+        App.Placement(App.Vector(44.4, 0,0), App.Rotation(App.Vector(0, 0, 1), 0)),
+    )
 
 left_top_belt = add(
     "LeftTopBelt",
@@ -687,7 +750,7 @@ frame_bl_rail = add(
     App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 0, 1), -90)),
     App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 1, 0), 90)),
     App.Placement(frame_bl_vslot.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
-    App.Placement(App.Vector(10, 0, -20), App.Rotation(App.Vector(0, 0, 1), 0)),
+    App.Placement(App.Vector(10, -20, -20), App.Rotation(App.Vector(0, 0, 1), 0)),
 )
 
 frame_fr_rail = add(
@@ -705,7 +768,7 @@ frame_br_rail = add(
     App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 0, 1), 90)),
     App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 1, 0), -90)),
     App.Placement(frame_br_vslot.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)),
-    App.Placement(App.Vector(-10, 0, -20), App.Rotation(App.Vector(0, 0, 1), 0)),
+    App.Placement(App.Vector(-10, -20, -20), App.Rotation(App.Vector(0, 0, 1), 0)),
 )
 
 frame_fl_mgn = add(
@@ -772,6 +835,7 @@ for i in range(4):
         part = "left"
 
     part_left_z_rod_support = printed_parts.get(f"{part}_z_rod_support")
+    part_left_z_rod_plate = printed_parts.get(f"{part}_z_rod_plate")
 
     frame_fl_motor = add(
         f"Frame{p}Motor",
@@ -811,11 +875,12 @@ for i in range(4):
         f"Frame{p}Nut",
         nut8,
         App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 1, 0), -90)),
+        App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 0, 1), 45)),
         App.Placement(
             frame_fl_motor.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)
         ),
         App.Placement(
-            App.Vector(0, 0, -(47 + 80 + Z)), App.Rotation(App.Vector(0, 0, 1), 0)
+            App.Vector(0, 0, -(47 + 80 - 13.5 + Z)), App.Rotation(App.Vector(0, 0, 1), 0)
         ),
     )
 
@@ -851,6 +916,22 @@ for i in range(4):
             ),
             App.Placement(
                 frame_fl_bottombb.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)
+            ),
+            #App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
+        )
+
+    if part_left_z_rod_plate:
+        frame_fl_support = add(
+            f"Frame{p}ZRodPlate",
+            part_left_z_rod_plate,
+            App.Placement(
+                App.Vector(-70 - k5 * 390, 37, base_z + 31.5), App.Rotation(App.Vector(0, 0, 1), 0)
+            ),
+            App.Placement(
+                App.Vector(0,0,0), App.Rotation(App.Vector(0, 0, 1), 180*k4)
+            ),
+            App.Placement(
+                frame_fl_nut.Placement.Base, App.Rotation(App.Vector(0, 0, 1), 0)
             ),
             #App.Placement(App.Vector(0, 0, 0), App.Rotation(App.Vector(0, 0, 1), 0)),
         )
@@ -897,7 +978,6 @@ if part_right_y_motor_plate:
 
 part_left_y_carriage_plate = printed_parts.get("left_y_carriage_plate")
 if part_left_y_carriage_plate:
-    base_y = 400
 
     left_y_carriage_plate = add(
         "LeftYCarriagePlate",
