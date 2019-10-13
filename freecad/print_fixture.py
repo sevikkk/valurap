@@ -17,7 +17,7 @@ if not in_gui:
 pp = []
 
 workdir = os.path.dirname(__file__)
-part = "left_y_carriage_plate"
+part = "x_carriage_plate"
 Part.insert(f'{workdir}/{part}.brep', App.ActiveDocument.Name)
 p = App.ActiveDocument.getObject(part)
 if p.ViewObject:
@@ -27,28 +27,29 @@ bbox = p.Shape.BoundBox
 plc = App.Placement(
     App.Vector(
         -(bbox.XMin + bbox.XMax)/2,
-        -(bbox.YMin + bbox.YMax)/2,
-        -bbox.ZMax,
+        -bbox.YMin,
+        -(bbox.ZMin + bbox.ZMax)/2,
         ),
     App.Rotation(App.Vector(0,0,1),0)
 )
 plc = App.Placement(
     App.Vector(0, -40, 0),
-    App.Rotation(App.Vector(1,0,0),180)
+    App.Rotation(App.Vector(1,0,0),90)
 ).multiply(plc)
 p.Placement = plc
 
 pp.append(p)
 
-rycp = App.ActiveDocument.addObject('PartDesign::FeatureBase','rycp_base')
-rycp.BaseFeature = p
-plc = App.Placement(
-    App.Vector(0, 80, 0),
-    App.Rotation(App.Vector(1,0,0),0)
-).multiply(p.Placement)
-rycp.Placement = plc
+if 0:
+    rycp = App.ActiveDocument.addObject('PartDesign::FeatureBase','rycp_base')
+    rycp.BaseFeature = p
+    plc = App.Placement(
+        App.Vector(0, 80, 0),
+        App.Rotation(App.Vector(1,0,0),0)
+    ).multiply(p.Placement)
+    rycp.Placement = plc
 
-pp.append(rycp)
+    pp.append(rycp)
 
 heated_plate = App.ActiveDocument.addObject("Part::Box", "HeatedPlate_base")
 heated_plate.Length = "200 mm"
