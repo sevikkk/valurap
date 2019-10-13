@@ -1,3 +1,4 @@
 breps/*
 debug/*
 stls/*
+__pycache__
