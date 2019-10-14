@@ -2,3 +2,4 @@ breps/*
 debug/*
 stls/*
 __pycache__
+*.FCStd1
