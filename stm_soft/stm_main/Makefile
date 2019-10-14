@@ -75,6 +75,7 @@ Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.c
 ASM_SOURCES =  \
 startup_stm32f103xb.s
 
+C_SOURCES += Src/task_blink.c
 
 #######################################
 # binaries
@@ -210,4 +211,3 @@ clean:
 -include $(wildcard $(BUILD_DIR)/*.d)
 
 # *** EOF ***
-C_SOURCES += Src/task_blink.c
