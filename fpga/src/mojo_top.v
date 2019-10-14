@@ -90,14 +90,24 @@ module mojo_top #(
     output ext2_7,
     output ext2_8,
 
-    output ext3_1,
-    output ext3_2,
-    output ext3_3,
-    output ext3_4,
-    output ext3_5,
-    output ext3_6,
-    output ext3_7,
-    output ext3_8
+    //output ext3_1,
+    //output ext3_2,
+    //output ext3_3,
+    //output ext3_4,
+    //output ext3_5,
+    //output ext3_6,
+    //output ext3_7,
+    //output ext3_8,
+
+    output stm_rx,   // 3_2
+    input stm_tx,    // 3_4
+    output stm_int,  // 3_6
+    input stm_alive, // 3_8
+
+    output stm_miso, // 3_1
+    input stm_mosi,  // 3_3
+    input stm_sck,   // 3_5
+    input stm_ss     // 3_7
     );
 
 wire rst = ~rst_n; // make reset active high
@@ -125,7 +135,12 @@ always @(posedge clk)
 assign led[7:0] = blink_cnt[23:16];
 
 assign avr_rx = 1'b1;
-assign ext_rx = 1'b1;
+
+assign ext_rx = stm_tx;
+assign stm_rx = ext_tx;
+
+assign stm_int = 1'b0;
+assign stm_miso = 1'b0;
 
 assign mot_1_step = 1'b0;
 assign mot_1_dir = 1'b0;
@@ -193,13 +208,13 @@ assign ext2_6 = blink_cnt[12];
 assign ext2_7 = blink_cnt[11];
 assign ext2_8 = blink_cnt[10];
 
-assign ext3_1 = blink_cnt[14];
-assign ext3_2 = blink_cnt[13];
-assign ext3_3 = blink_cnt[12];
-assign ext3_4 = blink_cnt[11];
-assign ext3_5 = blink_cnt[10];
-assign ext3_6 = blink_cnt[9];
-assign ext3_7 = blink_cnt[8];
-assign ext3_8 = blink_cnt[7];
+// assign ext3_1 = blink_cnt[14];
+// assign ext3_2 = blink_cnt[13];
+// assign ext3_3 = blink_cnt[12];
+// assign ext3_4 = blink_cnt[11];
+// assign ext3_5 = blink_cnt[10];
+// assign ext3_6 = blink_cnt[9];
+// assign ext3_7 = blink_cnt[8];
+// assign ext3_8 = blink_cnt[7];
 
 endmodule
