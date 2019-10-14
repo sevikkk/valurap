@@ -210,3 +210,4 @@ clean:
 -include $(wildcard $(BUILD_DIR)/*.d)
 
 # *** EOF ***
+C_SOURCES += Src/task_blink.c
