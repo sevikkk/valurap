@@ -77,7 +77,12 @@ module mojo_top #(
 
     input endstop_x1,
     input endstop_x2,
-    input endstop_y
+    input endstop_y1,
+    input endstop_y2,
+    input endstop_z1,
+    input endstop_z2,
+    input endstop_z3,
+    input endstop_z4
     );
 
 wire rst = ~rst_n; // make reset active high
@@ -284,6 +289,11 @@ wire asg_abort;
 wire asg_abort_chain_1;
 wire asg_abort_chain_2;
 wire asg_abort_chain_3;
+wire asg_abort_chain_4;
+wire asg_abort_chain_5;
+wire asg_abort_chain_6;
+wire asg_abort_chain_7;
+wire asg_abort_chain_8;
 
 
 assign asg_set_steps_limit = out_reg3[0];
@@ -625,6 +635,26 @@ wire[7:0] es_3_cycles;
 wire es_3_signal;
 wire es_3_signal_changed;
 
+wire[7:0] es_4_cycles;
+wire es_4_signal;
+wire es_4_signal_changed;
+
+wire[7:0] es_5_cycles;
+wire es_5_signal;
+wire es_5_signal_changed;
+
+wire[7:0] es_6_cycles;
+wire es_6_signal;
+wire es_6_signal_changed;
+
+wire[7:0] es_7_cycles;
+wire es_7_signal;
+wire es_7_signal_changed;
+
+wire[7:0] es_8_cycles;
+wire es_8_signal;
+wire es_8_signal_changed;
+
 s3g_rx s3g_rx(
     .clk(clk),
     .rst(n_rdy),
@@ -705,10 +735,13 @@ s3g_executor s3g_executor(
     .in_reg1(asg_steps),
 
     .in_reg2({16'h0, es_1_cycles, 7'h0, es_1_signal}),
-
-    .in_reg6({16'h0, es_2_cycles, 7'h0, es_2_signal}),
-
-    .in_reg10({16'h0, es_3_cycles, 7'h0, es_3_signal}),
+    .in_reg3({16'h0, es_2_cycles, 7'h0, es_2_signal}),
+    .in_reg4({16'h0, es_3_cycles, 7'h0, es_3_signal}),
+    .in_reg5({16'h0, es_4_cycles, 7'h0, es_4_signal}),
+    .in_reg6({16'h0, es_5_cycles, 7'h0, es_5_signal}),
+    .in_reg7({16'h0, es_6_cycles, 7'h0, es_6_signal}),
+    .in_reg8({16'h0, es_7_cycles, 7'h0, es_7_signal}),
+    .in_reg9({16'h0, es_8_cycles, 7'h0, es_8_signal}),
 
     .in_reg14({apg_x_x[31:24], 24'b0}),
     .in_reg15(apg_x_x[63:32]),
@@ -775,11 +808,11 @@ s3g_executor s3g_executor(
     .int2(es_1_signal_changed),
     .int3(es_2_signal_changed),
     .int4(es_3_signal_changed),
-    .int5(1'b0),
-    .int6(1'b0),
-    .int7(1'b0),
-    .int8(1'b0),
-    .int9(1'b0),
+    .int5(es_4_signal_changed),
+    .int6(es_5_signal_changed),
+    .int7(es_6_signal_changed),
+    .int8(es_7_signal_changed),
+    .int9(es_8_signal_changed),
     .int10(1'b0),
     .int11(1'b0),
     .int12(1'b0),
@@ -881,18 +914,28 @@ buf_executor buf_exec(
 
 reg endstop_x1_buf;
 reg endstop_x2_buf;
-reg endstop_y_buf;
+reg endstop_y1_buf;
+reg endstop_y2_buf;
+reg endstop_z1_buf;
+reg endstop_z2_buf;
+reg endstop_z3_buf;
+reg endstop_z4_buf;
 
 always @(posedge clk) begin
 	endstop_x1_buf <= endstop_x1;
 	endstop_x2_buf <= endstop_x2;
-	endstop_y_buf <= endstop_y;
+	endstop_y1_buf <= endstop_y1;
+	endstop_y2_buf <= endstop_y2;
+	endstop_z1_buf <= endstop_z1;
+	endstop_z2_buf <= endstop_z2;
+	endstop_z3_buf <= endstop_z3;
+	endstop_z4_buf <= endstop_z4;
 end
 
 assign led[3:0] = out_reg0[3:0];
 assign led[4] = endstop_x1_buf;
 assign led[5] = endstop_x2_buf;
-assign led[6] = endstop_y_buf;
+assign led[6] = endstop_y1_buf;
 assign led[7] = blink_cnt[23];
 
 acc_step_gen asg(
@@ -1050,7 +1093,7 @@ assign endstops_options = out_reg33;
 endstop_with_mux es_1(
     .clk(clk),
     .reset(n_rdy),
-    .signal_in(endstop_x1),
+    .signal_in(endstop_x1_buf),
     .abort_in(asg_abort_chain_1),
     .unlock(endstops_unlock),
     .mux_select(endstops_options[1:0]),
@@ -1066,7 +1109,7 @@ endstop_with_mux es_1(
 endstop_with_mux es_2(
     .clk(clk),
     .reset(n_rdy),
-    .signal_in(endstop_x2),
+    .signal_in(endstop_x2_buf),
     .abort_in(asg_abort_chain_2),
     .unlock(endstops_unlock),
     .mux_select(endstops_options[5:4]),
@@ -1082,7 +1125,7 @@ endstop_with_mux es_2(
 endstop_with_mux es_3(
     .clk(clk),
     .reset(n_rdy),
-    .signal_in(endstop_y),
+    .signal_in(endstop_y1_buf),
     .abort_in(asg_abort_chain_3),
     .unlock(endstops_unlock),
     .mux_select(endstops_options[9:8]),
@@ -1092,7 +1135,86 @@ endstop_with_mux es_3(
     .cycles(es_3_cycles),
     .signal(es_3_signal),
     .signal_changed(es_3_signal_changed),
-    .abort_out(asg_abort)
+    .abort_out(asg_abort_chain_4)
 );
 
+endstop_with_mux es_4(
+    .clk(clk),
+    .reset(n_rdy),
+    .signal_in(endstop_y2_buf),
+    .abort_in(asg_abort_chain_4),
+    .unlock(endstops_unlock),
+    .mux_select(endstops_options[13:12]),
+    .abort_polarity(endstops_options[14]),
+    .abort_enabled(endstops_options[15]),
+    .timeout(endstops_timeout),
+    .cycles(es_4_cycles),
+    .signal(es_4_signal),
+    .signal_changed(es_4_signal_changed),
+    .abort_out(asg_abort_chain_5)
+);
+
+endstop_with_mux es_5(
+    .clk(clk),
+    .reset(n_rdy),
+    .signal_in(endstop_z1_buf),
+    .abort_in(asg_abort_chain_5),
+    .unlock(endstops_unlock),
+    .mux_select(endstops_options[17:16]),
+    .abort_polarity(endstops_options[18]),
+    .abort_enabled(endstops_options[19]),
+    .timeout(endstops_timeout),
+    .cycles(es_5_cycles),
+    .signal(es_5_signal),
+    .signal_changed(es_5_signal_changed),
+    .abort_out(asg_abort_chain_6)
+);
+
+endstop_with_mux es_6(
+    .clk(clk),
+    .reset(n_rdy),
+    .signal_in(endstop_z2_buf),
+    .abort_in(asg_abort_chain_6),
+    .unlock(endstops_unlock),
+    .mux_select(endstops_options[21:20]),
+    .abort_polarity(endstops_options[22]),
+    .abort_enabled(endstops_options[23]),
+    .timeout(endstops_timeout),
+    .cycles(es_6_cycles),
+    .signal(es_6_signal),
+    .signal_changed(es_6_signal_changed),
+    .abort_out(asg_abort_chain_7)
+);
+
+endstop_with_mux es_7(
+    .clk(clk),
+    .reset(n_rdy),
+    .signal_in(endstop_z3_buf),
+    .abort_in(asg_abort_chain_7),
+    .unlock(endstops_unlock),
+    .mux_select(endstops_options[25:24]),
+    .abort_polarity(endstops_options[26]),
+    .abort_enabled(endstops_options[27]),
+    .timeout(endstops_timeout),
+    .cycles(es_7_cycles),
+    .signal(es_7_signal),
+    .signal_changed(es_7_signal_changed),
+    .abort_out(asg_abort_chain_8)
+);
+
+endstop_with_mux es_8(
+    .clk(clk),
+    .reset(n_rdy),
+    .signal_in(endstop_z4_buf),
+    .abort_in(asg_abort_chain_8),
+    .unlock(endstops_unlock),
+    .mux_select(endstops_options[29:28]),
+    .abort_polarity(endstops_options[30]),
+    .abort_enabled(endstops_options[31]),
+    .timeout(endstops_timeout),
+    .cycles(es_8_cycles),
+    .signal(es_8_signal),
+    .signal_changed(es_8_signal_changed),
+    .abort_out(asg_abort)
+);
 endmodule

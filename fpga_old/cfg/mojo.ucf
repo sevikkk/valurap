@@ -82,7 +82,12 @@ NET "mot_10_enable" LOC = P143 | IOSTANDARD = LVTTL;
 NET "mot_10_step" LOC = P141 | IOSTANDARD = LVTTL;
 NET "mot_10_dir" LOC = P139 | IOSTANDARD = LVTTL;
 
-NET "endstop_x1" LOC = P105 | IOSTANDARD = LVTTL;
-NET "endstop_x2" LOC = P111 | IOSTANDARD = LVTTL;
-NET "endstop_y" LOC = P112 | IOSTANDARD = LVTTL;
+NET "endstop_x1" LOC = P67 | IOSTANDARD = LVTTL;
+NET "endstop_x2" LOC = P75 | IOSTANDARD = LVTTL;
+NET "endstop_y1" LOC = P66 | IOSTANDARD = LVTTL;
+NET "endstop_y2" LOC = P74 | IOSTANDARD = LVTTL;
+NET "endstop_z1" LOC = P58 | IOSTANDARD = LVTTL;
+NET "endstop_z2" LOC = P57 | IOSTANDARD = LVTTL;
+NET "endstop_z3" LOC = P79 | IOSTANDARD = LVTTL;
+NET "endstop_z4" LOC = P78 | IOSTANDARD = LVTTL;
 
