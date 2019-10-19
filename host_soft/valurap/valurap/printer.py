@@ -12,7 +12,8 @@ import struct
 
 from .asg import Asg, ProfileSegment, PathSegment
 from .apgs import ApgX, ApgY, ApgZ
-from .axes import AxeX1, AxeX2, AxeY, AxeY2, AxeE1, AxeE2, AxeM7, AxeM8, AxeM9, AxeM10, AxeM11, AxeM12
+from .axes import AxeX1, AxeX2, AxeY, AxeY2, AxeE1, AxeE2, AxeM10, AxeY1, AxeE3, \
+    AxeZ, AxeBLZ, AxeBRZ, AxeFLZ, AxeFRZ
 from .commands import S3GPort
 
 try:
@@ -76,28 +77,32 @@ class Valurap(object):
         self.axe_x1 = AxeX1(self)
         self.axe_x2 = AxeX2(self)
         self.axe_y = AxeY(self)
+        self.axe_y1 = AxeY1(self)
         self.axe_y2 = AxeY2(self)
         self.axe_e1 = AxeE1(self)
         self.axe_e2 = AxeE2(self)
-        self.axe_m7 = AxeM7(self)
-        self.axe_m8 = AxeM8(self)
-        self.axe_m9 = AxeM9(self)
+        self.axe_e3 = AxeE3(self)
         self.axe_m10 = AxeM10(self)
-        self.axe_m11 = AxeM11(self)
-        self.axe_m12 = AxeM12(self)
+        self.axe_z = AxeZ(self)
+        self.axe_blz = AxeBLZ(self)
+        self.axe_brz = AxeBRZ(self)
+        self.axe_flz = AxeFLZ(self)
+        self.axe_frz = AxeFRZ(self)
         self.axes = {
             "X1": self.axe_x1,
             "X2": self.axe_x2,
             "Y": self.axe_y,
+            "Y1": self.axe_y1,
             "Y2": self.axe_y2,
             "E1": self.axe_e1,
             "E2": self.axe_e2,
-            "M7": self.axe_m7,
-            "M8": self.axe_m8,
-            "M9": self.axe_m9,
+            "E3": self.axe_e3,
             "M10": self.axe_m10,
-            "M11": self.axe_m11,
-            "M12": self.axe_m12,
+            "Z": self.axe_z,
+            "BLZ": self.axe_blz,
+            "BRZ": self.axe_brz,
+            "FLZ": self.axe_flz,
+            "FRZ": self.axe_frz,
         }
 
         self.apg_x = ApgX(self)
@@ -203,7 +208,7 @@ class Valurap(object):
         for axe in axes:
             current_status = axe.endstops_status()
             if current_status:
-                print("{} already on endstop")
+                print("{} already on endstop".format(axe.name))
                 continue
 
             axe.apg = apgs.pop()
@@ -264,14 +269,30 @@ class Valurap(object):
 
         ret = False
         while not ret:
-            ret = self.home_axes([self.axe_x1, self.axe_x2, self.axe_y])
+            ret = self.home_axes([
+                self.axe_x1,
+                self.axe_x2,
+                self.axe_y
+            ])
+
+        self.axe_y.apg = self.apg_x
+        self.update_axes_config()
+        self.move(Y=3000)
+        self.axe_y.apg = None
+        self.update_axes_config()
+        ret = False
+        while not ret:
+            ret = self.home_axes([
+                self.axe_y1,
+                self.axe_y2,
+            ])
 
         self.axe_x1.apg = self.apg_x
         self.axe_x2.apg = self.apg_y
         self.axe_y.apg = self.apg_z
         self.update_axes_config()
-        self.set_positions(X1=13000, X2=-13000, Y=13000)
-        self.moveto(X1=0, X2=0, Y=-0)
+        self.set_positions(X1=13200, X2=-14000, Y=-22500)
+        self.moveto(X1=0, X2=0, Y=0)
 
 
     def plan_move(self, min_dt = None, **deltas):
@@ -399,7 +420,9 @@ def main():
         p.setup()
         p.home()
 
-        optozero_calibrate_fast(p, True)
+
+
+        #optozero_calibrate_fast(p, True)
 
     except (KeyboardInterrupt, TimeoutError):
         raise
