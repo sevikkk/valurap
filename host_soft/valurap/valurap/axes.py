@@ -30,7 +30,6 @@ class Axe(object):
     max_j = 5000
 
     name = None
-    _virtual = False
 
     def __init__(self, bot):
         self.bot = bot
@@ -136,7 +135,6 @@ class AxeY(Axe_MC2):
     """
     Combined Axe for both Y motors
     """
-    _virtual = True
     endstop_at_max = False
     _control_enable = (
         S3GPort.OUT_MSG_CONTROL2_ENABLE_11
@@ -379,13 +377,16 @@ class AxeZ(Axe):
     All motors of Z
     """
 
-    _virtual = True
-    endstop_at_max = None
+    endstop_at_max = False
     _control_enable = (
         S3GPort.OUT_MSG_CONTROL_ENABLE_1
         | S3GPort.OUT_MSG_CONTROL_ENABLE_2
         | S3GPort.OUT_MSG_CONTROL_ENABLE_3
         | S3GPort.OUT_MSG_CONTROL_ENABLE_6
+        | S3GPort.OUT_MSG_CONTROL_INVERT_DIR_1
+        | S3GPort.OUT_MSG_CONTROL_INVERT_DIR_2
+        | S3GPort.OUT_MSG_CONTROL_INVERT_DIR_3
+        | S3GPort.OUT_MSG_CONTROL_INVERT_DIR_6
     )
     _control_mux = {
         "X": (
@@ -408,20 +409,70 @@ class AxeZ(Axe):
         ),
     }
 
+    _endstops_mux = {
+        "X": (
+                S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_5_X
+                | S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_6_X
+                | S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_7_X
+                | S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_8_X
+        ),
+        "Y": (
+                S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_5_Y
+                | S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_6_Y
+                | S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_7_Y
+                | S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_8_Y
+        ),
+        "Z": (
+            S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_5_Z
+            | S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_6_Z
+            | S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_7_Z
+            | S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_8_Z
+        ),
+    }
+
+    _endstops_abort = (
+        S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_ENABLED_5
+        | S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_ENABLED_6
+        | S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_ENABLED_7
+        | S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_ENABLED_8
+    )
+    _endstops_polarity = (
+        S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_POLARITY_5
+        | S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_POLARITY_6
+        | S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_POLARITY_7
+        | S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_POLARITY_8
+    )
+    _endstops_status = [
+        S3GPort.IN_ENDSTOPS_STATUS_5,
+        S3GPort.IN_ENDSTOPS_STATUS_6,
+        S3GPort.IN_ENDSTOPS_STATUS_7,
+        S3GPort.IN_ENDSTOPS_STATUS_8,
+    ]
+
+    endstop_int = (
+        S3GPort.INT_ENDSTOP_CHANGED_5
+        | S3GPort.INT_ENDSTOP_CHANGED_6
+        | S3GPort.INT_ENDSTOP_CHANGED_7
+        | S3GPort.INT_ENDSTOP_CHANGED_8
+    )
+
     abort_a = 20000
-    home_a = 5000
-    home_v = 200000
+    home_a = 2000
+    home_v = 500000
 
+    max_v = 500000
+    max_a = 2000
+    max_j = 5000
 
-class AxeFLZ(Axe):
+class AxeFLZ(AxeZ):
     name = "FLZ"
     """
     Front Left Z Motor
     """
 
-    endstop_at_max = None
     _control_enable = (
         S3GPort.OUT_MSG_CONTROL_ENABLE_1
+        | S3GPort.OUT_MSG_CONTROL_INVERT_DIR_1
     )
     _control_mux = {
         "X": (
@@ -435,20 +486,42 @@ class AxeFLZ(Axe):
         ),
     }
 
-    abort_a = 20000
-    home_a = 5000
-    home_v = 200000
+    _endstops_mux = {
+        "X": (
+                S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_8_X
+        ),
+        "Y": (
+                S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_8_Y
+        ),
+        "Z": (
+            S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_8_Z
+        ),
+    }
+
+    _endstops_abort = (
+        S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_ENABLED_8
+    )
+    _endstops_polarity = (
+        S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_POLARITY_8
+    )
+    _endstops_status = [
+        S3GPort.IN_ENDSTOPS_STATUS_8,
+    ]
+
+    endstop_int = (
+        S3GPort.INT_ENDSTOP_CHANGED_8
+    )
 
 
-class AxeBRZ(Axe):
+class AxeBRZ(AxeZ):
     name = "BRZ"
     """
     Back Right Z Motor
     """
 
-    endstop_at_max = None
     _control_enable = (
         S3GPort.OUT_MSG_CONTROL_ENABLE_2
+        | S3GPort.OUT_MSG_CONTROL_INVERT_DIR_2
     )
     _control_mux = {
         "X": (
@@ -462,20 +535,43 @@ class AxeBRZ(Axe):
         ),
     }
 
-    abort_a = 20000
-    home_a = 5000
-    home_v = 200000
+    _endstops_mux = {
+        "X": (
+                S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_5_X
+        ),
+        "Y": (
+                S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_5_Y
+        ),
+        "Z": (
+            S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_5_Z
+        ),
+    }
+
+    _endstops_abort = (
+        S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_ENABLED_5
+    )
+    _endstops_polarity = (
+        S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_POLARITY_5
+    )
+    _endstops_status = [
+        S3GPort.IN_ENDSTOPS_STATUS_5,
+    ]
+
+    endstop_int = (
+        S3GPort.INT_ENDSTOP_CHANGED_5
+    )
 
 
-class AxeBLZ(Axe):
+
+class AxeBLZ(AxeZ):
     name = "BLZ"
     """
     Back Left Z Motor
     """
 
-    endstop_at_max = None
     _control_enable = (
         S3GPort.OUT_MSG_CONTROL_ENABLE_3
+        | S3GPort.OUT_MSG_CONTROL_INVERT_DIR_3
     )
     _control_mux = {
         "X": (
@@ -489,20 +585,43 @@ class AxeBLZ(Axe):
         ),
     }
 
-    abort_a = 20000
-    home_a = 5000
-    home_v = 200000
+    _endstops_mux = {
+        "X": (
+                S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_6_X
+        ),
+        "Y": (
+                S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_6_Y
+        ),
+        "Z": (
+            S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_6_Z
+        ),
+    }
+
+    _endstops_abort = (
+        S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_ENABLED_6
+    )
+    _endstops_polarity = (
+        S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_POLARITY_6
+    )
+    _endstops_status = [
+        S3GPort.IN_ENDSTOPS_STATUS_6,
+    ]
+
+    endstop_int = (
+        S3GPort.INT_ENDSTOP_CHANGED_6
+    )
 
 
-class AxeFRZ(Axe):
+
+class AxeFRZ(AxeZ):
     name = "FRZ"
     """
     Front Right Z Motor
     """
 
-    endstop_at_max = None
     _control_enable = (
         S3GPort.OUT_MSG_CONTROL_ENABLE_6
+        | S3GPort.OUT_MSG_CONTROL_INVERT_DIR_6
     )
     _control_mux = {
         "X": (
@@ -516,8 +635,30 @@ class AxeFRZ(Axe):
         ),
     }
 
-    abort_a = 20000
-    home_a = 5000
-    home_v = 200000
+    _endstops_mux = {
+        "X": (
+                S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_7_X
+        ),
+        "Y": (
+                S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_7_Y
+        ),
+        "Z": (
+            S3GPort.OUT_ENDSTOPS_OPTIONS_MUX_7_Z
+        ),
+    }
+
+    _endstops_abort = (
+        S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_ENABLED_7
+    )
+    _endstops_polarity = (
+        S3GPort.OUT_ENDSTOPS_OPTIONS_ABORT_POLARITY_7
+    )
+    _endstops_status = [
+        S3GPort.IN_ENDSTOPS_STATUS_7,
+    ]
+
+    endstop_int = (
+        S3GPort.INT_ENDSTOP_CHANGED_7
+    )
 
 

@@ -260,13 +260,28 @@ class Valurap(object):
         self.axe_x1.enabled = True
         self.axe_x2.enabled = True
         self.axe_y.enabled = True
+        self.axe_z.enabled = True
         self.axe_x1.apg = None
         self.axe_x2.apg = None
         self.axe_y.apg = None
+        self.axe_y1.apg = None
         self.axe_y2.apg = None
+        self.axe_z.apg = None
+        self.axe_flz.apg = None
+        self.axe_frz.apg = None
+        self.axe_blz.apg = None
+        self.axe_brz.apg = None
         self.update_axes_config()
         time.sleep(0.5)
 
+        # Move Z down, just in case
+        self.axe_z.apg = self.apg_x
+        self.update_axes_config()
+        self.move(Z=30000)
+        self.axe_z.apg = None
+        self.update_axes_config()
+
+        # Initial home of top axes
         ret = False
         while not ret:
             ret = self.home_axes([
@@ -275,11 +290,14 @@ class Valurap(object):
                 self.axe_y
             ])
 
+        # Move Y back, for final homing
         self.axe_y.apg = self.apg_x
         self.update_axes_config()
         self.move(Y=3000)
         self.axe_y.apg = None
         self.update_axes_config()
+
+        # Home Y motors independently
         ret = False
         while not ret:
             ret = self.home_axes([
@@ -287,6 +305,36 @@ class Valurap(object):
                 self.axe_y2,
             ])
 
+        # Inital home of Z
+        ret = False
+        while not ret:
+            ret = self.home_axes([
+                self.axe_z,
+            ])
+
+        # Move Z back, for final homing
+        self.axe_z.apg = self.apg_x
+        self.update_axes_config()
+        self.move(Z=1000)
+        self.axe_z.apg = None
+        self.update_axes_config()
+
+        for axe in [
+            self.axe_blz,
+            self.axe_brz,
+            self.axe_flz,
+            self.axe_frz,
+            ]:
+            ret = False
+            while not ret:
+                ret = self.home_axes([
+                    axe
+                ])
+
+        self.axe_z.apg = self.apg_x
+        self.update_axes_config()
+        self.move(Z=10000)
+        self.axe_z.apg = None
         self.axe_x1.apg = self.apg_x
         self.axe_x2.apg = self.apg_y
         self.axe_y.apg = self.apg_z
