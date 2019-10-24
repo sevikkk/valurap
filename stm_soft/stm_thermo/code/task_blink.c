@@ -15,7 +15,7 @@ void StartDebugBlink(void const * argument)
     osDelay(50);
     HAL_GPIO_WritePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin, GPIO_PIN_SET);
     osDelay(450);
-    printf("\x1b[s\x1b[1;1H\x1b[K%d.\x1b[u", i);
+    printf("\x1b[s\x1b[1;1H\x1b[2K\x1b[1m%d.\x1b[0m\x1b[u", i);
     fflush(0);
     i++;
     /* HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF); */
