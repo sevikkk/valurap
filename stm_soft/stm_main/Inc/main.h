@@ -62,12 +62,26 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define DEBUG_LED_Pin GPIO_PIN_13
 #define DEBUG_LED_GPIO_Port GPIOC
+#define TH3_Pin GPIO_PIN_7
+#define TH3_GPIO_Port GPIOA
+#define TH2_Pin GPIO_PIN_0
+#define TH2_GPIO_Port GPIOB
+#define TH1_Pin GPIO_PIN_1
+#define TH1_GPIO_Port GPIOB
+#define HEAT_3_Pin GPIO_PIN_10
+#define HEAT_3_GPIO_Port GPIOB
 #define FPGA_INT_Pin GPIO_PIN_8
 #define FPGA_INT_GPIO_Port GPIOA
-#define FAN_EN1_Pin GPIO_PIN_4
-#define FAN_EN1_GPIO_Port GPIOB
-#define FAN_EN2_Pin GPIO_PIN_5
-#define FAN_EN2_GPIO_Port GPIOB
+#define ISP_TX_Pin GPIO_PIN_9
+#define ISP_TX_GPIO_Port GPIOA
+#define ISP_RX_Pin GPIO_PIN_10
+#define ISP_RX_GPIO_Port GPIOA
+#define HEAT_1_Pin GPIO_PIN_15
+#define HEAT_1_GPIO_Port GPIOA
+#define HEAT_2_Pin GPIO_PIN_3
+#define HEAT_2_GPIO_Port GPIOB
+#define USART1_RE_Pin GPIO_PIN_5
+#define USART1_RE_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
