@@ -70,7 +70,7 @@ Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c \
 Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c \
 Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.c  
 
-C_SOURCES +=  code/task_blink.c
+C_SOURCES +=  code/task_blink.c code/cmdline.c code/commands.c
 
 # ASM sources
 ASM_SOURCES =  \
