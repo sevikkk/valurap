@@ -35,10 +35,19 @@ void helpFunction(void)
 }
 
 void s55Function(void) {
+  int i;
   printf("s55\n");
   fflush(0);
-  osDelay(1000);
+  for (i=0; i<10; i++) {
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET);
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_15, GPIO_PIN_SET);
+	  osDelay(1000);
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_15, GPIO_PIN_RESET);
+	  osDelay(1000);
+  };
   printf("/s55\n");
+  fflush(0);
 }
 
 void setup_commands() {
