@@ -23,7 +23,7 @@ void StartDebugBlink(void const * argument)
 }
 
 void uart_putc(char ch) {
-      HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
+      while (HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF) != HAL_OK) taskYIELD();
 }
 
 int _write_r (struct _reent *r, int file, char * ptr, int len)
