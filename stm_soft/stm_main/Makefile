@@ -71,6 +71,8 @@ Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c \
 Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c \
 Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.c  
 
+C_SOURCES += code/task_blink.c
+
 # ASM sources
 ASM_SOURCES =  \
 startup_stm32f103xb.s
