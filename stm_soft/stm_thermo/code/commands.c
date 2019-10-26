@@ -6,9 +6,21 @@
 
 extern UART_HandleTypeDef huart1;
 
+extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim3;
+
 void StartCmdLine(void const * argument)
 {
   char ch;
+
+  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
+  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+
   cmdlineInit();
   setup_commands();
   cmdlinePrintPrompt();
@@ -28,15 +40,20 @@ void helpFunction(void)
   printf(
         "\n"
         "Available commands are:\n"
-        "help      - displays available commands\n"
+        "help         - displays available commands\n"
+        "exttest      - turm extra channels on and off\n"
+        "sep <N>      - set extruders prescaler to N\n"
+        "sfp <N>      - set fans prescaler to N\n"
+        "sev <C> <N>  - set extruder C to N\n"
+        "sfv <C> <N>  - set fan C to N\n"
         "\n"
   );
   fflush(0);
 }
 
-void s55Function(void) {
+void exttestFunction(void) {
   int i;
-  printf("s55\n");
+  printf("ext\n");
   fflush(0);
   for (i=0; i<10; i++) {
 	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET);
@@ -46,12 +63,60 @@ void s55Function(void) {
 	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_15, GPIO_PIN_RESET);
 	  osDelay(1000);
   };
-  printf("/s55\n");
+  printf("/ext\n");
   fflush(0);
 }
 
+void sepFunction(void) {
+ int32_t psc;
+ psc = cmdlineGetArgInt(1);
+ __HAL_TIM_SET_PRESCALER(&htim3, psc);
+}
+
+void sfpFunction(void) {
+ int32_t psc;
+ psc = cmdlineGetArgInt(1);
+ __HAL_TIM_SET_PRESCALER(&htim1, psc);
+}
+
+int32_t ech_ids[3] = {
+  TIM_CHANNEL_1,
+  TIM_CHANNEL_2,
+  TIM_CHANNEL_3,
+};
+
+void sevFunction(void) {
+ int32_t ch;
+ int32_t val;
+
+ ch = cmdlineGetArgInt(1);
+ val = cmdlineGetArgInt(2);
+ if (ch > 0 && ch <= 3)
+    __HAL_TIM_SET_COMPARE(&htim3, ech_ids[ch - 1], val);
+}
+
+int32_t fch_ids[3] = {
+  TIM_CHANNEL_3,
+  TIM_CHANNEL_2,
+  TIM_CHANNEL_1,
+};
+
+void sfvFunction(void) {
+ int32_t ch;
+ int32_t val;
+
+ ch = cmdlineGetArgInt(1);
+ val = cmdlineGetArgInt(2);
+ if (ch > 0 && ch <= 3)
+    __HAL_TIM_SET_COMPARE(&htim1, fch_ids[ch - 1], val);
+}
+
 void setup_commands() {
-  cmdlineAddCommand("help",   helpFunction);
-  cmdlineAddCommand("s55",    s55Function);
+  cmdlineAddCommand("help",    helpFunction);
+  cmdlineAddCommand("exttest", exttestFunction);
+  cmdlineAddCommand("sep", sepFunction);
+  cmdlineAddCommand("sfp", sfpFunction);
+  cmdlineAddCommand("sev", sevFunction);
+  cmdlineAddCommand("sfv", sfvFunction);
 }
 
