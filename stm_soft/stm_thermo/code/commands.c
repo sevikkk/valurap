@@ -9,6 +9,25 @@ extern UART_HandleTypeDef huart1;
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim3;
 
+extern SPI_HandleTypeDef hspi1;
+
+volatile int32_t k_type_temp = 0;
+
+
+void StartThermoRead(void const * argument) {
+  uint8_t in_buffer[2];
+  uint8_t out_buffer[2];
+  for(;;) {
+	HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_RESET);
+        HAL_SPI_TransmitReceive(&hspi1, out_buffer, in_buffer, 2, 1000);
+	HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_SET);
+	k_type_temp = in_buffer[0] << 8 | in_buffer[1];
+	printf("t: %d\n", k_type_temp >> 5);
+	fflush(0);
+	osDelay(500);
+  };
+}
+
 void StartCmdLine(void const * argument)
 {
   char ch;
