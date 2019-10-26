@@ -56,6 +56,7 @@ UART_HandleTypeDef huart2;
 osThreadId defaultTaskHandle;
 osThreadId DebugBlinkHandle;
 osThreadId CmdLineHandle;
+osThreadId ThermoReadHandle;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -72,6 +73,7 @@ static void MX_SPI1_Init(void);
 void StartDefaultTask(void const * argument);
 extern void StartDebugBlink(void const * argument);
 extern void StartCmdLine(void const * argument);
+extern void StartThermoRead(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -149,6 +151,10 @@ int main(void)
   /* definition and creation of CmdLine */
   osThreadDef(CmdLine, StartCmdLine, osPriorityIdle, 0, 128);
   CmdLineHandle = osThreadCreate(osThread(CmdLine), NULL);
+
+  /* definition and creation of ThermoRead */
+  osThreadDef(ThermoRead, StartThermoRead, osPriorityIdle, 0, 128);
+  ThermoReadHandle = osThreadCreate(osThread(ThermoRead), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -559,6 +565,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
+    
     
     
     
