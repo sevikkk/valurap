@@ -4,7 +4,16 @@
 
 extern UART_HandleTypeDef huart1;
 
+extern volatile int32_t k_type_temp;
+extern volatile int32_t adc_reads[5];
+extern volatile int32_t ext_values[3];
+extern volatile int32_t fan_values[3];
+
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#define ESC_TO_STATUS "\x1b[s\x1b[1;1H\x1b[2K"
+#define ESC_BOLD "\x1b[1m"
+#define ESC_NORMAL "\x1b[0m"
+#define ESC_BACK "\x1b[u"
 
 void StartDebugBlink(void const * argument)
 {
@@ -15,7 +24,23 @@ void StartDebugBlink(void const * argument)
     osDelay(50);
     HAL_GPIO_WritePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin, GPIO_PIN_SET);
     osDelay(450);
-    printf("\x1b[s\x1b[1;1H\x1b[2K\x1b[1m%d.\x1b[0m\x1b[u", i);
+    printf(ESC_TO_STATUS ESC_BOLD
+		    "[%d] | K-t: %3d | TH: %4d %4d %4d"
+		    " | Ext: %4d %4d %4d"
+		    " | Fan: %4d %4d %4d"
+		    ESC_NORMAL ESC_BACK, 
+		    i,
+		    k_type_temp >> 5,
+		    adc_reads[0],
+		    adc_reads[1],
+		    adc_reads[2],
+		    ext_values[0],
+		    ext_values[1],
+		    ext_values[2],
+		    fan_values[0],
+		    fan_values[1],
+		    fan_values[2]
+    );
     fflush(0);
     i++;
     /* HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF); */

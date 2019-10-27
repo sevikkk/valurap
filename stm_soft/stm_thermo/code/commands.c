@@ -14,6 +14,21 @@ extern SPI_HandleTypeDef hspi1;
 extern ADC_HandleTypeDef hadc1;
 
 volatile int32_t k_type_temp = 0;
+volatile int32_t adc_reads[5];
+volatile int32_t ext_values[3];
+volatile int32_t fan_values[3];
+
+int32_t ech_ids[3] = {
+  TIM_CHANNEL_1,
+  TIM_CHANNEL_2,
+  TIM_CHANNEL_3,
+};
+
+int32_t fch_ids[3] = {
+  TIM_CHANNEL_3,
+  TIM_CHANNEL_2,
+  TIM_CHANNEL_1,
+};
 
 
 void StartThermoRead(void const * argument) {
@@ -50,11 +65,18 @@ void StartThermoRead(void const * argument) {
 		};
 		HAL_ADC_Stop(&hadc1);
 	};
-	printf("k-t: %d\n", k_type_temp >> 5);
+	/* printf("k-t: %d\n", k_type_temp >> 5); */
 	for(i=0; i<5; i++) {
-		printf("adc%d: %d\n", i, adc_vals[i]/100);
+		/* printf("adc%d: %d\n", i, adc_vals[i]/100); */
+		adc_reads[i] = adc_vals[i]/100;
 	};
-	fflush(0);
+	for(i=0; i<3; i++) {
+		ext_values[i] = __HAL_TIM_GET_COMPARE(&htim3, ech_ids[i]);
+		fan_values[i] = __HAL_TIM_GET_COMPARE(&htim1, fch_ids[i]);
+		/* printf("ext%d: %d\n", i, ext_values[i]);
+		printf("fan%d: %d\n", i, fan_values[i]); */
+	};
+	/* fflush(0); */
 
 	osDelay(400);
   };
@@ -130,12 +152,6 @@ void sfpFunction(void) {
  __HAL_TIM_SET_PRESCALER(&htim1, psc);
 }
 
-int32_t ech_ids[3] = {
-  TIM_CHANNEL_1,
-  TIM_CHANNEL_2,
-  TIM_CHANNEL_3,
-};
-
 void sevFunction(void) {
  int32_t ch;
  int32_t val;
@@ -145,12 +161,6 @@ void sevFunction(void) {
  if (ch > 0 && ch <= 3)
     __HAL_TIM_SET_COMPARE(&htim3, ech_ids[ch - 1], val);
 }
-
-int32_t fch_ids[3] = {
-  TIM_CHANNEL_3,
-  TIM_CHANNEL_2,
-  TIM_CHANNEL_1,
-};
 
 void sfvFunction(void) {
  int32_t ch;
