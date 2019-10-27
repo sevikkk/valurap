@@ -534,7 +534,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, DEBUG_LED_Pin|GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, RS485_DE_Pin|ISP_TX_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(RS485_DE_GPIO_Port, RS485_DE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_SET);
@@ -546,18 +546,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : RS485_DE_Pin ISP_TX_Pin SPI1_NSS_Pin */
-  GPIO_InitStruct.Pin = RS485_DE_Pin|ISP_TX_Pin|SPI1_NSS_Pin;
+  /*Configure GPIO pins : RS485_DE_Pin SPI1_NSS_Pin */
+  GPIO_InitStruct.Pin = RS485_DE_Pin|SPI1_NSS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : ISP_RX_Pin */
-  GPIO_InitStruct.Pin = ISP_RX_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(ISP_RX_GPIO_Port, &GPIO_InitStruct);
 
 }
 

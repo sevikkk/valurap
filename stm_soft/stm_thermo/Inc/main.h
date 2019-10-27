@@ -86,10 +86,6 @@ void Error_Handler(void);
 #define TIM1_CH2N_F2_GPIO_Port GPIOB
 #define TIM1_CH3N_F1_Pin GPIO_PIN_15
 #define TIM1_CH3N_F1_GPIO_Port GPIOB
-#define ISP_TX_Pin GPIO_PIN_9
-#define ISP_TX_GPIO_Port GPIOA
-#define ISP_RX_Pin GPIO_PIN_10
-#define ISP_RX_GPIO_Port GPIOA
 #define SPI1_NSS_Pin GPIO_PIN_15
 #define SPI1_NSS_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
