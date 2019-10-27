@@ -57,6 +57,7 @@ osThreadId defaultTaskHandle;
 osThreadId DebugBlinkHandle;
 osThreadId CmdLineHandle;
 osThreadId ThermoReadHandle;
+osMutexId consoleMtxHandle;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -122,6 +123,11 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
+
+  /* Create the mutex(es) */
+  /* definition and creation of consoleMtx */
+  osMutexDef(consoleMtx);
+  consoleMtxHandle = osMutexCreate(osMutex(consoleMtx));
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
