@@ -11,20 +11,52 @@ extern TIM_HandleTypeDef htim3;
 
 extern SPI_HandleTypeDef hspi1;
 
+extern ADC_HandleTypeDef hadc1;
+
 volatile int32_t k_type_temp = 0;
 
 
 void StartThermoRead(void const * argument) {
   uint8_t in_buffer[2];
   uint8_t out_buffer[2];
+  uint32_t adc_vals[5];
+  uint32_t channels[5] = {
+	ADC_CHANNEL_0,
+	ADC_CHANNEL_4,
+	ADC_CHANNEL_5,
+	ADC_CHANNEL_TEMPSENSOR,
+	ADC_CHANNEL_VREFINT
+  };
+  ADC_ChannelConfTypeDef sConfig = {0};
+  int i, j;
+
   for(;;) {
 	HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_RESET);
         HAL_SPI_TransmitReceive(&hspi1, out_buffer, in_buffer, 2, 1000);
 	HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_SET);
 	k_type_temp = in_buffer[0] << 8 | in_buffer[1];
-	printf("t: %d\n", k_type_temp >> 5);
+	for(i=0; i<5; i++) adc_vals[i] = 0;
+	for(j=0; j<100; j++)
+	   for(i=0; i<5; i++) {
+		sConfig.Channel = channels[i];
+		sConfig.Rank = ADC_REGULAR_RANK_1;
+		sConfig.SamplingTime = ADC_SAMPLETIME_41CYCLES_5;
+		HAL_ADC_ConfigChannel(&hadc1, &sConfig);
+		HAL_ADC_Start(&hadc1);
+		if (HAL_ADC_PollForConversion(&hadc1, 1000000) == HAL_OK) {
+			adc_vals[i] += HAL_ADC_GetValue(&hadc1);
+		} else {
+			adc_vals[i] += 9999;
+		};
+		HAL_ADC_Stop(&hadc1);
+	};
+	printf("k-t: %d\n", k_type_temp >> 5);
+	for(i=0; i<5; i++) {
+		printf("adc%d: %d\n", i, adc_vals[i]/100);
+	};
 	fflush(0);
-	osDelay(500);
+
+	osDelay(400);
   };
 }
 
