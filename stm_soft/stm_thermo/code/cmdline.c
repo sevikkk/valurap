@@ -84,8 +84,8 @@ CmdlineFuncPtrType CmdlineExecFunction;
 // function pointer to single character output routine
 //static void (*cmdlineOutputFunc)(unsigned char c);
 
-extern void uart_putc(char ch);
-#define cmdlineOutputFunc uart_putc
+extern void cons_uart_putc(char ch);
+#define cmdlineOutputFunc cons_uart_putc
 
 void cmdlineInit(void)
 {

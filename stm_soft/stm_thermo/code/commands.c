@@ -140,6 +140,7 @@ void helpFunction(void)
         "sfp <N>      - set fans prescaler to N\n"
         "sev <C> <N>  - set extruder C to N\n"
         "sfv <C> <N>  - set fan C to N\n"
+        "spt <C> <N>  - set PID target for channel C to N\n"
         "\n"
   );
   fflush(0);
@@ -193,6 +194,16 @@ void sfvFunction(void) {
     __HAL_TIM_SET_COMPARE(&htim1, fch_ids[ch - 1], val);
 }
 
+void sptFunction(void) {
+ int32_t ch;
+ int32_t val;
+
+ ch = cmdlineGetArgInt(1);
+ val = cmdlineGetArgInt(2);
+ if (ch > 0 && ch <= 3)
+    pid_targets[ch - 1] = val;
+}
+
 void setup_commands() {
   cmdlineAddCommand("help",    helpFunction);
   cmdlineAddCommand("exttest", exttestFunction);
@@ -200,5 +211,6 @@ void setup_commands() {
   cmdlineAddCommand("sfp", sfpFunction);
   cmdlineAddCommand("sev", sevFunction);
   cmdlineAddCommand("sfv", sfvFunction);
+  cmdlineAddCommand("spt", sptFunction);
 }
 
