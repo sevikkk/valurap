@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
 
 extern osMutexId consoleMtxHandle;
 
@@ -59,6 +60,8 @@ void StartDebugBlink(void const * argument)
 		    fan_values[2]
     );
     fflush(0);
+    int ch = '.';
+    while (HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF) != HAL_OK) taskYIELD();
     i++;
     vTaskDelayUntil( &last_wake, 500 );
   }
@@ -72,7 +75,7 @@ void cons_uart_putc(char ch) {
 }
 
 void uart_putc(char ch) {
-      while (HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF) != HAL_OK) taskYIELD();
+      while (HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 0xFFFF) != HAL_OK) taskYIELD();
 }
 
 int _write_r (struct _reent *r, int file, char * ptr, int len)

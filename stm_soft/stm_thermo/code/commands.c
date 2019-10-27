@@ -4,7 +4,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 
-extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
 
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim3;
@@ -18,10 +18,10 @@ volatile int32_t adc_reads[5];
 volatile int32_t ext_values[3];
 volatile int32_t fan_values[3];
 
-volatile int32_t pid_targets[3];
+volatile int32_t pid_targets[3] = {5000,5000,5000};
 volatile int32_t pid_integrals[3];
-volatile int32_t pid_ki[3];
-volatile int32_t pid_kp[3];
+volatile int32_t pid_k_i[3] = {500,500,500};
+volatile int32_t pid_k_p[3] = {4000,4000,4000};
 
 int32_t ech_ids[3] = {
   TIM_CHANNEL_1,
@@ -90,6 +90,33 @@ void StartThermoRead(void const * argument) {
 		/* printf("adc%d: %d\n", i, adc_vals[i]/100); */
 		adc_reads[i] = adc_vals[i]/PID_ADC_SUPERSAMPLE;
 	};
+
+	for(i=0;i<3; i++) {
+		int pid_error = adc_reads[i] - pid_targets[i];
+		int current_value = ext_values[i];
+		int control_value = 0;
+
+		if (pid_error > 1000) {
+			control_value = 500;
+		} else if (pid_error < -1000) {
+			control_value = 0;
+		} else {
+			int new_pid_integral = pid_integrals[i];
+
+			new_pid_integral += pid_error * pid_k_i[i]/1000;
+
+			if (new_pid_integral > 15000) new_pid_integral = 15000;
+			if (new_pid_integral < -5000) new_pid_integral = -5000;
+
+			pid_integrals[i] = new_pid_integral;
+			control_value = new_pid_integral/10 + pid_error * pid_k_p[i] / 1000;
+		};
+		if (control_value > 500) control_value=500;
+		if (control_value < 30) control_value=0;
+
+		__HAL_TIM_SET_COMPARE(&htim3, ech_ids[i], control_value);
+	};
+
 	for(i=0; i<3; i++) {
 		ext_values[i] = __HAL_TIM_GET_COMPARE(&htim3, ech_ids[i]);
 		fan_values[i] = __HAL_TIM_GET_COMPARE(&htim1, fch_ids[i]);
@@ -120,7 +147,7 @@ void StartCmdLine(void const * argument)
   cmdlinePrintPrompt();
   for(;;)
   {
-      if (HAL_UART_Receive(&huart1, (uint8_t *)&ch, 1, 1) == HAL_OK) {
+      if (HAL_UART_Receive(&huart2, (uint8_t *)&ch, 1, 1) == HAL_OK) {
 	      cmdlineInputFunc((uint8_t)ch);
 	      cmdlineMainLoop();
       } else {
@@ -141,6 +168,8 @@ void helpFunction(void)
         "sev <C> <N>  - set extruder C to N\n"
         "sfv <C> <N>  - set fan C to N\n"
         "spt <C> <N>  - set PID target for channel C to N\n"
+        "spp <C> <k_p> <k_i> - set PID parameters for channel C\n"
+        "shpid <C>    - show PID state for channel C\n"
         "\n"
   );
   fflush(0);
@@ -204,6 +233,32 @@ void sptFunction(void) {
     pid_targets[ch - 1] = val;
 }
 
+void sppFunction(void) {
+ int32_t ch;
+ int32_t val_p;
+ int32_t val_i;
+
+ ch = cmdlineGetArgInt(1);
+ val_p = cmdlineGetArgInt(2);
+ val_i = cmdlineGetArgInt(3);
+ if (ch > 0 && ch <= 3) {
+    pid_k_p[ch - 1] = val_p;
+    pid_k_i[ch - 1] = val_i;
+ };
+}
+
+void shpidFunction(void) {
+ int32_t ch;
+
+ ch = cmdlineGetArgInt(1);
+ if (ch <= 0 && ch > 3) return;
+
+ printf("pid_k_p: %d\n", pid_k_p[ch-1]);
+ printf("pid_k_i: %d\n", pid_k_i[ch-1]);
+ printf("integral: %d\n", pid_integrals[ch-1]);
+ fflush(0);
+}
+
 void setup_commands() {
   cmdlineAddCommand("help",    helpFunction);
   cmdlineAddCommand("exttest", exttestFunction);
@@ -212,5 +267,7 @@ void setup_commands() {
   cmdlineAddCommand("sev", sevFunction);
   cmdlineAddCommand("sfv", sfvFunction);
   cmdlineAddCommand("spt", sptFunction);
+  cmdlineAddCommand("spp", sppFunction);
+  cmdlineAddCommand("shpid", shpidFunction);
 }
 
