@@ -18,6 +18,11 @@ volatile int32_t adc_reads[5];
 volatile int32_t ext_values[3];
 volatile int32_t fan_values[3];
 
+volatile int32_t pid_targets[3];
+volatile int32_t pid_integrals[3];
+volatile int32_t pid_ki[3];
+volatile int32_t pid_kp[3];
+
 int32_t ech_ids[3] = {
   TIM_CHANNEL_1,
   TIM_CHANNEL_2,
@@ -45,13 +50,28 @@ void StartThermoRead(void const * argument) {
   ADC_ChannelConfTypeDef sConfig = {0};
   int i, j;
 
+  TickType_t start_ticks, cur_ticks, last_wake;
+  int real_time;
+  int cycle_time;
+
+#define PID_CYCLE 400
+#define PID_ADC_SUPERSAMPLE 250
+
+  last_wake = xTaskGetTickCount() + 33;
+
   for(;;) {
+	cur_ticks = xTaskGetTickCount();
+	cycle_time = cur_ticks - start_ticks;
+	start_ticks = cur_ticks;
+
 	HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_RESET);
         HAL_SPI_TransmitReceive(&hspi1, out_buffer, in_buffer, 2, 1000);
 	HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_SET);
 	k_type_temp = in_buffer[0] << 8 | in_buffer[1];
+
 	for(i=0; i<5; i++) adc_vals[i] = 0;
-	for(j=0; j<100; j++)
+
+	for(j=0; j < PID_ADC_SUPERSAMPLE; j++)
 	   for(i=0; i<5; i++) {
 		sConfig.Channel = channels[i];
 		sConfig.Rank = ADC_REGULAR_RANK_1;
@@ -68,7 +88,7 @@ void StartThermoRead(void const * argument) {
 	/* printf("k-t: %d\n", k_type_temp >> 5); */
 	for(i=0; i<5; i++) {
 		/* printf("adc%d: %d\n", i, adc_vals[i]/100); */
-		adc_reads[i] = adc_vals[i]/100;
+		adc_reads[i] = adc_vals[i]/PID_ADC_SUPERSAMPLE;
 	};
 	for(i=0; i<3; i++) {
 		ext_values[i] = __HAL_TIM_GET_COMPARE(&htim3, ech_ids[i]);
@@ -77,8 +97,9 @@ void StartThermoRead(void const * argument) {
 		printf("fan%d: %d\n", i, fan_values[i]); */
 	};
 	/* fflush(0); */
-
-	osDelay(400);
+	cur_ticks = xTaskGetTickCount();
+	/* printf("rt: %d %d %d\n", real_time, cycle_time, last_wake); */
+	vTaskDelayUntil( &last_wake, PID_CYCLE );
   };
 }
 
