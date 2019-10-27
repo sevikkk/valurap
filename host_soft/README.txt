@@ -28,3 +28,7 @@ param_spidev_spi_bus=1
 usbstoragequirks=0x2537:0x1066:u,0x2537:0x1068:u
 ```
 
+disable console on ttyS0:
+```
+sudo systemctl mask serial-getty@ttyS0.service
+```
