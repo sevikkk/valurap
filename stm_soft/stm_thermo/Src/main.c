@@ -57,6 +57,7 @@ osThreadId defaultTaskHandle;
 osThreadId DebugBlinkHandle;
 osThreadId CmdLineHandle;
 osThreadId ThermoReadHandle;
+osThreadId S3G_IOHandle;
 osMutexId consoleMtxHandle;
 /* USER CODE BEGIN PV */
 
@@ -75,6 +76,7 @@ void StartDefaultTask(void const * argument);
 extern void StartDebugBlink(void const * argument);
 extern void StartCmdLine(void const * argument);
 extern void StartThermoRead(void const * argument);
+extern void StartS3GIO(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -161,6 +163,10 @@ int main(void)
   /* definition and creation of ThermoRead */
   osThreadDef(ThermoRead, StartThermoRead, osPriorityIdle, 0, 128);
   ThermoReadHandle = osThreadCreate(osThread(ThermoRead), NULL);
+
+  /* definition and creation of S3G_IO */
+  osThreadDef(S3G_IO, StartS3GIO, osPriorityIdle, 0, 128);
+  S3G_IOHandle = osThreadCreate(osThread(S3G_IO), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -531,7 +537,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, DEBUG_LED_Pin|GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, DEBUG_LED_Pin|EXT1_ON_Pin|EXT2_ON_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(RS485_DE_GPIO_Port, RS485_DE_Pin, GPIO_PIN_RESET);
@@ -539,8 +545,8 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SPI1_NSS_GPIO_Port, SPI1_NSS_Pin, GPIO_PIN_SET);
 
-  /*Configure GPIO pins : DEBUG_LED_Pin PC14 PC15 */
-  GPIO_InitStruct.Pin = DEBUG_LED_Pin|GPIO_PIN_14|GPIO_PIN_15;
+  /*Configure GPIO pins : DEBUG_LED_Pin EXT1_ON_Pin EXT2_ON_Pin */
+  GPIO_InitStruct.Pin = DEBUG_LED_Pin|EXT1_ON_Pin|EXT2_ON_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -568,6 +574,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
+    
     
     
     

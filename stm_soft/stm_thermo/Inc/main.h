@@ -62,6 +62,10 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define DEBUG_LED_Pin GPIO_PIN_13
 #define DEBUG_LED_GPIO_Port GPIOC
+#define EXT1_ON_Pin GPIO_PIN_14
+#define EXT1_ON_GPIO_Port GPIOC
+#define EXT2_ON_Pin GPIO_PIN_15
+#define EXT2_ON_GPIO_Port GPIOC
 #define ADC_TH1_Pin GPIO_PIN_0
 #define ADC_TH1_GPIO_Port GPIOA
 #define RS485_DE_Pin GPIO_PIN_1
