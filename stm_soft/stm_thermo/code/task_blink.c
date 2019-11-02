@@ -19,6 +19,11 @@ extern volatile int32_t pid_targets[3];
 #define ESC_NORMAL "\x1b[0m"
 #define ESC_BACK "\x1b[u"
 
+void StartS3GIO(void const* argument) {
+    for (;;) {
+    };
+}
+
 void StartDebugBlink(void const* argument)
 {
     TickType_t last_wake;
