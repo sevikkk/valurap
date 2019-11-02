@@ -101,7 +101,7 @@ void cmdlineSetOutputFunc(void (*output_func)(unsigned char c));
 void cmdlineInputFunc(unsigned char c);
 
 //! call this function in your program's main loop
-void cmdlineMainLoop(void);
+int cmdlineMainLoop(void);
 
 // internal commands
 void cmdlineRepaint(void);

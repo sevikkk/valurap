@@ -65,14 +65,6 @@ void StartDebugBlink(void const* argument)
     }
 }
 
-void cons_uart_putc(char ch)
-{
-    if (xSemaphoreTake(consoleMtxHandle, (TickType_t)1000) == pdTRUE) {
-        uart_putc(ch);
-        xSemaphoreGive(consoleMtxHandle);
-    };
-}
-
 void uart_putc(char ch)
 {
     while (HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, 0xFFFF) != HAL_OK)

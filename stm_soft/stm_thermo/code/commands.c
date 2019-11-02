@@ -13,6 +13,8 @@ extern SPI_HandleTypeDef hspi1;
 
 extern ADC_HandleTypeDef hadc1;
 
+extern osMutexId consoleMtxHandle;
+
 volatile int32_t k_type_temp = 0;
 volatile int32_t adc_reads[5];
 volatile int32_t ext_values[3];
@@ -149,11 +151,22 @@ void StartCmdLine(void const* argument)
 
     cmdlineInit();
     setup_commands();
-    cmdlinePrintPrompt();
+    if (xSemaphoreTake(consoleMtxHandle, (TickType_t)1000) == pdTRUE) {
+        cmdlinePrintPrompt();
+        xSemaphoreGive(consoleMtxHandle);
+    };
     for (;;) {
         if (HAL_UART_Receive(&huart2, (uint8_t*)&ch, 1, 1) == HAL_OK) {
-            cmdlineInputFunc((uint8_t)ch);
-            cmdlineMainLoop();
+            if (xSemaphoreTake(consoleMtxHandle, (TickType_t)1000) == pdTRUE) {
+                cmdlineInputFunc((uint8_t)ch);
+                xSemaphoreGive(consoleMtxHandle);
+            };
+            if (cmdlineMainLoop()) {
+                if (xSemaphoreTake(consoleMtxHandle, (TickType_t)1000) == pdTRUE) {
+                    cmdlinePrintPrompt();
+                    xSemaphoreGive(consoleMtxHandle);
+                };
+            }
         } else {
             taskYIELD();
         };

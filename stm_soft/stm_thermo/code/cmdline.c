@@ -84,8 +84,8 @@ CmdlineFuncPtrType CmdlineExecFunction;
 // function pointer to single character output routine
 //static void (*cmdlineOutputFunc)(unsigned char c);
 
-extern void cons_uart_putc(char ch);
-#define cmdlineOutputFunc cons_uart_putc
+extern void uart_putc(char ch);
+#define cmdlineOutputFunc uart_putc
 
 void cmdlineInit(void)
 {
@@ -443,7 +443,7 @@ void cmdlineProcessInputString(void)
     cmdlinePrintPrompt();
 }
 
-void cmdlineMainLoop(void)
+int cmdlineMainLoop(void)
 {
 
     // do we have a command/function to be executed
@@ -454,10 +454,9 @@ void cmdlineMainLoop(void)
 
         // reset
         CmdlineExecFunction = 0;
-
-        // output new prompt
-        cmdlinePrintPrompt();
+        return 1;
     }
+    return 0;
 }
 
 void cmdlinePrintPrompt(void)
