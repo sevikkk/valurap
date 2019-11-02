@@ -14,6 +14,7 @@ void helpFunction(void)
         "\n"
         "Available commands are:\n"
         "help         - displays available commands\n"
+        "clear        - clear screen\n"
         "exttest      - turm extra channels on and off\n"
         "sep <N>      - set extruders prescaler to N\n"
         "sfp <N>      - set fans prescaler to N\n"
@@ -43,9 +44,17 @@ void exttestFunction(void)
     fflush(0);
 }
 
+void clearFunction(void)
+{
+    printf("\x1b[0m\x1b[2J\n\n");
+    fflush(0);
+}
+
+
 void setup_commands()
 {
     cmdlineAddCommand("help", helpFunction);
+    cmdlineAddCommand("clear", clearFunction);
     cmdlineAddCommand("exttest", exttestFunction);
     cmdlineAddCommand("sep", sepFunction);
     cmdlineAddCommand("sfp", sfpFunction);
