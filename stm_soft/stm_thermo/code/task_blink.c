@@ -1,5 +1,5 @@
-#include "main.h"
 #include "cmsis_os.h"
+#include "main.h"
 #include <stdio.h>
 
 extern UART_HandleTypeDef huart1;
@@ -19,79 +19,79 @@ extern volatile int32_t pid_targets[3];
 #define ESC_NORMAL "\x1b[0m"
 #define ESC_BACK "\x1b[u"
 
-void StartDebugBlink(void const * argument)
+void StartDebugBlink(void const* argument)
 {
-  TickType_t last_wake;
-  
-  int i = 0, h, m, s;
-  last_wake = (xTaskGetTickCount() / 500) * 500;
+    TickType_t last_wake;
 
-  for(;;)
-  {
-    HAL_GPIO_WritePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin, GPIO_PIN_RESET);
-    osDelay(50);
-    s = i / 2;
+    int i = 0, h, m, s;
+    last_wake = (xTaskGetTickCount() / 500) * 500;
 
-    m = s / 60;
-    s -= m * 60;
+    for (;;) {
+        HAL_GPIO_WritePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin, GPIO_PIN_RESET);
+        osDelay(50);
+        s = i / 2;
 
-    h = m / 60;
-    m -= h * 60;
+        m = s / 60;
+        s -= m * 60;
 
-    HAL_GPIO_WritePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin, GPIO_PIN_SET);
-    printf(ESC_TO_STATUS ESC_BOLD
-		    "[%d:%02d:%02d] | K-t: %3d | TH: %4d[%4d] %4d[%4d] %4d[%4d]"
-		    " | Ext: %4d %4d %4d"
-		    " | Fan: %4d %4d %4d"
-		    ESC_NORMAL ESC_BACK, 
-		    h, m, s,
-		    k_type_temp >> 5,
-		    adc_reads[0],
-		    pid_targets[0],
-		    adc_reads[1],
-		    pid_targets[1],
-		    adc_reads[2],
-		    pid_targets[2],
-		    ext_values[0],
-		    ext_values[1],
-		    ext_values[2],
-		    fan_values[0],
-		    fan_values[1],
-		    fan_values[2]
-    );
-    fflush(0);
-    int ch = '.';
-    while (HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF) != HAL_OK) taskYIELD();
-    i++;
-    vTaskDelayUntil( &last_wake, 500 );
-  }
+        h = m / 60;
+        m -= h * 60;
+
+        HAL_GPIO_WritePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin, GPIO_PIN_SET);
+        printf(ESC_TO_STATUS ESC_BOLD
+            "[%d:%02d:%02d] | K-t: %3d | TH: %4d[%4d] %4d[%4d] %4d[%4d]"
+            " | Ext: %4d %4d %4d"
+            " | Fan: %4d %4d %4d" ESC_NORMAL ESC_BACK,
+            h, m, s,
+            k_type_temp >> 5,
+            adc_reads[0],
+            pid_targets[0],
+            adc_reads[1],
+            pid_targets[1],
+            adc_reads[2],
+            pid_targets[2],
+            ext_values[0],
+            ext_values[1],
+            ext_values[2],
+            fan_values[0],
+            fan_values[1],
+            fan_values[2]);
+        fflush(0);
+        int ch = '.';
+        while (HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, 0xFFFF) != HAL_OK)
+            taskYIELD();
+        i++;
+        vTaskDelayUntil(&last_wake, 500);
+    }
 }
 
-void cons_uart_putc(char ch) {
-      if( xSemaphoreTake(consoleMtxHandle, ( TickType_t ) 1000 ) == pdTRUE ) {
-	      uart_putc(ch);
-	      xSemaphoreGive( consoleMtxHandle );
-      };
-}
-
-void uart_putc(char ch) {
-      while (HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 0xFFFF) != HAL_OK) taskYIELD();
-}
-
-int _write_r (struct _reent *r, int file, char * ptr, int len)
+void cons_uart_putc(char ch)
 {
-  if (file == 1 || file == 2) {
-     int index;
-     if( xSemaphoreTake(consoleMtxHandle, ( TickType_t ) 1000 ) == pdTRUE ) {
-	     for(index=0; index<len; index++) {
-		  if (ptr[index] == '\n')
-		  {
-		    uart_putc('\r');
-		  }
-		  uart_putc(ptr[index]);
-	     }
-	     xSemaphoreGive( consoleMtxHandle );
-      };
-  }
-  return len;
+    if (xSemaphoreTake(consoleMtxHandle, (TickType_t)1000) == pdTRUE) {
+        uart_putc(ch);
+        xSemaphoreGive(consoleMtxHandle);
+    };
+}
+
+void uart_putc(char ch)
+{
+    while (HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, 0xFFFF) != HAL_OK)
+        taskYIELD();
+}
+
+int _write_r(struct _reent* r, int file, char* ptr, int len)
+{
+    if (file == 1 || file == 2) {
+        int index;
+        if (xSemaphoreTake(consoleMtxHandle, (TickType_t)1000) == pdTRUE) {
+            for (index = 0; index < len; index++) {
+                if (ptr[index] == '\n') {
+                    uart_putc('\r');
+                }
+                uart_putc(ptr[index]);
+            }
+            xSemaphoreGive(consoleMtxHandle);
+        };
+    }
+    return len;
 }

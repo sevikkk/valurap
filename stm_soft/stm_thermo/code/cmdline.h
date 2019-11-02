@@ -20,7 +20,7 @@
 ///     line-editing is supported, including backspace, arrow keys, and even a
 /// small command-history buffer.
 ///
-///     \note One can imagine more efficient ways to implement the command and 
+///     \note One can imagine more efficient ways to implement the command and
 ///             function database contained in this library, however, this is a decent
 ///             and functional first cut.  I may someday get around to making some
 ///             improvements.
@@ -80,7 +80,7 @@
 #define CMDLINE_H
 
 // constants/macros/typdefs
-typedef void (*CmdlineFuncPtrType) (void);
+typedef void (*CmdlineFuncPtrType)(void);
 
 // functions
 
@@ -91,11 +91,11 @@ void cmdlineInit(void);
 // newCmdString should be a null-terminated command string with no whitespace
 // newCmdFuncPtr should be a pointer to the function to execute when
 //   the user enters the corresponding command tring
-void cmdlineAddCommand(uint8_t * newCmdString,
-		       CmdlineFuncPtrType newCmdFuncPtr);
+void cmdlineAddCommand(uint8_t* newCmdString,
+    CmdlineFuncPtrType newCmdFuncPtr);
 
 //! sets the function used for sending characters to the user terminal
-void cmdlineSetOutputFunc(void (*output_func) (unsigned char c));
+void cmdlineSetOutputFunc(void (*output_func)(unsigned char c));
 
 //! call this function to pass input charaters from the user terminal
 void cmdlineInputFunc(unsigned char c);
@@ -112,7 +112,7 @@ void cmdlinePrintError(void);
 
 // argument retrieval commands
 //! returns a string pointer to argument number [argnum] on the command line
-uint8_t *cmdlineGetArgStr(uint8_t argnum);
+uint8_t* cmdlineGetArgStr(uint8_t argnum);
 //! returns the decimal integer interpretation of argument number [argnum]
 long cmdlineGetArgInt(uint8_t argnum);
 //! returns the hex integer interpretation of argument number [argnum]
