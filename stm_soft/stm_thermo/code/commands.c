@@ -43,7 +43,7 @@ void exttestFunction(void) {
 }
 
 void clearFunction(void) {
-    printf("\x1b[0m\x1b[2J\n\n");
+    printf("\x1b[0m\x1b[2J\x1b[1;1H\n\n");
     fflush(0);
 }
 
@@ -75,22 +75,22 @@ void StartCmdLine(void const* argument) {
     setup_commands();
     printf("\x1b[0m\n\n\x1b[1mSTMThermo\x1b[0m (%s)\n\n", build_timestamp);
     fflush(0);
-    if (xSemaphoreTake(consoleMtxHandle, (TickType_t)1000) == pdTRUE) {
-        cmdlinePrintPrompt();
-        xSemaphoreGive(consoleMtxHandle);
-    };
+    while (xSemaphoreTake(consoleMtxHandle, (TickType_t)100) != pdTRUE)
+        taskYIELD();
+    cmdlinePrintPrompt();
+    xSemaphoreGive(consoleMtxHandle);
     for (;;) {
         if (HAL_UART_Receive(&huart2, (uint8_t*)&ch, 1, 1) == HAL_OK) {
-            if (xSemaphoreTake(consoleMtxHandle, (TickType_t)1000) == pdTRUE) {
-                cmdlineInputFunc((uint8_t)ch);
-                xSemaphoreGive(consoleMtxHandle);
-            };
+            while (xSemaphoreTake(consoleMtxHandle, (TickType_t)100) != pdTRUE)
+                taskYIELD();
+            cmdlineInputFunc((uint8_t)ch);
+            xSemaphoreGive(consoleMtxHandle);
             if (cmdlineMainLoop()) {
-                if (xSemaphoreTake(consoleMtxHandle, (TickType_t)1000) ==
-                    pdTRUE) {
-                    cmdlinePrintPrompt();
-                    xSemaphoreGive(consoleMtxHandle);
-                };
+                while (xSemaphoreTake(consoleMtxHandle, (TickType_t)100) !=
+                       pdTRUE)
+                    taskYIELD();
+                cmdlinePrintPrompt();
+                xSemaphoreGive(consoleMtxHandle);
             }
         } else {
             taskYIELD();
