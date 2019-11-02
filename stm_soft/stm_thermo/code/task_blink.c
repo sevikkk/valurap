@@ -1,19 +1,9 @@
+#include <stdio.h>
 #include "cmsis_os.h"
 #include "main.h"
-#include <stdio.h>
+#include "hardware.h"
+#include "task_thermo.h"
 
-extern UART_HandleTypeDef huart1;
-extern UART_HandleTypeDef huart2;
-
-extern osMutexId consoleMtxHandle;
-
-extern volatile int32_t k_type_temp;
-extern volatile int32_t adc_reads[5];
-extern volatile int32_t ext_values[3];
-extern volatile int32_t fan_values[3];
-extern volatile int32_t pid_targets[3];
-
-#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 #define ESC_TO_STATUS "\x1b[s\x1b[1;1H\x1b[2K"
 #define ESC_BOLD "\x1b[1m"
 #define ESC_NORMAL "\x1b[0m"
