@@ -21,8 +21,8 @@
 
 //----- Include Files ---------------------------------------------------------
 #include <stdint.h>
-#include <stdlib.h> // include stdlib for string conversion functions
-#include <string.h> // include standard C string functions
+#include <stdlib.h>  // include stdlib for string conversion functions
+#include <string.h>  // include standard C string functions
 
 #include "cmdline.h"
 
@@ -82,14 +82,12 @@ CmdlineFuncPtrType CmdlineExecFunction;
 // Functions
 
 // function pointer to single character output routine
-//static void (*cmdlineOutputFunc)(unsigned char c);
+// static void (*cmdlineOutputFunc)(unsigned char c);
 
 extern void uart_putc(char ch);
 #define cmdlineOutputFunc uart_putc
 
-void cmdlineInit(void)
-{
-
+void cmdlineInit(void) {
     // reset vt100 processing state
     CmdlineInputVT100State = 0;
 
@@ -107,9 +105,7 @@ void cmdlineInit(void)
     CmdlineHistoryCopy = 0;
 }
 void cmdlineAddCommand(uint8_t* newCmdString,
-    CmdlineFuncPtrType newCmdFuncPtr)
-{
-
+                       CmdlineFuncPtrType newCmdFuncPtr) {
     // add command string to end of command list
     strcpy(CmdlineCommandList[CmdlineNumCommands], newCmdString);
 
@@ -119,8 +115,7 @@ void cmdlineAddCommand(uint8_t* newCmdString,
     // increment number of registered commands
     CmdlineNumCommands++;
 }
-void cmdlineInputFunc(unsigned char c)
-{
+void cmdlineInputFunc(unsigned char c) {
     uint8_t i;
 
     // process the received character
@@ -128,56 +123,51 @@ void cmdlineInputFunc(unsigned char c)
     // VT100 handling
     // are we processing a VT100 command?
     if (CmdlineInputVT100State == 2) {
-
         // we have already received ESC and [
         // now process the vt100 code
         switch (c) {
-        case VT100_ARROWUP:
-            cmdlineDoHistory(CMDLINE_HISTORY_PREV);
-            break;
-        case VT100_ARROWDOWN:
-            cmdlineDoHistory(CMDLINE_HISTORY_NEXT);
-            break;
-        case VT100_ARROWRIGHT:
+            case VT100_ARROWUP:
+                cmdlineDoHistory(CMDLINE_HISTORY_PREV);
+                break;
+            case VT100_ARROWDOWN:
+                cmdlineDoHistory(CMDLINE_HISTORY_NEXT);
+                break;
+            case VT100_ARROWRIGHT:
 
-            // if the edit position less than current string length
-            if (CmdlineBufferEditPos < CmdlineBufferLength) {
+                // if the edit position less than current string length
+                if (CmdlineBufferEditPos < CmdlineBufferLength) {
+                    // increment the edit position
+                    CmdlineBufferEditPos++;
 
-                // increment the edit position
-                CmdlineBufferEditPos++;
+                    // move cursor forward one space (no erase)
+                    cmdlineOutputFunc(ASCII_ESC);
+                    cmdlineOutputFunc('[');
+                    cmdlineOutputFunc(VT100_ARROWRIGHT);
+                }
 
-                // move cursor forward one space (no erase)
-                cmdlineOutputFunc(ASCII_ESC);
-                cmdlineOutputFunc('[');
-                cmdlineOutputFunc(VT100_ARROWRIGHT);
-            }
+                else {
+                    // else, ring the bell
+                    cmdlineOutputFunc(ASCII_BEL);
+                }
+                break;
+            case VT100_ARROWLEFT:
 
-            else {
+                // if the edit position is non-zero
+                if (CmdlineBufferEditPos) {
+                    // decrement the edit position
+                    CmdlineBufferEditPos--;
 
-                // else, ring the bell
-                cmdlineOutputFunc(ASCII_BEL);
-            }
-            break;
-        case VT100_ARROWLEFT:
+                    // move cursor back one space (no erase)
+                    cmdlineOutputFunc(ASCII_BS);
+                }
 
-            // if the edit position is non-zero
-            if (CmdlineBufferEditPos) {
-
-                // decrement the edit position
-                CmdlineBufferEditPos--;
-
-                // move cursor back one space (no erase)
-                cmdlineOutputFunc(ASCII_BS);
-            }
-
-            else {
-
-                // else, ring the bell
-                cmdlineOutputFunc(ASCII_BEL);
-            }
-            break;
-        default:
-            break;
+                else {
+                    // else, ring the bell
+                    cmdlineOutputFunc(ASCII_BEL);
+                }
+                break;
+            default:
+                break;
         }
 
         // done, reset state
@@ -186,7 +176,6 @@ void cmdlineInputFunc(unsigned char c)
     }
 
     else if (CmdlineInputVT100State == 1) {
-
         // we last received [ESC]
         if (c == '[') {
             CmdlineInputVT100State = 2;
@@ -198,14 +187,12 @@ void cmdlineInputFunc(unsigned char c)
     }
 
     else {
-
         // anything else, reset state
         CmdlineInputVT100State = 0;
     }
 
     // Regular handling
     if ((c >= 0x20) && (c < 0x7F)) {
-
         // character is printable
         // is this a simple append
         if (CmdlineBufferEditPos == CmdlineBufferLength) {
@@ -225,14 +212,12 @@ void cmdlineInputFunc(unsigned char c)
         }
 
         else {
-
             // edit/cursor position != end of buffer
             // we're inserting characters at a mid-line edit position
             // make room at the insert point
             if (CmdlineBufferLength < CMDLINE_BUFFERSIZE - 2) {
                 CmdlineBufferLength++;
-                for (i = CmdlineBufferLength;
-                     i > CmdlineBufferEditPos; i--)
+                for (i = CmdlineBufferLength; i > CmdlineBufferEditPos; i--)
                     CmdlineBuffer[i] = CmdlineBuffer[i - 1];
 
                 // insert character
@@ -242,8 +227,7 @@ void cmdlineInputFunc(unsigned char c)
                 cmdlineRepaint();
 
                 // reposition cursor
-                for (i = CmdlineBufferEditPos;
-                     i < CmdlineBufferLength; i++)
+                for (i = CmdlineBufferEditPos; i < CmdlineBufferLength; i++)
                     cmdlineOutputFunc(ASCII_BS);
                 CmdlineHistoryCopy = 1;
             } else {
@@ -253,7 +237,6 @@ void cmdlineInputFunc(unsigned char c)
     }
     // handle special characters
     else if (c == ASCII_CR) {
-
         // user pressed [ENTER]
         // echo CR and LF to terminal
         cmdlineOutputFunc(ASCII_CR);
@@ -275,10 +258,8 @@ void cmdlineInputFunc(unsigned char c)
 
     else if (c == ASCII_DEL) {
         if (CmdlineBufferEditPos) {
-
             // is this a simple delete (off the end of the line)
             if (CmdlineBufferEditPos == CmdlineBufferLength) {
-
                 // destructive backspace
                 // echo backspace-space-backspace
                 cmdlineOutputFunc(ASCII_BS);
@@ -291,14 +272,12 @@ void cmdlineInputFunc(unsigned char c)
             }
 
             else {
-
                 // edit/cursor position != end of buffer
                 // we're deleting characters at a mid-line edit position
                 // shift characters down, effectively deleting
                 CmdlineBufferLength--;
                 CmdlineBufferEditPos--;
-                for (i = CmdlineBufferEditPos;
-                     i < CmdlineBufferLength; i++)
+                for (i = CmdlineBufferEditPos; i < CmdlineBufferLength; i++)
                     CmdlineBuffer[i] = CmdlineBuffer[i + 1];
 
                 // repaint
@@ -308,30 +287,28 @@ void cmdlineInputFunc(unsigned char c)
                 cmdlineOutputFunc(' ');
 
                 // reposition cursor
-                for (i = CmdlineBufferEditPos;
-                     i < (CmdlineBufferLength + 1); i++)
+                for (i = CmdlineBufferEditPos; i < (CmdlineBufferLength + 1);
+                     i++)
                     cmdlineOutputFunc(ASCII_BS);
             }
         }
 
         else {
-
             // else, ring the bell
             cmdlineOutputFunc(ASCII_BEL);
         }
     }
 
     /* else if(c == ASCII_DEL)
-	   {
-	   // not yet handled
-	   } */
+           {
+           // not yet handled
+           } */
     else if (c == ASCII_ESC) {
         CmdlineInputVT100State = 1;
     }
 }
 
-void cmdlineRepaint(void)
-{
+void cmdlineRepaint(void) {
     uint8_t* ptr;
     uint8_t i;
 
@@ -347,61 +324,56 @@ void cmdlineRepaint(void)
     // print the new command line buffer
     i = CmdlineBufferLength;
     ptr = CmdlineBuffer;
-    while (i--)
-        cmdlineOutputFunc(*ptr++);
+    while (i--) cmdlineOutputFunc(*ptr++);
 }
 
-void cmdlineDoHistory(uint8_t action)
-{
+void cmdlineDoHistory(uint8_t action) {
     switch (action) {
-    case CMDLINE_HISTORY_SAVE:
+        case CMDLINE_HISTORY_SAVE:
 
-        // copy CmdlineBuffer to history if not null string
-        if (strlen(CmdlineBuffer)) {
-            int i;
-            if (CmdlineHistoryCopy) {
-                if (CmdlineHistoryCnt >= CMDLINE_HISTORYSIZE)
-                    CmdlineHistoryCnt = CMDLINE_HISTORYSIZE - 1;
-                i = CmdlineHistoryCnt;
-                CmdlineHistoryCnt++;
-            } else {
-                i = CmdlineHistoryIdx;
+            // copy CmdlineBuffer to history if not null string
+            if (strlen(CmdlineBuffer)) {
+                int i;
+                if (CmdlineHistoryCopy) {
+                    if (CmdlineHistoryCnt >= CMDLINE_HISTORYSIZE)
+                        CmdlineHistoryCnt = CMDLINE_HISTORYSIZE - 1;
+                    i = CmdlineHistoryCnt;
+                    CmdlineHistoryCnt++;
+                } else {
+                    i = CmdlineHistoryIdx;
+                };
+
+                for (; i > 0; i--) {
+                    strcpy(CmdlineHistory[i], CmdlineHistory[i - 1]);
+                };
+                strcpy(CmdlineHistory[0], CmdlineBuffer);
             };
+            break;
+        case CMDLINE_HISTORY_NEXT:
+            CmdlineHistoryIdx -= 2;
+        case CMDLINE_HISTORY_PREV:
+            CmdlineHistoryIdx++;
 
-            for (; i > 0; i--) {
-                strcpy(CmdlineHistory[i],
-                    CmdlineHistory[i - 1]);
-            };
-            strcpy(CmdlineHistory[0], CmdlineBuffer);
-        };
-        break;
-    case CMDLINE_HISTORY_NEXT:
-        CmdlineHistoryIdx -= 2;
-    case CMDLINE_HISTORY_PREV:
-        CmdlineHistoryIdx++;
+            if (CmdlineHistoryIdx >= CmdlineHistoryCnt - 1)
+                CmdlineHistoryIdx = CmdlineHistoryCnt - 1;
 
-        if (CmdlineHistoryIdx >= CmdlineHistoryCnt - 1)
-            CmdlineHistoryIdx = CmdlineHistoryCnt - 1;
+            if (CmdlineHistoryIdx < 0) CmdlineHistoryIdx = 0;
 
-        if (CmdlineHistoryIdx < 0)
-            CmdlineHistoryIdx = 0;
+            // copy history to current buffer
+            strcpy(CmdlineBuffer, CmdlineHistory[CmdlineHistoryIdx]);
 
-        // copy history to current buffer
-        strcpy(CmdlineBuffer, CmdlineHistory[CmdlineHistoryIdx]);
+            // set the buffer position to the end of the line
+            CmdlineBufferLength = strlen(CmdlineBuffer);
+            CmdlineBufferEditPos = CmdlineBufferLength;
 
-        // set the buffer position to the end of the line
-        CmdlineBufferLength = strlen(CmdlineBuffer);
-        CmdlineBufferEditPos = CmdlineBufferLength;
-
-        // "re-paint" line
-        cmdlineRepaint();
-        CmdlineHistoryCopy = 0;
-        break;
+            // "re-paint" line
+            cmdlineRepaint();
+            CmdlineHistoryCopy = 0;
+            break;
     }
 }
 
-void cmdlineProcessInputString(void)
-{
+void cmdlineProcessInputString(void) {
     uint8_t cmdIndex;
     uint8_t i = 0;
 
@@ -410,10 +382,8 @@ void cmdlineProcessInputString(void)
 
     // find the end of the command (excluding arguments)
     // find first whitespace character in CmdlineBuffer
-    while (!((CmdlineBuffer[i] == ' ') || (CmdlineBuffer[i] == 0)))
-        i++;
+    while (!((CmdlineBuffer[i] == ' ') || (CmdlineBuffer[i] == 0))) i++;
     if (!i) {
-
         // command was null or empty
         // output a new prompt
         cmdlinePrintPrompt();
@@ -424,7 +394,6 @@ void cmdlineProcessInputString(void)
     // search command list for match with entered command
     for (cmdIndex = 0; cmdIndex < CmdlineNumCommands; cmdIndex++) {
         if (!strncmp(CmdlineCommandList[cmdIndex], CmdlineBuffer, i)) {
-
             // user-entered command matched a command in the list (database)
             // run the corresponding function
             CmdlineExecFunction = CmdlineFunctionList[cmdIndex];
@@ -443,12 +412,9 @@ void cmdlineProcessInputString(void)
     cmdlinePrintPrompt();
 }
 
-int cmdlineMainLoop(void)
-{
-
+int cmdlineMainLoop(void) {
     // do we have a command/function to be executed
     if (CmdlineExecFunction) {
-
         // run it
         CmdlineExecFunction();
 
@@ -459,37 +425,30 @@ int cmdlineMainLoop(void)
     return 0;
 }
 
-void cmdlinePrintPrompt(void)
-{
-
+void cmdlinePrintPrompt(void) {
     // print a new command prompt
     uint8_t* ptr = CmdlinePrompt;
-    while (*ptr)
-        cmdlineOutputFunc(*(ptr++));
+    while (*ptr) cmdlineOutputFunc(*(ptr++));
 }
 
-void cmdlinePrintError(void)
-{
+void cmdlinePrintError(void) {
     uint8_t* ptr;
 
     // print a notice header
     // (uint8_t*) cast used to avoid compiler warning
     ptr = (uint8_t*)CmdlineNotice;
-    while (*ptr)
-        cmdlineOutputFunc(*(ptr++));
+    while (*ptr) cmdlineOutputFunc(*(ptr++));
 
     // print the offending command
     ptr = CmdlineBuffer;
-    while ((*ptr) && (*ptr != ' '))
-        cmdlineOutputFunc(*ptr++);
+    while ((*ptr) && (*ptr != ' ')) cmdlineOutputFunc(*ptr++);
     cmdlineOutputFunc(':');
     cmdlineOutputFunc(' ');
 
     // print the not-found message
     // (uint8_t*) cast used to avoid compiler warning
     ptr = (uint8_t*)CmdlineCmdNotFound;
-    while (*ptr)
-        cmdlineOutputFunc(*(ptr++));
+    while (*ptr) cmdlineOutputFunc(*(ptr++));
     cmdlineOutputFunc('\r');
     cmdlineOutputFunc('\n');
 }
@@ -497,29 +456,21 @@ void cmdlinePrintError(void)
 // argument retrieval commands
 
 // return string pointer to argument [argnum]
-uint8_t* cmdlineGetArgStr(uint8_t argnum)
-{
-
+uint8_t* cmdlineGetArgStr(uint8_t argnum) {
     // find the offset of argument number [argnum]
     uint8_t idx = 0;
     uint8_t arg;
 
     // find the first non-whitespace character
-    while ((CmdlineBuffer[idx] != 0) && (CmdlineBuffer[idx] == ' '))
-        idx++;
+    while ((CmdlineBuffer[idx] != 0) && (CmdlineBuffer[idx] == ' ')) idx++;
 
     // we are at the first argument
     for (arg = 0; arg < argnum; arg++) {
-
         // find the next whitespace character
-        while ((CmdlineBuffer[idx] != 0)
-            && (CmdlineBuffer[idx] != ' '))
-            idx++;
+        while ((CmdlineBuffer[idx] != 0) && (CmdlineBuffer[idx] != ' ')) idx++;
 
         // find the first non-whitespace character
-        while ((CmdlineBuffer[idx] != 0)
-            && (CmdlineBuffer[idx] == ' '))
-            idx++;
+        while ((CmdlineBuffer[idx] != 0) && (CmdlineBuffer[idx] == ' ')) idx++;
     }
 
     // we are at the requested argument or the end of the buffer
@@ -527,15 +478,13 @@ uint8_t* cmdlineGetArgStr(uint8_t argnum)
 }
 
 // return argument [argnum] interpreted as a decimal integer
-long cmdlineGetArgInt(uint8_t argnum)
-{
+long cmdlineGetArgInt(uint8_t argnum) {
     char* endptr;
     return strtol(cmdlineGetArgStr(argnum), &endptr, 10);
 }
 
 // return argument [argnum] interpreted as a hex integer
-long cmdlineGetArgHex(uint8_t argnum)
-{
+long cmdlineGetArgHex(uint8_t argnum) {
     char* endptr;
     return strtol(cmdlineGetArgStr(argnum), &endptr, 16);
 }

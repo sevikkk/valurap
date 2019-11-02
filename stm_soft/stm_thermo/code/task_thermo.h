@@ -23,4 +23,4 @@ void sptFunction(void);
 void sppFunction(void);
 void shpidFunction(void);
 
-#endif //STM_THERMO_TASK_THERMO_H
+#endif  // STM_THERMO_TASK_THERMO_H

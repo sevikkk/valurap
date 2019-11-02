@@ -22,4 +22,4 @@ extern osThreadId ThermoReadHandle;
 extern osThreadId S3G_IOHandle;
 extern osMutexId consoleMtxHandle;
 
-#endif //STM_THERMO_HARDWARE_H
+#endif  // STM_THERMO_HARDWARE_H

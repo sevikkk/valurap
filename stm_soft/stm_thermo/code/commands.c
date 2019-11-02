@@ -6,10 +6,9 @@
 #include "hardware.h"
 #include "task_thermo.h"
 
-extern char *build_timestamp;
+extern char* build_timestamp;
 
-void helpFunction(void)
-{
+void helpFunction(void) {
     printf(
         "\n"
         "Available commands are:\n"
@@ -27,8 +26,7 @@ void helpFunction(void)
     fflush(0);
 }
 
-void exttestFunction(void)
-{
+void exttestFunction(void) {
     int i;
     printf("ext\n");
     fflush(0);
@@ -44,15 +42,12 @@ void exttestFunction(void)
     fflush(0);
 }
 
-void clearFunction(void)
-{
+void clearFunction(void) {
     printf("\x1b[0m\x1b[2J\n\n");
     fflush(0);
 }
 
-
-void setup_commands()
-{
+void setup_commands() {
     cmdlineAddCommand("help", helpFunction);
     cmdlineAddCommand("clear", clearFunction);
     cmdlineAddCommand("exttest", exttestFunction);
@@ -65,8 +60,7 @@ void setup_commands()
     cmdlineAddCommand("shpid", shpidFunction);
 }
 
-void StartCmdLine(void const* argument)
-{
+void StartCmdLine(void const* argument) {
     char ch;
 
     HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
@@ -92,7 +86,8 @@ void StartCmdLine(void const* argument)
                 xSemaphoreGive(consoleMtxHandle);
             };
             if (cmdlineMainLoop()) {
-                if (xSemaphoreTake(consoleMtxHandle, (TickType_t)1000) == pdTRUE) {
+                if (xSemaphoreTake(consoleMtxHandle, (TickType_t)1000) ==
+                    pdTRUE) {
                     cmdlinePrintPrompt();
                     xSemaphoreGive(consoleMtxHandle);
                 };

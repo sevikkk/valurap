@@ -14,16 +14,18 @@
 /// \defgroup cmdline Command-line Implementation (cmdline.c)
 /// \code #include "cmdline.h" \endcode
 /// \par Overview
-///             This Command-Line interface library is meant to provide a reusable
-///     terminal-like user interface much like a DOS command line or UNIX terminal.
-///     A terminal with VT100 support is assumed on the user's end.  Common
-///     line-editing is supported, including backspace, arrow keys, and even a
+///             This Command-Line interface library is meant to provide a
+///             reusable
+///     terminal-like user interface much like a DOS command line or UNIX
+///     terminal. A terminal with VT100 support is assumed on the user's end.
+///     Common line-editing is supported, including backspace, arrow keys, and
+///     even a
 /// small command-history buffer.
 ///
 ///     \note One can imagine more efficient ways to implement the command and
-///             function database contained in this library, however, this is a decent
-///             and functional first cut.  I may someday get around to making some
-///             improvements.
+///             function database contained in this library, however, this is a
+///             decent and functional first cut.  I may someday get around to
+///             making some improvements.
 ///
 /// \par Operation
 ///     The cmdline library does the following things for you:
@@ -44,27 +46,29 @@
 ///             - Command History (up-arrow) (currently only one command deep)
 ///
 ///     To use the cmdline system, you will need to associate command strings
-///     (commands the user will be typing) with your function that you wish to have
-///     called when the user enters that command.  This is done by using the
-///     cmdlineAddCommand() function.
+///     (commands the user will be typing) with your function that you wish to
+///     have called when the user enters that command.  This is done by using
+///     the cmdlineAddCommand() function.
 ///
 ///     To setup the cmdline system, you must do these things:
 ///             - Initialize it: cmdlineInit()
 ///             - Add one or more commands to the database: cmdlineAddCommand()
-///             - Set an output function for your terminal: cmdlineSetOutputFunc()
+///             - Set an output function for your terminal:
+///             cmdlineSetOutputFunc()
 ///
 ///     To operate the cmdline system, you must do these things repeatedly:
 ///             - Pass user input from the terminal to: cmdlineSetOutputFunc()
 ///             - Call cmdlineMainLoop() from your program's main loop
 ///
-///     The cmdline library does not assume an input or output device, but can be
-///     configured to use any user function for output using cmdlineSetOutputFunc()
-///     and accepts input by calling cmdlineInputFunc().  This means the cmdline
-///     library can operate over any interface including UART (serial port),
-///     I2c, ethernet, etc.
+///     The cmdline library does not assume an input or output device, but can
+///     be configured to use any user function for output using
+///     cmdlineSetOutputFunc() and accepts input by calling cmdlineInputFunc().
+///     This means the cmdline library can operate over any interface including
+///     UART (serial port), I2c, ethernet, etc.
 ///
-///     ***** FOR MORE INFORMATION ABOUT USING cmdline SEE THE AVRLIB EXAMPLE *****
-///     ***** CODE IN THE avrlib/examples DIRECTORY                           *****
+///     ***** FOR MORE INFORMATION ABOUT USING cmdline SEE THE AVRLIB EXAMPLE
+///     *****
+///     ***** CODE IN THE avrlib/examples DIRECTORY *****
 //
 // NOTE: This code is currently below version 1.0, and therefore is considered
 // to be lacking in some functionality or documentation, or may not be fully
@@ -91,8 +95,7 @@ void cmdlineInit(void);
 // newCmdString should be a null-terminated command string with no whitespace
 // newCmdFuncPtr should be a pointer to the function to execute when
 //   the user enters the corresponding command tring
-void cmdlineAddCommand(uint8_t* newCmdString,
-    CmdlineFuncPtrType newCmdFuncPtr);
+void cmdlineAddCommand(uint8_t* newCmdString, CmdlineFuncPtrType newCmdFuncPtr);
 
 //! sets the function used for sending characters to the user terminal
 void cmdlineSetOutputFunc(void (*output_func)(unsigned char c));
