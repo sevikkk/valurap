@@ -61,6 +61,7 @@ void setup_commands() {
 }
 
 uint8_t cons_rx_char;
+uint8_t s3g_rx_char;
 
 void StartCmdLine(void const* argument) {
     char ch;
@@ -73,6 +74,7 @@ void StartCmdLine(void const* argument) {
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
 
+    HAL_UART_Receive_IT(&huart1, (uint8_t*)&s3g_rx_char, 1);
     HAL_UART_Receive_IT(&huart2, (uint8_t*)&cons_rx_char, 1);
     cmdlineInit();
     setup_commands();
@@ -104,13 +106,22 @@ void StartCmdLine(void const* argument) {
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-    if (huart == &huart2) {
+    if (huart == &huart1) {
+        xQueueSendFromISR(s3g_rx_bufHandle, (void*)&s3g_rx_char,
+                          &xHigherPriorityTaskWoken);
+
+        HAL_LockTypeDef old_lock = huart->Lock;
+        __HAL_UNLOCK(huart);
+        HAL_UART_Receive_IT(huart, (uint8_t*)&s3g_rx_char, 1);
+        huart->Lock = old_lock;
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    } else if (huart == &huart2) {
         xQueueSendFromISR(cons_rx_bufHandle, (void*)&cons_rx_char,
                           &xHigherPriorityTaskWoken);
 
         HAL_LockTypeDef old_lock = huart->Lock;
         __HAL_UNLOCK(huart);
-        HAL_UART_Receive_IT(&huart2, (uint8_t*)&cons_rx_char, 1);
+        HAL_UART_Receive_IT(huart, (uint8_t*)&cons_rx_char, 1);
         huart->Lock = old_lock;
         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }

@@ -71,6 +71,9 @@ osStaticThreadDef_t S3G_IOControlBlock;
 osMessageQId cons_rx_bufHandle;
 uint8_t myQueue01Buffer[ 64 * sizeof( uint8_t ) ];
 osStaticMessageQDef_t myQueue01ControlBlock;
+osMessageQId s3g_rx_bufHandle;
+uint8_t myQueue02Buffer[ 270 * sizeof( uint8_t ) ];
+osStaticMessageQDef_t myQueue02ControlBlock;
 osMutexId consoleMtxHandle;
 osStaticMutexDef_t consoleMtxControlBlock;
 /* USER CODE BEGIN PV */
@@ -165,6 +168,10 @@ int main(void)
   /* definition and creation of cons_rx_buf */
   osMessageQStaticDef(cons_rx_buf, 64, uint8_t, myQueue01Buffer, &myQueue01ControlBlock);
   cons_rx_bufHandle = osMessageCreate(osMessageQ(cons_rx_buf), NULL);
+
+  /* definition and creation of s3g_rx_buf */
+  osMessageQStaticDef(s3g_rx_buf, 270, uint8_t, myQueue02Buffer, &myQueue02ControlBlock);
+  s3g_rx_bufHandle = osMessageCreate(osMessageQ(s3g_rx_buf), NULL);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */

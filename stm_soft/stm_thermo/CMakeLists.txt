@@ -52,9 +52,8 @@ set(SOURCES Src/main.c Src/freertos.c Src/stm32f1xx_it.c Src/stm32f1xx_hal_msp.c
         Middlewares/Third_Party/FreeRTOS/Source/list.c Middlewares/Third_Party/FreeRTOS/Source/queue.c
         Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c Middlewares/Third_Party/FreeRTOS/Source/tasks.c
         Middlewares/Third_Party/FreeRTOS/Source/timers.c Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c
-	#Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c
-	Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.c
-        code/task_blink.c code/cmdline.c code/commands.c code/task_thermo.c startup_stm32f103xb.s)
+		Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.c
+        code/task_blink.c code/cmdline.c code/commands.c code/task_thermo.c code/task_s3g.c startup_stm32f103xb.s)
 
 include_directories(Inc Drivers/STM32F1xx_HAL_Driver/Inc Drivers/STM32F1xx_HAL_Driver/Inc/Legacy Middlewares/Third_Party/FreeRTOS/Source/include Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3 Drivers/CMSIS/Device/ST/STM32F1xx/Include Drivers/CMSIS/Include code)
 

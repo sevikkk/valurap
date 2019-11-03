@@ -23,5 +23,6 @@ extern osThreadId S3G_IOHandle;
 
 extern osMutexId consoleMtxHandle;
 extern osMessageQId cons_rx_bufHandle;
+extern osMessageQId s3g_rx_bufHandle;
 
 #endif  // STM_THERMO_HARDWARE_H
