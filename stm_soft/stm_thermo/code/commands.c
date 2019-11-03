@@ -83,7 +83,7 @@ void StartCmdLine(void const* argument) {
     cmdlinePrintPrompt();
     xSemaphoreGive(consoleMtxHandle);
     for (;;) {
-        if (xQueueReceive(cons_rx_bufHandle, &ch, (TickType_t) 100)) {
+        if (xQueueReceive(cons_rx_bufHandle, &ch, (TickType_t)100)) {
             while (xSemaphoreTake(consoleMtxHandle, (TickType_t)100) != pdTRUE)
                 taskYIELD();
             cmdlineInputFunc((uint8_t)ch);
@@ -101,17 +101,17 @@ void StartCmdLine(void const* argument) {
     }
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-        if(huart == &huart2){
-            xQueueSendFromISR( cons_rx_bufHandle, ( void * ) &cons_rx_char, &xHigherPriorityTaskWoken);
+    if (huart == &huart2) {
+        xQueueSendFromISR(cons_rx_bufHandle, (void*)&cons_rx_char,
+                          &xHigherPriorityTaskWoken);
 
-            HAL_LockTypeDef old_lock = huart -> Lock;
-            __HAL_UNLOCK(huart);
-            HAL_UART_Receive_IT(&huart2, (uint8_t*)&cons_rx_char, 1);
-            huart -> Lock = old_lock;
-            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-        }
+        HAL_LockTypeDef old_lock = huart->Lock;
+        __HAL_UNLOCK(huart);
+        HAL_UART_Receive_IT(&huart2, (uint8_t*)&cons_rx_char, 1);
+        huart->Lock = old_lock;
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
 }
