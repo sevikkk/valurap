@@ -11,6 +11,7 @@
 
 void StartS3GIO(void const* argument) {
     for (;;) {
+        taskYIELD();
     };
 }
 
@@ -31,18 +32,16 @@ void StartDebugBlink(void const* argument) {
         h = m / 60;
         m -= h * 60;
 
-        if (i % 3 == 0) {
-            HAL_GPIO_WritePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin, GPIO_PIN_SET);
-            printf(ESC_TO_STATUS ESC_BOLD
-                   "[%d:%02d:%02d] | K-t: %3d | TH: %4d[%4d] %4d[%4d] %4d[%4d]"
-                   " | Ext: %4d %4d %4d"
-                   " | Fan: %4d %4d %4d" ESC_NORMAL ESC_BACK,
-                   h, m, s, k_type_temp >> 5, adc_reads[0], pid_targets[0],
-                   adc_reads[1], pid_targets[1], adc_reads[2], pid_targets[2],
-                   ext_values[0], ext_values[1], ext_values[2], fan_values[0],
-                   fan_values[1], fan_values[2]);
-            fflush(0);
-        }
+        HAL_GPIO_WritePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin, GPIO_PIN_SET);
+        printf(ESC_TO_STATUS ESC_BOLD
+               "[%d:%02d:%02d] | K-t: %3d | TH: %4d[%4d] %4d[%4d] %4d[%4d]"
+               " | Ext: %4d %4d %4d"
+               " | Fan: %4d %4d %4d" ESC_NORMAL ESC_BACK,
+               h, m, s, k_type_temp >> 5, adc_reads[0], pid_targets[0],
+               adc_reads[1], pid_targets[1], adc_reads[2], pid_targets[2],
+               ext_values[0], ext_values[1], ext_values[2], fan_values[0],
+               fan_values[1], fan_values[2]);
+        fflush(0);
         int ch = '.';
         while (HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, 0xFFFF) != HAL_OK)
             taskYIELD();
