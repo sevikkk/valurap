@@ -11,6 +11,9 @@
 #include "task_s3g.h"
 
 #define CMD_PING 0
+#define CMD_QUERY 1
+#define CMD_SET_PID_TARGET 2
+#define CMD_SET_PID_PARAMS 3
 
 enum S3G_State {
     S_START = 0,
@@ -166,7 +169,39 @@ void process_command() {
     if (cmd == CMD_PING) {
         reset_send_buffer();
         append16(cmd_id);
+        append8(0x80);
         append32(read32(receive_buffer, 3) + 123);
+        send_packet();
+    } else if (cmd == CMD_QUERY) {
+        reset_send_buffer();
+        append16(cmd_id);
+        append8(0x80);
+        append16(k_type_temp);
+        append16(adc_reads[0]);
+        append16(adc_reads[1]);
+        append16(adc_reads[2]);
+        append16(ext_values[0]);
+        append16(ext_values[2]);
+        append16(ext_values[2]);
+        append16(pid_targets[0]);
+        append16(pid_targets[1]);
+        append16(pid_targets[2]);
+        send_packet();
+    } else if (cmd == CMD_SET_PID_TARGET) {
+        pid_targets[read8(receive_buffer, 3)] = read16(receive_buffer, 4);
+        reset_send_buffer();
+        append16(cmd_id);
+        append8(0x80);
+        send_packet();
+    } else if (cmd == CMD_SET_PID_PARAMS) {
+        int channel = read8(receive_buffer, 3);
+        int k_p = read16(receive_buffer, 4);
+        int k_i = read16(receive_buffer, 6);
+        pid_k_p[channel] = k_p;
+        pid_k_i[channel] = k_i;
+        reset_send_buffer();
+        append16(cmd_id);
+        append8(0x80);
         send_packet();
     }
 }
