@@ -30,8 +30,6 @@ uint8_t send_buffer_len = 0;
 uint8_t send_buffer_crc = 0;
 int receive_buffer_len = 0;
 
-int check_crc(uint8_t ch);
-
 static __inline__ uint8_t _crc_ibutton_update(uint8_t crc, uint8_t data) {
     uint8_t i;
 
@@ -93,32 +91,32 @@ void StartS3GIO(void const *argument) {
     }
 }
 
-uint8_t read8(uint8_t *payload, uint8_t index) { return payload[index]; }
+uint8_t read8(uint8_t index) { return receive_buffer[index]; }
 
-uint16_t read16(const uint8_t *payload, uint8_t index) {
+uint16_t read16(uint8_t index) {
     union {
         uint16_t a;
         struct {
             uint8_t data[2];
         } b;
     } shared;
-    shared.b.data[0] = payload[index];
-    shared.b.data[1] = payload[index + 1];
+    shared.b.data[0] = receive_buffer[index];
+    shared.b.data[1] = receive_buffer[index + 1];
 
     return shared.a;
 }
 
-uint32_t read32(const uint8_t *payload, uint8_t index) {
+uint32_t read32(uint8_t index) {
     union {
         uint32_t a;
         struct {
             uint8_t data[4];
         } b;
     } shared;
-    shared.b.data[0] = payload[index];
-    shared.b.data[1] = payload[index + 1];
-    shared.b.data[2] = payload[index + 2];
-    shared.b.data[3] = payload[index + 3];
+    shared.b.data[0] = receive_buffer[index];
+    shared.b.data[1] = receive_buffer[index + 1];
+    shared.b.data[2] = receive_buffer[index + 2];
+    shared.b.data[3] = receive_buffer[index + 3];
 
     return shared.a;
 }
@@ -134,7 +132,7 @@ void send_packet() {
     send_buffer[send_buffer_len] = send_buffer_crc;
     while (HAL_UART_Transmit(&huart1, (uint8_t *)send_buffer,
                              send_buffer_len + 1, 0xFFFF) != HAL_OK)
-        taskYIELD();
+        taskYIELD()
 }
 
 void appendByte(uint8_t data) {
@@ -163,14 +161,14 @@ void process_command() {
     for (i = 0; i < receive_buffer_len; i++)
         printf(" %3d: %02X\n", i, receive_buffer[i]);
     printf("---\n");
-    uint16_t cmd_id = read16(receive_buffer, 0);
-    uint8_t cmd = read8(receive_buffer, 2);
+    uint16_t cmd_id = read16(0);
+    uint8_t cmd = read8(2);
 
     if (cmd == CMD_PING) {
         reset_send_buffer();
         append16(cmd_id);
         append8(0x80);
-        append32(read32(receive_buffer, 3) + 123);
+        append32(read32(3) + 123);
         send_packet();
     } else if (cmd == CMD_QUERY) {
         reset_send_buffer();
@@ -188,20 +186,26 @@ void process_command() {
         append16(pid_targets[2]);
         send_packet();
     } else if (cmd == CMD_SET_PID_TARGET) {
-        pid_targets[read8(receive_buffer, 3)] = read16(receive_buffer, 4);
-        reset_send_buffer();
-        append16(cmd_id);
-        append8(0x80);
-        send_packet();
+        uint8_t channel = read8(3);
+        int target = read16(4);
+        if (channel < 3) {
+            pid_targets[channel] = target;
+            reset_send_buffer();
+            append16(cmd_id);
+            append8(0x80);
+            send_packet();
+        }
     } else if (cmd == CMD_SET_PID_PARAMS) {
-        int channel = read8(receive_buffer, 3);
-        int k_p = read16(receive_buffer, 4);
-        int k_i = read16(receive_buffer, 6);
-        pid_k_p[channel] = k_p;
-        pid_k_i[channel] = k_i;
-        reset_send_buffer();
-        append16(cmd_id);
-        append8(0x80);
-        send_packet();
+        uint8_t channel = read8(3);
+        int k_p = read16(4);
+        int k_i = read16(6);
+        if (channel < 3) {
+            pid_k_p[channel] = k_p;
+            pid_k_i[channel] = k_i;
+            reset_send_buffer();
+            append16(cmd_id);
+            append8(0x80);
+            send_packet();
+        }
     }
 }
