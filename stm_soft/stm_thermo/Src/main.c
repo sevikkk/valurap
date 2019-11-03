@@ -54,11 +54,22 @@ UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
 osThreadId defaultTaskHandle;
+uint32_t defaultTaskBuffer[ 128 ];
+osStaticThreadDef_t defaultTaskControlBlock;
 osThreadId DebugBlinkHandle;
+uint32_t DebugBlinkBuffer[ 128 ];
+osStaticThreadDef_t DebugBlinkControlBlock;
 osThreadId CmdLineHandle;
+uint32_t CmdLineBuffer[ 128 ];
+osStaticThreadDef_t CmdLineControlBlock;
 osThreadId ThermoReadHandle;
+uint32_t ThermoReadBuffer[ 128 ];
+osStaticThreadDef_t ThermoReadControlBlock;
 osThreadId S3G_IOHandle;
+uint32_t S3G_IOBuffer[ 128 ];
+osStaticThreadDef_t S3G_IOControlBlock;
 osMutexId consoleMtxHandle;
+osStaticMutexDef_t consoleMtxControlBlock;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -128,7 +139,7 @@ int main(void)
 
   /* Create the mutex(es) */
   /* definition and creation of consoleMtx */
-  osMutexDef(consoleMtx);
+  osMutexStaticDef(consoleMtx, &consoleMtxControlBlock);
   consoleMtxHandle = osMutexCreate(osMutex(consoleMtx));
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -149,23 +160,23 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  osThreadStaticDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128, defaultTaskBuffer, &defaultTaskControlBlock);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of DebugBlink */
-  osThreadDef(DebugBlink, StartDebugBlink, osPriorityIdle, 0, 128);
+  osThreadStaticDef(DebugBlink, StartDebugBlink, osPriorityIdle, 0, 128, DebugBlinkBuffer, &DebugBlinkControlBlock);
   DebugBlinkHandle = osThreadCreate(osThread(DebugBlink), NULL);
 
   /* definition and creation of CmdLine */
-  osThreadDef(CmdLine, StartCmdLine, osPriorityIdle, 0, 128);
+  osThreadStaticDef(CmdLine, StartCmdLine, osPriorityIdle, 0, 128, CmdLineBuffer, &CmdLineControlBlock);
   CmdLineHandle = osThreadCreate(osThread(CmdLine), NULL);
 
   /* definition and creation of ThermoRead */
-  osThreadDef(ThermoRead, StartThermoRead, osPriorityIdle, 0, 128);
+  osThreadStaticDef(ThermoRead, StartThermoRead, osPriorityIdle, 0, 128, ThermoReadBuffer, &ThermoReadControlBlock);
   ThermoReadHandle = osThreadCreate(osThread(ThermoRead), NULL);
 
   /* definition and creation of S3G_IO */
-  osThreadDef(S3G_IO, StartS3GIO, osPriorityIdle, 0, 128);
+  osThreadStaticDef(S3G_IO, StartS3GIO, osPriorityIdle, 0, 128, S3G_IOBuffer, &S3G_IOControlBlock);
   S3G_IOHandle = osThreadCreate(osThread(S3G_IO), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
