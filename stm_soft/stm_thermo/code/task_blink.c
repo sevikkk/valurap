@@ -36,9 +36,6 @@ void StartDebugBlink(void const* argument) {
                ext_values[0], ext_values[1], ext_values[2], fan_values[0],
                fan_values[1], fan_values[2]);
         fflush(0);
-        int ch = '.';
-        while (HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, 0xFFFF) != HAL_OK)
-            taskYIELD();
         i++;
         vTaskDelayUntil(&last_wake, 500);
     }
