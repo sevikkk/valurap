@@ -20,6 +20,8 @@ extern osThreadId DebugBlinkHandle;
 extern osThreadId CmdLineHandle;
 extern osThreadId ThermoReadHandle;
 extern osThreadId S3G_IOHandle;
+
 extern osMutexId consoleMtxHandle;
+extern osMessageQId cons_rx_bufHandle;
 
 #endif  // STM_THERMO_HARDWARE_H

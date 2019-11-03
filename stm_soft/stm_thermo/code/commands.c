@@ -60,6 +60,8 @@ void setup_commands() {
     cmdlineAddCommand("shpid", shpidFunction);
 }
 
+uint8_t cons_rx_char;
+
 void StartCmdLine(void const* argument) {
     char ch;
 
@@ -71,6 +73,7 @@ void StartCmdLine(void const* argument) {
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
 
+    HAL_UART_Receive_IT(&huart2, (uint8_t*)&cons_rx_char, 1);
     cmdlineInit();
     setup_commands();
     printf("\x1b[0m\n\n\x1b[1mSTMThermo\x1b[0m (%s)\n\n", build_timestamp);
@@ -80,7 +83,7 @@ void StartCmdLine(void const* argument) {
     cmdlinePrintPrompt();
     xSemaphoreGive(consoleMtxHandle);
     for (;;) {
-        if (HAL_UART_Receive(&huart2, (uint8_t*)&ch, 1, 1) == HAL_OK) {
+        if (xQueueReceive(cons_rx_bufHandle, &ch, (TickType_t) 100)) {
             while (xSemaphoreTake(consoleMtxHandle, (TickType_t)100) != pdTRUE)
                 taskYIELD();
             cmdlineInputFunc((uint8_t)ch);
@@ -96,4 +99,19 @@ void StartCmdLine(void const* argument) {
             taskYIELD();
         };
     }
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+        if(huart == &huart2){
+            xQueueSendFromISR( cons_rx_bufHandle, ( void * ) &cons_rx_char, &xHigherPriorityTaskWoken);
+
+            HAL_LockTypeDef old_lock = huart -> Lock;
+            __HAL_UNLOCK(huart);
+            HAL_UART_Receive_IT(&huart2, (uint8_t*)&cons_rx_char, 1);
+            huart -> Lock = old_lock;
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
 }

@@ -68,6 +68,9 @@ osStaticThreadDef_t ThermoReadControlBlock;
 osThreadId S3G_IOHandle;
 uint32_t S3G_IOBuffer[ 128 ];
 osStaticThreadDef_t S3G_IOControlBlock;
+osMessageQId cons_rx_bufHandle;
+uint8_t myQueue01Buffer[ 64 * sizeof( uint8_t ) ];
+osStaticMessageQDef_t myQueue01ControlBlock;
 osMutexId consoleMtxHandle;
 osStaticMutexDef_t consoleMtxControlBlock;
 /* USER CODE BEGIN PV */
@@ -89,6 +92,7 @@ extern void StartCmdLine(void const * argument);
 extern void StartThermoRead(void const * argument);
 extern void StartS3GIO(void const * argument);
 
+static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -133,6 +137,9 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM3_Init();
   MX_SPI1_Init();
+
+  /* Initialize interrupts */
+  MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -153,6 +160,11 @@ int main(void)
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
+
+  /* Create the queue(s) */
+  /* definition and creation of cons_rx_buf */
+  osMessageQStaticDef(cons_rx_buf, 64, uint8_t, myQueue01Buffer, &myQueue01ControlBlock);
+  cons_rx_bufHandle = osMessageCreate(osMessageQ(cons_rx_buf), NULL);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -241,6 +253,17 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief NVIC Configuration.
+  * @retval None
+  */
+static void MX_NVIC_Init(void)
+{
+  /* USART2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(USART2_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(USART2_IRQn);
 }
 
 /**
