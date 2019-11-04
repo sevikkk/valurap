@@ -167,13 +167,13 @@ void process_command() {
     if (cmd == CMD_PING) {
         reset_send_buffer();
         append16(cmd_id);
-        append8(0x80);
+        append8(0x81);
         append32(read32(3) + 123);
         send_packet();
     } else if (cmd == CMD_QUERY) {
         reset_send_buffer();
         append16(cmd_id);
-        append8(0x80);
+        append8(0x81);
         append16(k_type_temp);
         append16(adc_reads[0]);
         append16(adc_reads[1]);
@@ -188,23 +188,23 @@ void process_command() {
     } else if (cmd == CMD_SET_PID_TARGET) {
         uint8_t channel = read8(3);
         int target = read16(4);
-        if (channel < 3) {
-            pid_targets[channel] = target;
+        if (channel >= 1 && channel <= 3) {
+            pid_targets[channel - 1] = target;
             reset_send_buffer();
             append16(cmd_id);
-            append8(0x80);
+            append8(0x81);
             send_packet();
         }
     } else if (cmd == CMD_SET_PID_PARAMS) {
         uint8_t channel = read8(3);
         int k_p = read16(4);
         int k_i = read16(6);
-        if (channel < 3) {
-            pid_k_p[channel] = k_p;
-            pid_k_i[channel] = k_i;
+        if (channel >= 1 && channel <= 3) {
+            pid_k_p[channel - 1] = k_p;
+            pid_k_i[channel - 1] = k_i;
             reset_send_buffer();
             append16(cmd_id);
-            append8(0x80);
+            append8(0x81);
             send_packet();
         }
     }
