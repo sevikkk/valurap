@@ -256,7 +256,7 @@ void cmdlineInputFunc(unsigned char c) {
         CmdlineHistoryIdx = -1;
     }
 
-    else if (c == ASCII_DEL) {
+    else if (c == ASCII_DEL || c == ASCII_BS) {
         if (CmdlineBufferEditPos) {
             // is this a simple delete (off the end of the line)
             if (CmdlineBufferEditPos == CmdlineBufferLength) {
