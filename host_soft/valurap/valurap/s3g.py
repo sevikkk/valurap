@@ -8,12 +8,19 @@ from valurap.packet import encode_payload, decode_packet
 
 
 class S3GPortBase(object):
-    def __init__(self, port='/dev/ttyS1', baudrate=115200):
+    default_port = '/dev/ttyS1'
+    default_baudrate = 115200
+
+    def __init__(self, port=None, baudrate=None):
         self.port = self.open_port(port, baudrate)
         self.data = bytearray()
         self.unexpected_packets = []
 
     def open_port(self, port, baudrate):
+        if port is None:
+            port = self.default_port
+        if baudrate is None:
+            baudrate = self.default_baudrate
         return serial.Serial(port, baudrate=baudrate, timeout=0.1)
 
     def unexpected_packet(self, packet):
