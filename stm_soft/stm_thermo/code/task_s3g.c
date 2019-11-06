@@ -3,6 +3,7 @@
 //
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "cmsis_os.h"
 #include "main.h"
 #include "hardware.h"
@@ -189,8 +190,9 @@ void process_command() {
         uint8_t channel = read8(3);
         int target = read16(4);
         if (channel >= 1 && channel <= 3) {
+            if (abs(pid_targets[channel - 1] - target) > 20)
+                pid_integrals[channel - 1] = 0;
             pid_targets[channel - 1] = target;
-            pid_integrals[channel - 1] = 0;
             reset_send_buffer();
             append16(cmd_id);
             append8(0x81);
