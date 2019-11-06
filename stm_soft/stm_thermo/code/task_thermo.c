@@ -3,14 +3,17 @@
 //
 
 #include <stdio.h>
+#include <math.h>
+
+int __errno;
 
 #include "main.h"
 #include "cmsis_os.h"
 #include "cmdline.h"
 #include "hardware.h"
 
-volatile int32_t pid_targets[3] = {5000, 5000, 5000};
-volatile int32_t pid_integrals[3];
+volatile int32_t pid_targets[3] = {0, 0, 0};
+volatile double pid_integrals[3];
 volatile int32_t pid_k_i[3] = {500, 500, 500};
 volatile int32_t pid_k_p[3] = {4000, 4000, 4000};
 
@@ -18,6 +21,7 @@ volatile int32_t k_type_temp = 0;
 volatile int32_t adc_reads[5];
 volatile int32_t ext_values[3];
 volatile int32_t fan_values[3];
+volatile int32_t adc_temps[3];
 
 int32_t ech_ids[3] = {
     TIM_CHANNEL_1,
@@ -75,26 +79,31 @@ void StartThermoRead(void const* argument) {
         }
 
         for (i = 0; i < 3; i++) {
-            int pid_error = adc_reads[i] - pid_targets[i];
+            double adc = (double) adc_vals[i] / (double)PID_ADC_SUPERSAMPLE;
+            double temp = (10598.0 + 4.0 * adc - 295.0 * sqrt(adc) - adc * adc/2190.0)/32.0;
+            adc_temps[i] = (long)temp;
+
+            double pid_error = (double)pid_targets[i] - temp;
             int control_value = 0;
 
-            if (pid_error > 1000) {
-                control_value = 500;
-            } else if (pid_error < -1000) {
+            if (pid_error > 20) {
+                control_value = 1000;
+                pid_integrals[i] = 0;
+            } else if (pid_error < -20) {
                 control_value = 0;
+                pid_integrals[i] = 0;
             } else {
-                int new_pid_integral = pid_integrals[i];
+                double new_pid_integral = pid_integrals[i];
 
-                new_pid_integral += pid_error * pid_k_i[i] / 1000;
+                new_pid_integral += pid_error;
 
-                if (new_pid_integral > 15000) new_pid_integral = 15000;
-                if (new_pid_integral < -5000) new_pid_integral = -5000;
+                if (new_pid_integral > 5000.0) new_pid_integral = 5000.0;
+                if (new_pid_integral < -5000.0) new_pid_integral = -5000.0;
 
                 pid_integrals[i] = new_pid_integral;
-                control_value =
-                    new_pid_integral / 10 + pid_error * pid_k_p[i] / 1000;
+                control_value = (long)(new_pid_integral * pid_k_i[i] + pid_error * pid_k_p[i]) / 1000;
             }
-            if (control_value > 500) control_value = 500;
+            if (control_value > 970) control_value = 1000;
             if (control_value < 30) control_value = 0;
 
             __HAL_TIM_SET_COMPARE(&htim3, ech_ids[i], control_value);
@@ -144,7 +153,10 @@ void sptFunction(void) {
 
     ch = cmdlineGetArgInt(1);
     val = cmdlineGetArgInt(2);
-    if (ch > 0 && ch <= 3) pid_targets[ch - 1] = val;
+    if (ch > 0 && ch <= 3) {
+        pid_targets[ch - 1] = val;
+        pid_integrals[ch - 1] = 0;
+    }
 }
 
 void sppFunction(void) {
@@ -158,6 +170,7 @@ void sppFunction(void) {
     if (ch > 0 && ch <= 3) {
         pid_k_p[ch - 1] = val_p;
         pid_k_i[ch - 1] = val_i;
+        pid_integrals[ch - 1] = 0;
     }
 }
 
@@ -169,6 +182,6 @@ void shpidFunction(void) {
 
     printf("pid_k_p: %ld\n", pid_k_p[ch - 1]);
     printf("pid_k_i: %ld\n", pid_k_i[ch - 1]);
-    printf("integral: %ld\n", pid_integrals[ch - 1]);
+    printf("integral: %ld\n", (long)pid_integrals[ch - 1]);
     fflush(0);
 }

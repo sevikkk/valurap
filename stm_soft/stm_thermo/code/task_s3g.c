@@ -81,8 +81,8 @@ void StartS3GIO(void const *argument) {
                 crc = _crc_ibutton_update(crc, ch);
                 if (receive_buffer_len == len) state = S_CRC;
             } else if (state == S_CRC) {
-                printf("Got command\n len: %d expected crc: %02X\n",
-                       receive_buffer_len, crc);
+                // printf("Got command\n len: %d expected crc: %02X\n",
+                //       receive_buffer_len, crc);
                 if (ch == crc) process_command();
                 state = S_START;
             }
@@ -157,10 +157,10 @@ void append32(uint32_t value) {
 }
 
 void process_command() {
-    int i;
-    for (i = 0; i < receive_buffer_len; i++)
-        printf(" %3d: %02X\n", i, receive_buffer[i]);
-    printf("---\n");
+    //int i;
+    //for (i = 0; i < receive_buffer_len; i++)
+    //    printf(" %3d: %02X\n", i, receive_buffer[i]);
+    //printf("---\n");
     uint16_t cmd_id = read16(0);
     uint8_t cmd = read8(2);
 
@@ -190,6 +190,7 @@ void process_command() {
         int target = read16(4);
         if (channel >= 1 && channel <= 3) {
             pid_targets[channel - 1] = target;
+            pid_integrals[channel - 1] = 0;
             reset_send_buffer();
             append16(cmd_id);
             append8(0x81);
@@ -202,6 +203,7 @@ void process_command() {
         if (channel >= 1 && channel <= 3) {
             pid_k_p[channel - 1] = k_p;
             pid_k_i[channel - 1] = k_i;
+            pid_integrals[channel - 1] = 0;
             reset_send_buffer();
             append16(cmd_id);
             append8(0x81);
