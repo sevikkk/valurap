@@ -32,3 +32,9 @@ disable console on ttyS0:
 ```
 sudo systemctl mask serial-getty@ttyS0.service
 ```
+
+install cv2 into virtualenv
+```
+sudo apt-get install python3-opencv
+cp /usr/lib/python3/dist-packages/cv2.cpython-37m-arm-linux-gnueabihf.so ~/.virtualenvs/valurap3/lib/python3.7/site-packages/
+```
