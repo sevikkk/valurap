@@ -91,10 +91,10 @@ void StartThermoRead(void const* argument) {
 
             if (pid_error > 20) {
                 control_value = 1000;
-                pid_integrals[i] = 5000;
+                pid_integrals[i] = 2500;
             } else if (pid_error < -20) {
                 control_value = 0;
-                pid_integrals[i] = -5000;
+                pid_integrals[i] = 0;
             } else {
                 double new_pid_integral = pid_integrals[i];
 
