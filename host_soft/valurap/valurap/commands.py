@@ -371,6 +371,9 @@ class S3GPort(S3GPortBase):
         for v in args:
             val |= v
 
+        if val > 2**31:
+            val = val - 2**32
+
         data = struct.pack('<iB', val, 64+reg)
 
         return data

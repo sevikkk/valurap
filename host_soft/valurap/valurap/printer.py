@@ -181,7 +181,6 @@ class Valurap(object):
 
     def update_axes_config(self):
         s3g = self.s3g
-
         msg_controls = {}
         es_control = 0
         for axe in self.axes.values():
@@ -194,6 +193,48 @@ class Valurap(object):
         for k, v in msg_controls.items():
             s3g.S3G_OUTPUT(k, v)
         s3g.S3G_OUTPUT(s3g.OUT_ENDSTOPS_OPTIONS, es_control)
+
+        pos_to_set = {}
+        for axe in self.axes.values():
+            if axe.apg:
+                pos_to_set[axe.name] = axe.last_pos or 0
+
+        if pos_to_set:
+            self.set_positions(**pos_to_set)
+
+    def assign_apgs(self, axes_names):
+        self.update_axes_positions()
+
+        owners = {}
+
+        for name in self.apgs.keys():
+            owners[name] = []
+
+        for name, axis in self.axes.items():
+            if axis.apg:
+                owners[axis.apg.name].append(axis)
+
+        needs_apg = []
+        for name in axes_names:
+            axis = self.axes[name]
+            if axis.apg:
+                del owners[axis.apg.name]
+            else:
+                needs_apg.append(axis)
+
+        if needs_apg:
+            owners = list(owners.items())
+            owners.sort(key=lambda x: max([0] + [a.last_used for a in x[1]]))
+
+            while needs_apg:
+                axis = needs_apg.pop(0)
+                apg_name, current_owners = owners.pop(0)
+                for owner in current_owners:
+                    owner.apg = None
+
+                axis.apg = self.apgs[apg_name]
+
+            self.update_axes_config()
 
     def home_axes(self, axes, speed=1.0):
         print("homing: {}".format(axes))
@@ -315,7 +356,7 @@ class Valurap(object):
         # Move Z back, for final homing
         self.axe_z.apg = self.apg_x
         self.update_axes_config()
-        self.move(Z=1000)
+        self.move(Z=2000)
         self.axe_z.apg = None
         self.update_axes_config()
 
@@ -331,16 +372,17 @@ class Valurap(object):
                     axe
                 ])
 
+        self.set_positions(Z=0)
         self.axe_z.apg = self.apg_x
         self.update_axes_config()
-        self.move(Z=10000)
+        self.move(Z=20000)
         self.axe_z.apg = None
         self.axe_x1.apg = self.apg_x
         self.axe_x2.apg = self.apg_y
         self.axe_y.apg = self.apg_z
         self.update_axes_config()
         self.set_positions(X1=13200, X2=-14000, Y=-22500)
-        self.moveto(X1=0, X2=0, Y=0)
+        self.moveto(X1=12700, X2=-13500, Y=-20000)
 
 
     def plan_move(self, min_dt = None, **deltas):
@@ -418,6 +460,8 @@ class Valurap(object):
         return profile
 
     def move(self, **deltas):
+        self.assign_apgs(deltas.keys())
+
         profile = self.plan_move(**deltas)
 
         print(profile)
@@ -427,6 +471,7 @@ class Valurap(object):
         self.exec_code(path_code)
 
     def moveto(self, **point):
+        self.assign_apgs(point.keys())
         args = {}
         state = self.get_state()
         for s in state:
@@ -437,8 +482,12 @@ class Valurap(object):
         self.move(**args)
 
     def set_positions(self, **kw):
+        for a, v in kw.items():
+            self.axes[a].last_pos = v
+
         set_code = self.asg.gen_set_apg_positions(**kw)
-        self.exec_code(set_code)
+        if set_code:
+            self.exec_code(set_code)
 
     def get_state(self):
         s3g = self.s3g
@@ -456,6 +505,11 @@ class Valurap(object):
                     "v": cur_v
                 })
         return result
+
+    def update_axes_positions(self):
+        state = self.get_state()
+        for axis in self.axes.values():
+            axis.update_state(state)
 
 
 import cv2

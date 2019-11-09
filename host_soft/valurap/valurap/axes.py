@@ -1,3 +1,5 @@
+import time
+
 from .commands import S3GPort
 
 
@@ -36,6 +38,8 @@ class Axe(object):
         self.enabled = False
         self.endstop_abort = False
         self.apg = None
+        self.last_pos = None
+        self.last_used = 0
 
     def msg_control(self):
         control = 0
@@ -74,6 +78,15 @@ class Axe(object):
             final_status = final_status or not(status ^ mask)
 
         return final_status
+
+    def update_state(self, state):
+        new_state = [a for a in state if a["name"] == self.name]
+        if new_state:
+            new_state = new_state[0]
+            assert new_state["v"] == 0
+            if self.last_pos != new_state["x"]:
+                self.last_used = time.time()
+                self.last_pos = new_state["x"]
 
 
 class Axe_MC2(Axe):
@@ -272,17 +285,17 @@ class AxeE1(Axe):
 
     endstop_at_max = None
     _control_enable = (
-        S3GPort.OUT_MSG_CONTROL_ENABLE_5
+        S3GPort.OUT_MSG_CONTROL_ENABLE_4
     )
     _control_mux = {
         "X": (
-            S3GPort.OUT_MSG_CONTROL_MUX_5_X
+            S3GPort.OUT_MSG_CONTROL_MUX_4_X
         ),
         "Y": (
-            S3GPort.OUT_MSG_CONTROL_MUX_5_Y
+            S3GPort.OUT_MSG_CONTROL_MUX_4_Y
         ),
         "Z": (
-            S3GPort.OUT_MSG_CONTROL_MUX_5_Z
+            S3GPort.OUT_MSG_CONTROL_MUX_4_Z
         ),
     }
 
@@ -299,17 +312,17 @@ class AxeE2(Axe):
 
     endstop_at_max = None
     _control_enable = (
-            S3GPort.OUT_MSG_CONTROL_ENABLE_4
+            S3GPort.OUT_MSG_CONTROL_ENABLE_5
     )
     _control_mux = {
         "X": (
-                S3GPort.OUT_MSG_CONTROL_MUX_4_X
+                S3GPort.OUT_MSG_CONTROL_MUX_5_X
         ),
         "Y": (
-                S3GPort.OUT_MSG_CONTROL_MUX_4_Y
+                S3GPort.OUT_MSG_CONTROL_MUX_5_Y
         ),
         "Z": (
-                S3GPort.OUT_MSG_CONTROL_MUX_4_Z
+                S3GPort.OUT_MSG_CONTROL_MUX_5_Z
         ),
     }
 
