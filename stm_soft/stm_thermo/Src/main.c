@@ -68,6 +68,9 @@ osStaticThreadDef_t ThermoReadControlBlock;
 osThreadId S3G_IOHandle;
 uint32_t S3G_IOBuffer[ 128 ];
 osStaticThreadDef_t S3G_IOControlBlock;
+osThreadId HeatBedPWMHandle;
+uint32_t myTask06Buffer[ 128 ];
+osStaticThreadDef_t myTask06ControlBlock;
 osMessageQId cons_rx_bufHandle;
 uint8_t myQueue01Buffer[ 64 * sizeof( uint8_t ) ];
 osStaticMessageQDef_t myQueue01ControlBlock;
@@ -94,6 +97,7 @@ extern void StartDebugBlink(void const * argument);
 extern void StartCmdLine(void const * argument);
 extern void StartThermoRead(void const * argument);
 extern void StartS3GIO(void const * argument);
+extern void StartHeatBedPWM(void const * argument);
 
 static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
@@ -197,6 +201,10 @@ int main(void)
   /* definition and creation of S3G_IO */
   osThreadStaticDef(S3G_IO, StartS3GIO, osPriorityIdle, 0, 128, S3G_IOBuffer, &S3G_IOControlBlock);
   S3G_IOHandle = osThreadCreate(osThread(S3G_IO), NULL);
+
+  /* definition and creation of HeatBedPWM */
+  osThreadStaticDef(HeatBedPWM, StartHeatBedPWM, osPriorityIdle, 0, 128, myTask06Buffer, &myTask06ControlBlock);
+  HeatBedPWMHandle = osThreadCreate(osThread(HeatBedPWM), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -615,6 +623,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
+    
     
     
     
