@@ -180,8 +180,8 @@ void process_command() {
         append16(adc_reads[1]);
         append16(adc_reads[2]);
         append16(ext_values[0]);
-        append16(ext_values[2]);
-        append16(ext_values[2]);
+        append16(ext_values[1]);
+        append16(heatbed_value);
         append16(pid_targets[0]);
         append16(pid_targets[1]);
         append16(pid_targets[2]);

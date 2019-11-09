@@ -37,7 +37,7 @@ void StartDebugBlink(void const* argument) {
                adc_reads[0], adc_temps[0], pid_targets[0],
                adc_reads[1], adc_temps[1], pid_targets[1],
                adc_reads[2], adc_temps[2], pid_targets[2],
-               ext_values[0], ext_values[1], ext_values[2], fan_values[0],
+               ext_values[0], ext_values[1], heatbed_value, fan_values[0],
                fan_values[1], fan_values[2]);
         fflush(0);
         i++;

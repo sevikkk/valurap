@@ -22,6 +22,7 @@ volatile int32_t adc_reads[5];
 volatile int32_t ext_values[3];
 volatile int32_t fan_values[3];
 volatile int32_t adc_temps[3];
+volatile int32_t heatbed_value = 0;
 
 int32_t ech_ids[3] = {
     TIM_CHANNEL_1,
@@ -80,7 +81,9 @@ void StartThermoRead(void const* argument) {
 
         for (i = 0; i < 3; i++) {
             double adc = (double) adc_vals[i] / (double)PID_ADC_SUPERSAMPLE;
-            double temp = (10598.0 + 4.0 * adc - 295.0 * sqrt(adc) - adc * adc/2190.0)/32.0;
+            // ext1: 10211.569233868902 4.081041224040854 -292.90712330869326 -2194.2350864642244
+
+            double temp = (10157.98 + 4.051241 * adc - 290.5820 * sqrt(adc) - adc * adc/2209.283)/32.0;
             adc_temps[i] = (long)temp;
 
             double pid_error = (double)pid_targets[i] - temp;
@@ -88,10 +91,10 @@ void StartThermoRead(void const* argument) {
 
             if (pid_error > 20) {
                 control_value = 1000;
-                pid_integrals[i] = 0;
+                pid_integrals[i] = 5000;
             } else if (pid_error < -20) {
                 control_value = 0;
-                pid_integrals[i] = 0;
+                pid_integrals[i] = -5000;
             } else {
                 double new_pid_integral = pid_integrals[i];
 
@@ -104,9 +107,12 @@ void StartThermoRead(void const* argument) {
                 control_value = (long)(new_pid_integral * pid_k_i[i] + pid_error * pid_k_p[i]) / 1000;
             }
             if (control_value > 970) control_value = 1000;
-            if (control_value < 30) control_value = 0;
+            if (control_value < 10) control_value = 0;
 
-            __HAL_TIM_SET_COMPARE(&htim3, ech_ids[i], control_value);
+            if (i < 2)
+                __HAL_TIM_SET_COMPARE(&htim3, ech_ids[i], control_value);
+            else
+                heatbed_value = control_value;
         }
 
         for (i = 0; i < 3; i++) {
@@ -114,6 +120,30 @@ void StartThermoRead(void const* argument) {
             fan_values[i] = __HAL_TIM_GET_COMPARE(&htim1, fch_ids[i]);
         }
         vTaskDelayUntil(&last_wake, PID_CYCLE);
+    }
+}
+
+void StartHeatBedPWM(void const* argument) {
+    TickType_t last_wake;
+    int32_t current_cycle = 0;
+#define HEATBED_CYCLE 5000
+
+    last_wake = xTaskGetTickCount() + 33;
+
+    for (;;) {
+        current_cycle = heatbed_value * HEATBED_CYCLE / 1000;
+        if (current_cycle >= HEATBED_CYCLE - 10) {
+            HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET);
+            vTaskDelayUntil(&last_wake, HEATBED_CYCLE);
+        } else if (current_cycle > 10) {
+            HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET);
+            vTaskDelayUntil(&last_wake, current_cycle);
+            HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET);
+            vTaskDelayUntil(&last_wake, HEATBED_CYCLE - current_cycle);
+        } else {
+            HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET);
+            vTaskDelayUntil(&last_wake, HEATBED_CYCLE);
+        };
     }
 }
 

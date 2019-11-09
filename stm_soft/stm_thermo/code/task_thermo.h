@@ -15,6 +15,7 @@ extern volatile int32_t adc_reads[5];
 extern volatile int32_t ext_values[3];
 extern volatile int32_t fan_values[3];
 extern volatile int32_t adc_temps[3];
+extern volatile int32_t heatbed_value;
 
 void sepFunction(void);
 void sfpFunction(void);
