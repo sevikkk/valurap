@@ -194,8 +194,13 @@ class Asg(object):
                 apg.control_set_j,
                 apg.control_set_jj,
             ]
-            x_hi = int(v)
-            x_lo = int((v - x_hi) * 2**32)
+            x = int(v * 2**32)
+            if x < 0:
+                x = x + 2**64
+
+            x_hi = x >> 32
+            x_lo = x & (2**32-1)
+
             code += [
                 s3g.BUF_OUTPUT(apg.val_x_lo, x_lo),
                 s3g.BUF_OUTPUT(apg.val_x_hi, x_hi),
