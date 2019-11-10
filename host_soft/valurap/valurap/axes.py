@@ -85,6 +85,7 @@ class Axe(object):
             new_state = new_state[0]
             assert new_state["v"] == 0
             if self.last_pos != new_state["x"]:
+                print("Save position:", self.name, new_state["x"])
                 self.last_used = time.time()
                 self.last_pos = new_state["x"]
 
@@ -470,12 +471,12 @@ class AxeZ(Axe):
     )
 
     abort_a = 20000
-    home_a = 2000
+    home_a = 1000
     home_v = 500000
 
     max_v = 500000
-    max_a = 2000
-    max_j = 5000
+    max_a = 1000
+    max_j = 3000
 
 class AxeFLZ(AxeZ):
     name = "FLZ"
