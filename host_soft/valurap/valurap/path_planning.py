@@ -3,6 +3,8 @@ from math import sqrt
 from numpy import array, absolute, isnan
 from numpy.linalg import norm
 import pandas as pd
+from scipy.optimize import minimize
+
 
 from valurap import printer, commands
 from .asg import Asg, ProfileSegment, PathSegment
@@ -154,13 +156,16 @@ def int_v(t, v, a, j, jj):
     return ir(v + a * t + j * t * (t - 1) / 2 + jj * t * (t - 1) * (t - 2) / 6)
 
 
-def solve_model_simple(in_v, target_plato_v, target_out_v, target_x, accel_t,
-                       plato_t, decel_t):
+def int_a(t, v, a, j, jj):
+    return ir(a  + j * t  + jj * t * (t - 1) / 2)
+
+
+def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t, errors = None):
     vtoa_k = 65536
     xtov_k = 2 ** 32 / 50000
     xtoa_k = vtoa_k * xtov_k
 
-    accel_a = (target_plato_v - in_v) / accel_t * vtoa_k * 1.5
+    accel_a = (target_v - in_v) / accel_t * vtoa_k * 1.5
     accel_j = accel_a / accel_t * 2 * 2
     accel_jj = -accel_j / accel_t * 2
 
@@ -173,20 +178,53 @@ def solve_model_simple(in_v, target_plato_v, target_out_v, target_x, accel_t,
     #print("int_accel_j:", int_accel_j)
     #print("int_accel_jj:", int_accel_jj)
 
+
+    k_e_a = 1e-8
+    k_e_delta_v = 1e-6
+    k_e_jerk = 1e-6
+    k_e_target = 0
+    k_dj = int_accel_j * 0.01
+    k_djj = int_accel_jj * 0.01
+
+    def get_errors(dj, djj):
+        int_accel_x = int_x(accel_t, in_v * vtoa_k, 0, int_accel_j + dj, int_accel_jj + djj)
+        int_accel_v = int_v(accel_t, in_v * vtoa_k, 0, int_accel_j + dj, int_accel_jj + djj)
+        int_accel_a = int_a(accel_t, in_v * vtoa_k, 0, int_accel_j + dj, int_accel_jj + djj)
+
+        plato_x = target_x * xtoa_k - int_accel_x
+        plato_v = plato_x / plato_t
+
+        int_plato_v = ir(plato_v)
+        int_plato_x = int_x(plato_t, int_plato_v, 0, 0, 0)
+
+        e_delta_v = target_v - int_plato_v / vtoa_k
+        e_jerk = int_plato_v / vtoa_k - int_accel_v / vtoa_k
+        e_a = int_accel_a
+        e_target = target_x - int_plato_x + int_accel_x
+
+        return e_a, e_delta_v, e_jerk, e_target
+
+    def get_errors_2(x):
+        e_a, e_delta_v, e_jerk, e_target = get_errors(x[0]*k_dj, x[1]*k_djj)
+        return sqrt(
+            (e_a * k_e_a) ** 2
+            + (e_delta_v * k_e_delta_v) ** 2
+            + (e_jerk * k_e_jerk) ** 2
+            + (e_target * k_e_target) ** 2
+        )
+
+    if 1:
+        res = minimize(get_errors_2, [0, 0])
+        print(res)
+        print("old", int_accel_j, int_accel_jj)
+        int_accel_j = ir(int_accel_j + k_dj * res.x[0])
+        int_accel_jj = ir(int_accel_jj + k_djj * res.x[1])
+        print("new", int_accel_j, int_accel_jj)
+
     int_accel_x = int_x(accel_t, in_v * vtoa_k, 0, int_accel_j, int_accel_jj)
     int_accel_v = int_v(accel_t, in_v * vtoa_k, 0, int_accel_j, int_accel_jj)
 
-    decel_a = (target_out_v - target_plato_v) / decel_t * vtoa_k * 1.5
-    decel_j = decel_a / decel_t * 2 * 2
-    decel_jj = -decel_j / decel_t * 2
-
-    int_decel_jj = ir(decel_jj)
-    int_decel_j = ir(-int_decel_jj * decel_t / 2)
-
-    int_decel_x = int_x(decel_t, target_plato_v * vtoa_k, 0, int_decel_j, int_decel_jj)
-    int_decel_v = int_v(decel_t, target_plato_v * vtoa_k, 0, int_decel_j, int_decel_jj)
-
-    plato_x = target_x * xtoa_k - int_accel_x - int_decel_x
+    plato_x = target_x * xtoa_k - int_accel_x
     plato_v = plato_x / plato_t
 
     int_plato_v = ir(plato_v)
@@ -196,19 +234,18 @@ def solve_model_simple(in_v, target_plato_v, target_out_v, target_x, accel_t,
         "accel_j": int_accel_j,
         "accel_jj": int_accel_jj,
         "plato_v": int_plato_v / vtoa_k,
-        "decel_j": int_decel_j,
-        "decel_jj": int_decel_jj,
         "accel_x": int_accel_x / xtoa_k,
         "plato_x": int_plato_x / xtoa_k,
-        "decel_x": int_decel_x / xtoa_k,
     }
+
+
 
 class FakeApg():
     def __init__(self, name):
         self.name = name
 
 
-def plan_path(path, apgs=None, fatal=True):
+def plan_path(start, path, apgs=None, fatal=True):
     if apgs is None:
         apgs = {}
 
@@ -220,24 +257,24 @@ def plan_path(path, apgs=None, fatal=True):
 
     pr_opt = []
 
-    in_x = array([0, 0])
-    in_target = array([0, 0])
-    in_v = array([0, 0])
-    in_avail = array([0, 0])
+    in_x = array(start)         # end of accel position for previous segment
+    in_target = array(start)    # target position of previous segment
+    in_v = array([0, 0])        # plato speed of previous segment
+    in_avail = array([0, 0])    # length left in previous segment after end of accel
 
     for i, seg in enumerate(path):
         try:
-            target_x, target_y, target_v = seg
+            target_x, target_y, target_v = seg # this segment target and speed
 
             cur_target = array([target_x, target_y])
 
-            cur_d = cur_target - in_target
+            cur_d = cur_target - in_target # this segment theoretical target vector
             assert (norm(cur_d) > 0)
             assert (target_v > 0)
 
             if i == len(path) - 1:
-                out_v = array([0, 0])
-                out_avail = array([0, 0])
+                out_v = array([0, 0])       # next segment target speed
+                out_avail = array([0, 0])   # available length in next segment for next speed accel
             else:
                 next_x, next_y, next_v = path[i + 1]
                 next_target = array([next_x, next_y])
@@ -247,11 +284,11 @@ def plan_path(path, apgs=None, fatal=True):
                 out_v = next_v * next_d / norm(next_d)
                 out_avail = next_d / 2
 
-            cur_avail = cur_d
-            plato_v = target_v * cur_d / norm(cur_d)
+            cur_avail = cur_d + 0                       # full length is available for now
+            plato_v = target_v * cur_d / norm(cur_d)    # target plato speed
 
-            print("speeds:", in_v, plato_v, out_v)
-            print("avails:", in_avail, cur_avail, out_avail)
+            print("speeds: prev {} current {} next {}".format(in_v, plato_v, out_v))
+            print("avails: prev {} current {} next {}".format(in_avail, cur_avail, out_avail))
 
             # Enter
             enter_delta_v = plato_v - in_v
@@ -262,9 +299,9 @@ def plan_path(path, apgs=None, fatal=True):
 
             enter_a = enter_delta_v / enter_time
             print("enter_a:", enter_a)
-            enter_speed_filter = absolute(enter_delta_v) > 0.1
+            enter_speed_filter = absolute(enter_delta_v) > 0.1 # list of channels that need enter
 
-            enter_delta_x = in_v * enter_time + enter_a * enter_time ** 2 / 2
+            enter_delta_x = in_v * enter_time + enter_a * enter_time ** 2 / 2 # total required length of enter
             print("enter_delta_x:", enter_delta_x)
 
             enter_t_first = (enter_time * plato_v[enter_speed_filter] - enter_delta_x[enter_speed_filter]) / enter_delta_v[
@@ -274,8 +311,9 @@ def plan_path(path, apgs=None, fatal=True):
             print("enter_t_second:", enter_t_second)
             assert ((enter_t_first >= 0).all())
             assert ((enter_t_second >= 0).all())
+            print("enter_speed_filter:", enter_speed_filter)
 
-            enter_need_first = in_v[enter_speed_filter] * enter_t_first
+            enter_need_first = in_v[enter_speed_filter] * enter_t_first         # length required from prev and curremt segments
             enter_need_second = plato_v[enter_speed_filter] * enter_t_second
             print("enter_need_first:", enter_need_first)
             print("enter_need_second:", enter_need_second)
@@ -286,8 +324,8 @@ def plan_path(path, apgs=None, fatal=True):
             assert (
                 (in_avail[enter_speed_filter][enter_need_first_filter] / enter_need_first[enter_need_first_filter] > 1.0).all())
             assert ((cur_avail[enter_speed_filter][enter_need_second_filter] / enter_need_second[
-                enter_need_second_filter] > 2.0).all())
-            cur_avail[enter_speed_filter] = cur_avail[enter_speed_filter] - enter_need_second
+                enter_need_second_filter] > 2.0).all())  # no more than half of length for accell
+            cur_avail[enter_speed_filter] = cur_avail[enter_speed_filter] - enter_need_second # adjust avail length
 
             # Exit
             exit_delta_v = out_v - plato_v
@@ -299,6 +337,7 @@ def plan_path(path, apgs=None, fatal=True):
             exit_a = exit_delta_v / exit_time
             print("exit_a:", exit_a)
             exit_speed_filter = absolute(exit_delta_v) > 0.1
+            print("exit_speed_filter:", exit_speed_filter)
 
             exit_delta_x = plato_v * exit_time + exit_a * exit_time ** 2 / 2
             print("exit_delta_x:", exit_delta_x)
@@ -331,7 +370,7 @@ def plan_path(path, apgs=None, fatal=True):
                 # remaining path from first step from end of last accel to start of new accel
                 # performing with constant speed
                 #  remaining path
-                prev_plato = (in_target - in_x)
+                prev_plato = in_target - in_x
                 prev_plato[enter_speed_filter] -= enter_need_first
                 #  required time in ms
                 prev_t = int(round(1000 * norm(prev_plato) / norm(in_v)))
@@ -351,39 +390,40 @@ def plan_path(path, apgs=None, fatal=True):
 
             # new decel finish_point
             print("cur_target:", cur_target)
-            decel_end = cur_target
+            decel_end = cur_target + 0
             decel_end[exit_speed_filter] += exit_need_second
             print("decel_end:", decel_end)
+
+            decel_start = cur_target + 0
+            decel_start[exit_speed_filter] -= exit_need_first
+            print("decel_start:", decel_start)
 
             plato_t = int(round(1000 * (norm(cur_d) / norm(plato_v) - enter_t_second[0] - exit_t_first[0])))
             accel_t = int(round(1000 * (enter_t_first[0] + enter_t_second[0])))
             decel_t = int(round(1000 * (exit_t_first[0] + exit_t_second[0])))
 
             print("accel_start:", accel_start)
-            target_x = decel_end - accel_start
+            target_x = decel_start - accel_start
             print("target_x:", target_x)
 
             args_x = dict(
                 in_v=int(round(prev_v[0] * 80 * 2 ** 32 / 50000000)),
-                target_plato_v=int(round(plato_v[0] * 80 * 2 ** 32 / 50000000)),
-                target_out_v=int(round(out_v[0] * 80 * 2 ** 32 / 50000000)),
-                target_x=int(round(target_x[0] * 80)),
+                target_v=int(round(plato_v[0] * 80 * 2 ** 32 / 50000000)),
+                target_x=ir(decel_start[0] * 80),
                 accel_t=accel_t,
                 plato_t=plato_t,
-                decel_t=decel_t,
             )
             print("args_x:", args_x)
             solution_x = solve_model_simple(**args_x)
             assert (solution_x)
+            print("cur_target:", cur_target)
 
             args_y = dict(
                 in_v=int(round(prev_v[1] * 80 * 2 ** 32 / 50000000)),
-                target_plato_v=int(round(plato_v[1] * 80 * 2 ** 32 / 50000000)),
-                target_out_v=int(round(out_v[1] * 80 * 2 ** 32 / 50000000)),
-                target_x=int(round(target_x[1] * 80)),
+                target_v=int(round(plato_v[1] * 80 * 2 ** 32 / 50000000)),
+                target_x=ir(decel_start[1] * 80),
                 accel_t=accel_t,
                 plato_t=plato_t,
-                decel_t=decel_t,
             )
 
             print("args_y:", args_y)
@@ -408,7 +448,7 @@ def plan_path(path, apgs=None, fatal=True):
                 ]]
             ]
 
-            if i == len(path) - 1:
+            if 0 and (i == len(path) - 1):
                 pr_opt += [
                     [plato_t, [
                         ProfileSegment(apg=apg_x, v=solution_x["plato_v"]),
