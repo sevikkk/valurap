@@ -247,9 +247,12 @@ class FakeApg():
         self.name = name
 
 
-def plan_path(start, path, apgs=None, fatal=True):
+def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
     if apgs is None:
         apgs = {}
+
+    if plan_errors is None:
+        plan_errors = []
 
     apg_x = apgs.get("X", FakeApg("X"))
     apg_y = apgs.get("Y", FakeApg("Y"))
@@ -263,6 +266,7 @@ def plan_path(start, path, apgs=None, fatal=True):
     in_target = array(start)    # target position of previous segment
     in_v = array([0, 0])        # plato speed of previous segment
     in_avail = array([0, 0])    # length left in previous segment after end of accel
+    need_abort = False
 
     for i, seg in enumerate(path):
         try:
@@ -318,10 +322,20 @@ def plan_path(start, path, apgs=None, fatal=True):
             print("enter_need_first:", enter_need_first)
             print("enter_need_second:", enter_need_second)
 
-            print("in_avail enter assert:", (in_avail + 1e-10) / (enter_need_first + 1e-12))
-            assert ((in_avail + 1e-10) / (enter_need_first + 1e-12)> 1.0).all()
-            print("cur_avail enter assert:", (cur_avail + 1e-10) / (enter_need_second + 1e-12))
-            assert ((cur_avail + 1e-10) / (enter_need_second + 1e-12) > 2.0).all()
+            in_avail_enter_assert = (in_avail + 1e-10) / (enter_need_first + 1e-12)
+            if not (in_avail_enter_assert > 1.0).all():
+                print("in_avail enter assert:", in_avail_enter_assert)
+                assert not fatal
+                plan_errors.append((i, "in_avail_enter", in_avail_enter_assert, 1.0))
+                need_abort = True
+
+            cur_avail_enter_assert = (cur_avail + 1e-10) / (enter_need_second + 1e-12)
+            if not (cur_avail_enter_assert > 2.0).all():
+                print("cur_avail enter assert:", cur_avail_enter_assert)
+                assert not fatal
+                plan_errors.append((i, "cur_avail_enter", cur_avail_enter_assert, 2.0))
+                need_abort = True
+
             cur_avail = cur_avail - enter_need_second # adjust avail length
 
             # Exit
@@ -350,10 +364,19 @@ def plan_path(start, path, apgs=None, fatal=True):
             print("exit_need_first:", exit_need_first)
             print("exit_need_second:", exit_need_second)
 
-            print("cur_avail exit assert:", (cur_avail + 1e-10) / (exit_need_first + 1e-12))
-            assert ((cur_avail + 1e-10) / (exit_need_first + 1e-12) > 1.0).all()
-            print("out_avail exit assert:", (out_avail + 1e-10) / (exit_need_second + 1e-12))
-            assert ((out_avail + 1e-10) / (exit_need_second + 1e-12)> 1.0).all()
+            cur_avail_exit_assert = (cur_avail + 1e-10) / (exit_need_first + 1e-12)
+            if not (cur_avail_exit_assert > 1.0).all():
+                print("cur_avail exit assert:", cur_avail_exit_assert)
+                assert not fatal
+                plan_errors.append((i, "cur_avail_exit", cur_avail_exit_assert, 1.0))
+                need_abort = True
+
+            out_avail_exit_assert = (out_avail + 1e-10) / (exit_need_second + 1e-12)
+            if not (out_avail_exit_assert > 1.0).all():
+                print("out_avail exit assert:", out_avail_exit_assert)
+                assert not fatal
+                plan_errors.append((i, "out_avail_exit", out_avail_exit_assert, 1.0))
+                need_abort = True
 
             if norm(in_v) > 0:
                 # remaining path from first step from end of last accel to start of new accel
@@ -458,10 +481,14 @@ def plan_path(start, path, apgs=None, fatal=True):
             in_target = cur_target
             in_x = accel_start + array([solution_x["accel_x"], solution_y["accel_x"]]) / 80
             in_avail = in_target - in_x
+            if need_abort:
+                print("Failed to plan full path")
+                break
         except:
+            print("Failed to plan full path")
+            plan_errors.append((i, "unknown", None, None))
             if fatal:
                 raise
-            print("Failed to plan full path")
             break
 
     return pr_opt
