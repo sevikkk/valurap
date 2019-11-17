@@ -275,13 +275,20 @@ def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
             cur_target = array([target_x, target_y])
 
             cur_d = cur_target - in_target # this segment theoretical target vector
-            assert (norm(cur_d) > 0)
-            assert (target_v > 0)
 
             if i == len(path) - 1:
+                assert (norm(cur_d) < 1e-16)
+                assert (target_v < 1e-6)
+                out_v = array([0, 0])       # next segment target speed
+                out_avail = array([0, 0])   # available length in next segment for next speed accel
+            elif i == len(path) - 2:
+                assert (norm(cur_d) > 0)
+                assert (target_v > 0)
                 out_v = array([0, 0])       # next segment target speed
                 out_avail = array([0, 0])   # available length in next segment for next speed accel
             else:
+                assert (norm(cur_d) > 0)
+                assert (target_v > 0)
                 next_x, next_y, next_v = path[i + 1]
                 next_target = array([next_x, next_y])
                 next_d = next_target - cur_target
@@ -291,7 +298,7 @@ def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
                 out_avail = next_d / 2
 
             cur_avail = cur_d + 0                       # full length is available for now
-            plato_v = target_v * cur_d / norm(cur_d)    # target plato speed
+            plato_v = target_v * cur_d / (norm(cur_d) + 1e-12)    # target plato speed
 
             print("x: in {} in_target {} cur_target {}".format(in_x, in_target, cur_target))
             print("speeds: prev {} current {} next {}".format(in_v, plato_v, out_v))
@@ -345,7 +352,7 @@ def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
             exit_time = max(list(absolute(exit_delta_v) / max_a))
             print("exit_time:", exit_time)
 
-            exit_a = exit_delta_v / exit_time
+            exit_a = exit_delta_v / (exit_time + 1e-12)
             print("exit_a:", exit_a)
 
             exit_delta_x = plato_v * exit_time + exit_a * exit_time ** 2 / 2
@@ -402,7 +409,7 @@ def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
             decel_start = cur_target - exit_need_first
             print("decel_start:", decel_start)
 
-            plato_t = ir(1000 * (norm(cur_d) / norm(plato_v) - enter_t_second[0] - exit_t_first[0]))
+            plato_t = ir(1000 * (norm(cur_d) / (norm(plato_v) + 1e-12) - enter_t_second[0] - exit_t_first[0]))
             accel_t = ir(1000 * (enter_t_first[0] + enter_t_second[0]))
             decel_t = ir(1000 * (exit_t_first[0] + exit_t_second[0]))
 
@@ -452,18 +459,8 @@ def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
                 ]]
             ]
 
-            if 0 and (i == len(path) - 1):
+            if i == len(path) - 1:
                 pr_opt += [
-                    [plato_t, [
-                        ProfileSegment(apg=apg_x, v=solution_x["plato_v"]),
-                        ProfileSegment(apg=apg_y, v=solution_y["plato_v"]),
-                        ProfileSegment(apg=apg_z, v=-400000),
-                    ]],
-                    [decel_t, [
-                        ProfileSegment(apg=apg_x, j=solution_x["decel_j"], jj=solution_x["decel_jj"]),
-                        ProfileSegment(apg=apg_y, j=solution_y["decel_j"], jj=solution_y["decel_jj"]),
-                        ProfileSegment(apg=apg_z, v=-400000),
-                    ]],
                     [5, [
                         ProfileSegment(apg=apg_x, v=0),
                         ProfileSegment(apg=apg_y, v=0),
