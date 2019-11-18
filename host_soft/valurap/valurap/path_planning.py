@@ -167,6 +167,17 @@ xtoa_k = vtoa_k * xtov_k
 
 def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t, errors = None):
 
+    if in_v == target_v:
+        #assert accel_t == 0
+        return {
+            "accel_j": 0,
+            "accel_jj": 0,
+            "plato_v": in_v,
+            "accel_x": 0,
+            "accel_middle_x": 0,
+            "plato_x": target_x,
+        }
+
     accel_a = (target_v - in_v) / accel_t * vtoa_k * 1.5
     accel_j = accel_a / accel_t * 2 * 2
     accel_jj = -accel_j / accel_t * 2
@@ -225,6 +236,7 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t, errors = None
 
     int_accel_x = int_x(accel_t, in_v * vtoa_k, 0, int_accel_j, int_accel_jj)
     int_accel_v = int_v(accel_t, in_v * vtoa_k, 0, int_accel_j, int_accel_jj)
+    int_accel_middle_x = int_x(int(accel_t/2), in_v * vtoa_k, 0, int_accel_j, int_accel_jj)
 
     plato_x = target_x * xtoa_k - int_accel_x
     plato_v = plato_x / plato_t
@@ -237,6 +249,7 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t, errors = None
         "accel_jj": int_accel_jj,
         "plato_v": int_plato_v / vtoa_k,
         "accel_x": int_accel_x / xtoa_k,
+        "accel_middle_x": int_accel_middle_x / xtoa_k,
         "plato_x": int_plato_x / xtoa_k,
     }
 
@@ -277,8 +290,8 @@ def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
             cur_d = cur_target - in_target # this segment theoretical target vector
 
             if i == len(path) - 1:
-                assert (norm(cur_d) < 1e-16)
-                assert (target_v < 1e-6)
+                assert (norm(cur_d) < 1e-3)
+                assert (target_v < 1e-3)
                 out_v = array([0, 0])       # next segment target speed
                 out_avail = array([0, 0])   # available length in next segment for next speed accel
             elif i == len(path) - 2:
@@ -298,7 +311,7 @@ def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
                 out_avail = next_d / 2
 
             cur_avail = cur_d + 0                       # full length is available for now
-            plato_v = target_v * cur_d / (norm(cur_d) + 1e-12)    # target plato speed
+            plato_v = target_v * cur_d / (norm(cur_d) + 1e-6)    # target plato speed
 
             print("x: in {} in_target {} cur_target {}".format(in_x, in_target, cur_target))
             print("speeds: prev {} current {} next {}".format(in_v, plato_v, out_v))
@@ -317,7 +330,7 @@ def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
             enter_delta_x = in_v * enter_time + enter_a * enter_time ** 2 / 2 # total required length of enter
             print("enter_delta_x:", enter_delta_x)
 
-            enter_t_first = (enter_time * plato_v - enter_delta_x) / (enter_delta_v + 1e-12)
+            enter_t_first = (enter_time * plato_v - enter_delta_x) / (enter_delta_v + 1e-6)
             enter_t_second = enter_time - enter_t_first
             print("enter_t_first:", enter_t_first)
             print("enter_t_second:", enter_t_second)
@@ -329,14 +342,14 @@ def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
             print("enter_need_first:", enter_need_first)
             print("enter_need_second:", enter_need_second)
 
-            in_avail_enter_assert = (in_avail + 1e-10) / (enter_need_first + 1e-12)
+            in_avail_enter_assert = (in_avail / (enter_need_first + 1e-6))[enter_need_first > 0]
             if not (in_avail_enter_assert > 1.0).all():
                 print("in_avail enter assert:", in_avail_enter_assert)
                 assert not fatal
                 plan_errors.append((i, "in_avail_enter", in_avail_enter_assert, 1.0))
                 need_abort = True
 
-            cur_avail_enter_assert = (cur_avail + 1e-10) / (enter_need_second + 1e-12)
+            cur_avail_enter_assert = (cur_avail / (enter_need_second + 1e-6))[enter_need_second>0]
             if not (cur_avail_enter_assert > 2.0).all():
                 print("cur_avail enter assert:", cur_avail_enter_assert)
                 assert not fatal
@@ -347,18 +360,20 @@ def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
 
             # Exit
             exit_delta_v = out_v - plato_v
+            exit_delta_v[abs(exit_delta_v) <  1e-3] = 0
             print("exit_delta_v:", exit_delta_v)
 
             exit_time = max(list(absolute(exit_delta_v) / max_a))
             print("exit_time:", exit_time)
 
-            exit_a = exit_delta_v / (exit_time + 1e-12)
+            exit_a = exit_delta_v / (exit_time + 1e-6)
             print("exit_a:", exit_a)
 
             exit_delta_x = plato_v * exit_time + exit_a * exit_time ** 2 / 2
             print("exit_delta_x:", exit_delta_x)
 
-            exit_t_first = (exit_time * out_v - exit_delta_x) / (exit_delta_v + 1e-12)
+            exit_t_first = (exit_time * out_v - exit_delta_x) / (exit_delta_v + 1e-6)
+            exit_t_first[exit_time == 0] = 0
             exit_t_second = exit_time - exit_t_first
 
             print("exit_t_first:", exit_t_first)
@@ -371,14 +386,14 @@ def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
             print("exit_need_first:", exit_need_first)
             print("exit_need_second:", exit_need_second)
 
-            cur_avail_exit_assert = (cur_avail + 1e-10) / (exit_need_first + 1e-12)
+            cur_avail_exit_assert = (cur_avail / (exit_need_first + 1e-8))[exit_need_first > 0]
             if not (cur_avail_exit_assert > 1.0).all():
                 print("cur_avail exit assert:", cur_avail_exit_assert)
                 assert not fatal
                 plan_errors.append((i, "cur_avail_exit", cur_avail_exit_assert, 1.0))
                 need_abort = True
 
-            out_avail_exit_assert = (out_avail + 1e-10) / (exit_need_second + 1e-12)
+            out_avail_exit_assert = (out_avail / (exit_need_second + 1e-8))[exit_need_second > 0]
             if not (out_avail_exit_assert > 1.0).all():
                 print("out_avail exit assert:", out_avail_exit_assert)
                 assert not fatal
@@ -409,7 +424,7 @@ def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
             decel_start = cur_target - exit_need_first
             print("decel_start:", decel_start)
 
-            plato_t = ir(1000 * (norm(cur_d) / (norm(plato_v) + 1e-12) - enter_t_second[0] - exit_t_first[0]))
+            plato_t = ir(1000 * (norm(cur_d) / (norm(plato_v) + 1e-6) - enter_t_second[0] - exit_t_first[0]))
             accel_t = ir(1000 * (enter_t_first[0] + enter_t_second[0]))
             decel_t = ir(1000 * (exit_t_first[0] + exit_t_second[0]))
 
@@ -442,6 +457,20 @@ def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
             assert (solution_x)
             print("sol_x:", solution_x)
             print("sol_y:", solution_y)
+
+            if i > 0 and i < len(path) - 1:
+                accel_middle = array([solution_x["accel_middle_x"], solution_y["accel_middle_x"]]) / 80 + accel_start
+                middle_delta = norm(accel_middle - in_target)
+
+                if middle_delta > 1.0:
+                    print("middle_delta too big", middle_delta)
+                    assert not fatal
+                    if norm(in_v) > norm(plato_v):
+                        plan_errors.append((i, "middle_delta_in", [1.0 / middle_delta], 1.0))
+                    else:
+                        plan_errors.append((i, "middle_delta_cur", [1.0 / middle_delta], 1.0))
+                    need_abort = True
+
             if prev_t > 0:
                 pr_opt += [
                     [int(round(prev_t * 1000)), [
@@ -475,6 +504,7 @@ def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
 
             print()
             in_v = plato_v
+            in_v[abs(in_v) < 0.1] = 0
             in_target = cur_target
             in_x = accel_start + array([solution_x["accel_x"], solution_y["accel_x"]]) / 80
             in_avail = in_target - in_x
@@ -482,11 +512,7 @@ def plan_path(start, path, apgs=None, fatal=True, plan_errors=None):
                 print("Failed to plan full path")
                 break
         except:
-            print("Failed to plan full path")
-            plan_errors.append((i, "unknown", None, None))
-            if fatal:
-                raise
-            break
+            raise
 
     return pr_opt
 
