@@ -615,7 +615,6 @@ class PathPlanner:
         EPS = 1e-3
         plan = []
         plan_errors = []
-        plan_notes = {i: {} for i in range(len(self.path))}
         if slowdowns is None:
             slowdowns = [ 1.0 ] * (len(self.path) - 1)
 
@@ -625,12 +624,32 @@ class PathPlanner:
         in_avail = array([0.0, 0.0])  # length left in previous segment after end of accel
         need_abort = False
 
-        path = self.path[1:]
+        start_x = in_x * 1.0
+        path = []
+        log_ids = []
+        for i, seg in enumerate(self.path[1:]):
+            end_x = array([seg.x, seg.y])
+            splits = slowdowns[i]
+            if not type(splits) == list:
+                splits = [[splits, 1.0]]
+
+            total = 0.0
+            for _, split in splits:
+                total += split
+
+            vec_x = (end_x - start_x) / total
+            for j, (k, split) in enumerate(splits):
+                seg_x = start_x + vec_x * split
+                path.append(PathSegment(seg_x[0], seg_x[1], seg.speed * k))
+                log_ids.append((i, j))
+                start_x = seg_x
+
+        plan_notes = {i: {} for i in range(len(path))}
 
         for i, seg in enumerate(path):
             try:
                 cur_target = array([seg.x * 1.0, seg.y * 1.0])
-                target_v = seg.speed * slowdowns[i]
+                target_v = seg.speed
 
                 cur_d = cur_target - in_target  # this segment theoretical target vector
 
@@ -639,7 +658,7 @@ class PathPlanner:
                     out_avail = array([0.0, 0.0])  # available length in next segment for next speed accel
                 else:
                     next_x, next_y, next_v = path[i + 1]
-                    next_v = next_v * slowdowns[i+1]
+                    next_v = next_v
                     next_target = array([next_x * 1.0, next_y * 1.0])
                     next_d = next_target - cur_target
                     out_v = next_v * next_d / norm(next_d)
@@ -810,10 +829,20 @@ class PathPlanner:
                     else:
                         plan_notes[i]["middle_delta"] = (middle_delta, self.limits.max_middle_delta)
 
-                if prev_t > 0:
-                    plan += [[prev_t, accel_start[0], accel_start[1], in_v[0], in_v[1], "plato_{}".format(i-1)]]
+                a, b = log_ids[i - 1]
+                prev_log_id = "{}".format(a)
+                if b != 0:
+                    prev_log_id += "_{}".format(b)
 
-                plan += [[accel_t, accel_end[0], accel_end[1], plato_v[0], plato_v[1], "accel_{}".format(i)]]
+                a, b = log_ids[i]
+                cur_log_id = "{}".format(a)
+                if b != 0:
+                    cur_log_id += "_{}".format(b)
+
+                if prev_t > 0:
+                    plan += [[prev_t, accel_start[0], accel_start[1], in_v[0], in_v[1], "plato_{}".format(prev_log_id)]]
+
+                plan += [[accel_t, accel_end[0], accel_end[1], plato_v[0], plato_v[1], "accel_{}".format(cur_log_id)]]
 
                 if i == len(path) - 1:
                     plan += [[5, accel_end[0], accel_end[1], 0.0, 0.0, "final"]]
@@ -832,6 +861,7 @@ class PathPlanner:
                     "plato_v": plato_v,
                     "plato_start": in_x,
                     "plato_end": decel_start,
+                    "log_id": log_ids[i]
                 }
 
                 if need_abort:
@@ -857,9 +887,95 @@ class PathPlanner:
 
             if k > 1.0:
                 slowdowns = slowdowns / k / 1.05
-                print(slowdowns)
             else:
                 raise RuntimeError()
 
+
+    def plan_speedup(self, initial_slowdowns, initial_notes):
+        slowdowns = list(initial_slowdowns)
+        notes = initial_notes
+        for i, note in notes.items():
+            details = note.get("path_details", None)
+            if not details:
+                continue
+
+            orig_i, j = details["log_id"]
+
+            if type(slowdowns[orig_i]) is list: # not yet split
+                continue
+
+            cur_segment = self.path[orig_i + 1]
+            prev_segment = self.path[orig_i]
+            segment_length = norm(array([prev_segment.x - cur_segment.x, prev_segment.y - cur_segment.y]))
+
+            plato_len = norm(details["plato_end"] - details["plato_start"])
+            current_plato_v = details["plato_v"]
+            print("current_plato_v", current_plato_v)
+            current_k = slowdowns[orig_i]
+            target_plato_v = current_plato_v / current_k
+            print("target_plato_v", target_plato_v)
+            plato_delta_v = target_plato_v - current_plato_v
+            print("plato_delta_v", plato_delta_v)
+            print("plato_speedup_tv", plato_delta_v / array([self.limits.max_x_a, self.limits.max_y_a]))
+            plato_speedup_t = max(plato_delta_v / array([self.limits.max_x_a, self.limits.max_y_a]))
+            print("plato_speedup_t", plato_speedup_t)
+            plato_min_len = norm(plato_speedup_t * (current_plato_v + target_plato_v)) # / 2 * 2
+            print("plato_min_len", plato_min_len)
+
+            if plato_len < 3: # 3mm of plato
+                continue
+
+            if plato_len < plato_min_len * 3: # at least 2/3 of plato will be constant speed
+                continue
+
+            sd = slowdowns[orig_i]
+            try_slowdowns = slowdowns[:]
+            try_slowdown = [
+                [sd, segment_length/4],
+                [1.0, segment_length/2],
+                [sd, segment_length/4]
+            ]
+            try_slowdowns[orig_i] = try_slowdown
+            try_plan, try_errors, try_notes = self.plan_path_in_floats(try_slowdowns)
+            if try_errors:
+                print("errors", try_errors)
+                continue
+
+            new_notes = {0: None, 1: None, 2: None}
+            for k, n in try_notes.items():
+                n_details = n.get("path_details", None)
+                n_orig_i, n_j = n_details["log_id"]
+                if n_orig_i == orig_i:
+                    new_notes[n_j] = n_details
+
+            accel_notes = new_notes[0]
+            accel_plato_len = norm(accel_notes["plato_end"] - accel_notes["plato_start"])
+            new_accel_len = (try_slowdown[0][1] - accel_plato_len) * 1.5
+            plato_notes = new_notes[1]
+            decel_notes = new_notes[2]
+            decel_plato_len = norm(decel_notes["plato_end"] - decel_notes["plato_start"])
+            new_decel_len = (try_slowdown[2][1] - decel_plato_len) * 1.5
+
+            try_slowdown = [
+                [sd, new_accel_len],
+                [1.0, segment_length - new_accel_len - new_decel_len],
+                [sd, new_decel_len]
+            ]
+            try_slowdowns[orig_i] = try_slowdown
+            try_plan, try_errors, try_notes = self.plan_path_in_floats(try_slowdowns)
+            if try_errors:
+                print("errors", try_errors)
+                continue
+
+            print("final_notes", try_notes)
+            print("plan", try_plan)
+            slowdowns[orig_i] = try_slowdown
+            notes = try_notes
+
+        return slowdowns
+
+
+    def plan(self):
+        plan, slowdowns, notes = self.plan_with_slow_down()
 
 
