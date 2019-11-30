@@ -1,18 +1,18 @@
 import math
 from collections import namedtuple
 from math import sqrt
+
+import numpy
 from numpy import array, absolute, isnan
 from numpy.linalg import norm
 import pandas as pd
 from scipy.optimize import minimize
 
 
-from valurap import printer, commands
-from .asg import Asg, ProfileSegment
-
 import logging
+
 logger = logging.getLogger(__name__)
-#logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class ApgState(object):
@@ -54,8 +54,9 @@ class ApgState(object):
                 next_j = 0
                 next_a = 0
                 next_v = self.target_v
-            elif ((self.v < self.target_v and next_v > self.target_v) or
-                  (self.v > self.target_v and next_v < self.target_v)):
+            elif (self.v < self.target_v and next_v > self.target_v) or (
+                self.v > self.target_v and next_v < self.target_v
+            ):
                 next_jj = 0
                 next_j = 0
                 next_v = self.target_v
@@ -93,13 +94,17 @@ def emulate(profile, verbose=0, apg_states=None):
             prefix = seg.apg.name + "_"
 
             if verbose == 1:
-                print("    {:6d} {:10.3f} {:10.1f} {:10.1f}".format(ts_start, state.x / 2.0 ** 32, state.v, state.a))
+                print(
+                    "    {:6d} {:10.3f} {:10.1f} {:10.1f}".format(
+                        ts_start, state.x / 2.0 ** 32, state.v, state.a
+                    )
+                )
                 print("                 ...")
 
             last_v = None
             first_v = 0
             for i in range(dt):
-                step_data = steps.setdefault(ts_start + i, {'ts': ts_start + i})
+                step_data = steps.setdefault(ts_start + i, {"ts": ts_start + i})
                 step_data[prefix + "jj"] = state.jj
                 step_data[prefix + "j"] = state.j
                 step_data[prefix + "a"] = state.a
@@ -111,17 +116,25 @@ def emulate(profile, verbose=0, apg_states=None):
                         if first_v > 0:
                             if first_v > 1:
                                 print("        ... {} ...".format(first_v - 1))
-                            print("    {:6d} {:10.3f} {:10.1f} {:10.1f}".format(ts_start + i - 1, prev_x / 2.0 ** 32,
-                                                                                prev_v, prev_a))
-                        print("    {:6d} {:10.3f} {:10.1f} {:10.1f}".format(ts_start + i, state.x / 2.0 ** 32, state.v,
-                                                                            state.a))
+                            print(
+                                "    {:6d} {:10.3f} {:10.1f} {:10.1f}".format(
+                                    ts_start + i - 1, prev_x / 2.0 ** 32, prev_v, prev_a
+                                )
+                            )
+                        print(
+                            "    {:6d} {:10.3f} {:10.1f} {:10.1f}".format(
+                                ts_start + i, state.x / 2.0 ** 32, state.v, state.a
+                            )
+                        )
                     last_v = state.v
                     first_v = 0
                 else:
                     if verbose == 1 and first_v == 0:
                         print(
-                            "    {:6d} {:10.3f} {:10.1f} {:10.1f}".format(ts_start + i - 1, prev_x / 2.0 ** 32, prev_v,
-                                                                          prev_a))
+                            "    {:6d} {:10.3f} {:10.1f} {:10.1f}".format(
+                                ts_start + i - 1, prev_x / 2.0 ** 32, prev_v, prev_a
+                            )
+                        )
 
                     first_v += 1
 
@@ -134,14 +147,20 @@ def emulate(profile, verbose=0, apg_states=None):
                 if first_v != 0:
                     if first_v > 1:
                         print("           ... {} ...".format(first_v - 1))
-                    print("    {:6d} {:10.3f} {:10.1f} {:10.1f}".format(ts_start + i, state.x / 2.0 ** 32, state.v,
-                                                                        state.a))
+                    print(
+                        "    {:6d} {:10.3f} {:10.1f} {:10.1f}".format(
+                            ts_start + i, state.x / 2.0 ** 32, state.v, state.a
+                        )
+                    )
             elif verbose == 1:
                 if first_v > 1:
                     print("                 ...")
 
                 print(
-                    "    {:6d} {:10.3f} {:10.1f} {:10.1f}".format(ts_start + i, state.x / 2.0 ** 32, state.v, state.a))
+                    "    {:6d} {:10.3f} {:10.1f} {:10.1f}".format(
+                        ts_start + i, state.x / 2.0 ** 32, state.v, state.a
+                    )
+                )
 
     steps = [a[1] for a in sorted(steps.items())]
     steps = pd.DataFrame(steps)
@@ -154,7 +173,11 @@ def ir(x):
 
 def int_x(t, v, a, j, jj):
     return ir(
-        v * t + a * t * (t - 1) / 2 + j * t * (t - 1) * (t - 2) / 6 + jj * t * (t - 1) * (t - 2) * (t - 3) / 24)
+        v * t
+        + a * t * (t - 1) / 2
+        + j * t * (t - 1) * (t - 2) / 6
+        + jj * t * (t - 1) * (t - 2) * (t - 3) / 24
+    )
 
 
 def int_v(t, v, a, j, jj):
@@ -162,7 +185,7 @@ def int_v(t, v, a, j, jj):
 
 
 def int_a(t, v, a, j, jj):
-    return ir(a  + j * t  + jj * t * (t - 1) / 2)
+    return ir(a + j * t + jj * t * (t - 1) / 2)
 
 
 vtoa_k = 65536
@@ -170,7 +193,7 @@ xtov_k = 2 ** 32 / 50000
 xtoa_k = vtoa_k * xtov_k
 
 
-def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t, errors = None):
+def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t, errors=None):
 
     if in_v == target_v or accel_t == 0:
         return {
@@ -186,15 +209,14 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t, errors = None
     accel_j = accel_a / accel_t * 2 * 2
     accel_jj = -accel_j / accel_t * 2
 
-    #print("accel_a:", accel_a)
-    #print("accel_j:", accel_j)
-    #print("accel_jj:", accel_jj)
+    # print("accel_a:", accel_a)
+    # print("accel_j:", accel_j)
+    # print("accel_jj:", accel_jj)
 
     int_accel_jj = ir(accel_jj)
     int_accel_j = ir(-int_accel_jj * accel_t / 2)
-    #print("int_accel_j:", int_accel_j)
-    #print("int_accel_jj:", int_accel_jj)
-
+    # print("int_accel_j:", int_accel_j)
+    # print("int_accel_jj:", int_accel_jj)
 
     k_e_a = 1e-8
     k_e_delta_v = 1e-6
@@ -222,7 +244,7 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t, errors = None
         return e_a, e_delta_v, e_jerk, e_target
 
     def get_errors_2(x):
-        e_a, e_delta_v, e_jerk, e_target = get_errors(x[0]*k_dj, x[1]*k_djj)
+        e_a, e_delta_v, e_jerk, e_target = get_errors(x[0] * k_dj, x[1] * k_djj)
         return sqrt(
             (e_a * k_e_a) ** 2
             + (e_delta_v * k_e_delta_v) ** 2
@@ -240,7 +262,7 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t, errors = None
 
     int_accel_x = int_x(accel_t, in_v * vtoa_k, 0, int_accel_j, int_accel_jj)
     int_accel_v = int_v(accel_t, in_v * vtoa_k, 0, int_accel_j, int_accel_jj)
-    int_accel_middle_x = int_x(int(accel_t/2), in_v * vtoa_k, 0, int_accel_j, int_accel_jj)
+    int_accel_middle_x = int_x(int(accel_t / 2), in_v * vtoa_k, 0, int_accel_j, int_accel_jj)
 
     plato_x = target_x * xtoa_k - int_accel_x
     plato_v = plato_x / plato_t
@@ -258,312 +280,15 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t, errors = None
     }
 
 
-
-class FakeApg():
+class FakeApg:
     def __init__(self, name):
         self.name = name
 
 
-def plan_path(start, path, apgs=None, fatal=True, plan_errors=None, plan_notes=None, max_middle_delta = 0.2):
-    if apgs is None:
-        apgs = {}
-
-    if plan_errors is None:
-        plan_errors = []
-
-    if plan_notes is None:
-        plan_notes = {}
-
-    for i in range(len(path)):
-        plan_notes.setdefault(i, {})
-
-    apg_x = apgs.get("X", FakeApg("X"))
-    apg_y = apgs.get("Y", FakeApg("Y"))
-    apg_z = apgs.get("Z", FakeApg("Z"))
-
-    max_a = array([3000.0, 2000.0])
-
-    pr_opt = []
-
-    in_x = array(start)         # end of accel position for previous segment
-    in_target = array(start)    # target position of previous segment
-    in_v = array([0, 0])        # plato speed of previous segment
-    in_avail = array([0, 0])    # length left in previous segment after end of accel
-    need_abort = False
-
-    for i, seg in enumerate(path):
-        try:
-            target_x, target_y, target_v = seg # this segment target and speed
-
-            cur_target = array([target_x, target_y])
-
-            in_v[abs(in_v) < 0.1] = 0
-
-            small_diff = abs(in_target - in_x) < 0.1
-            in_target[small_diff] = in_x[small_diff]
-
-            small_diff = abs(cur_target - in_target) < 0.1
-            cur_target[small_diff] = in_target[small_diff]
-
-            cur_d = cur_target - in_target # this segment theoretical target vector
-
-            if i == len(path) - 1:
-                assert (norm(cur_d) < 1e-3)
-                assert (target_v < 1e-3)
-                out_v = array([0, 0])       # next segment target speed
-                out_avail = array([0, 0])   # available length in next segment for next speed accel
-            elif i == len(path) - 2:
-                assert (norm(cur_d) > 0)
-                assert (target_v > 0)
-                out_v = array([0, 0])       # next segment target speed
-                out_avail = array([0, 0])   # available length in next segment for next speed accel
-            else:
-                assert (norm(cur_d) > 0)
-                assert (target_v > 0)
-                next_x, next_y, next_v = path[i + 1]
-                next_target = array([next_x, next_y])
-                next_d = next_target - cur_target
-                next_d[abs(next_d) < 0.1] = 0
-                assert (norm(next_d) > 0)
-
-                out_v = next_v * next_d / norm(next_d)
-                out_avail = next_d / 2
-
-            cur_avail = cur_d + 0                       # full length is available for now
-            plato_v = target_v * cur_d / (norm(cur_d) + 1e-6)    # target plato speed
-
-            print("x: in {} in_target {} cur_target {}".format(in_x, in_target, cur_target))
-            print("speeds: prev {} current {} next {}".format(in_v, plato_v, out_v))
-            print("avails: prev {} current {} next {}".format(in_avail, cur_avail, out_avail))
-
-            # Enter
-            enter_delta_v = plato_v - in_v
-            print("enter_delta_v:", enter_delta_v)
-
-            enter_time = max(list(absolute(enter_delta_v) / max_a))
-            print("enter_time:", enter_time)
-
-            enter_a = enter_delta_v / enter_time
-            print("enter_a:", enter_a)
-
-            enter_delta_x = in_v * enter_time + enter_a * enter_time ** 2 / 2 # total required length of enter
-            print("enter_delta_x:", enter_delta_x)
-
-            enter_t_first = (enter_time * plato_v - enter_delta_x) / (enter_delta_v + 1e-6)
-            enter_t_second = enter_time - enter_t_first
-            print("enter_t_first:", enter_t_first)
-            print("enter_t_second:", enter_t_second)
-            assert ((enter_t_first >= 0).all())
-            assert ((enter_t_second >= 0).all())
-
-            enter_need_first = in_v * enter_t_first         # length required from prev and curremt segments
-            enter_need_second = plato_v * enter_t_second
-            print("enter_need_first:", enter_need_first)
-            print("enter_need_second:", enter_need_second)
-
-            in_avail_enter_assert = (in_avail / (enter_need_first + 1e-6))[enter_need_first > 0]
-            if not (in_avail_enter_assert > 1.0).all():
-                print("in_avail enter assert:", in_avail_enter_assert)
-                assert not fatal
-                plan_errors.append((i, "in_avail_enter", in_avail_enter_assert, 1.0))
-                need_abort = True
-            else:
-                plan_notes[i]["in_avail_enter"] = (in_avail_enter_assert, 1.0)
-
-            cur_avail_enter_assert = (cur_avail / (enter_need_second + 1e-6))[enter_need_second>0]
-            if not (cur_avail_enter_assert > 2.0).all():
-                print("cur_avail enter assert:", cur_avail_enter_assert)
-                assert not fatal
-                plan_errors.append((i, "cur_avail_enter", cur_avail_enter_assert, 2.0))
-                need_abort = True
-            else:
-                plan_notes[i]["cur_avail_enter"] = (cur_avail_enter_assert, 2.0)
-
-            cur_avail = cur_avail - enter_need_second # adjust avail length
-
-            # Exit
-            exit_delta_v = out_v - plato_v
-            exit_delta_v[abs(exit_delta_v) <  1e-3] = 0
-            print("exit_delta_v:", exit_delta_v)
-
-            exit_time = max(list(absolute(exit_delta_v) / max_a))
-            print("exit_time:", exit_time)
-
-            exit_a = exit_delta_v / (exit_time + 1e-6)
-            print("exit_a:", exit_a)
-
-            exit_delta_x = plato_v * exit_time + exit_a * exit_time ** 2 / 2
-            print("exit_delta_x:", exit_delta_x)
-
-            exit_t_first = (exit_time * out_v - exit_delta_x) / (exit_delta_v + 1e-6)
-            exit_t_first[abs(exit_a) < 1e-3 ] = 0
-            exit_t_first[exit_time < 1e-6] = 0
-
-            exit_t_second = exit_time - exit_t_first
-            exit_t_second[abs(exit_a) < 1e-3 ] = 0
-            exit_t_second[exit_time < 1e-6] = 0
-
-            print("exit_t_first:", exit_t_first)
-            print("exit_t_second:", exit_t_second)
-            assert ((exit_t_first >= 0).all())
-            assert ((exit_t_second >= 0).all())
-
-            exit_need_first = plato_v * exit_t_first
-            exit_need_second = out_v * exit_t_second
-            print("exit_need_first:", exit_need_first)
-            print("exit_need_second:", exit_need_second)
-
-            cur_avail_exit_assert = (cur_avail / (exit_need_first + 1e-8))[exit_need_first > 0]
-            if not (cur_avail_exit_assert > 1.0).all():
-                print("cur_avail exit assert:", cur_avail_exit_assert)
-                assert not fatal
-                plan_errors.append((i, "cur_avail_exit", cur_avail_exit_assert, 1.0))
-                need_abort = True
-            else:
-                plan_notes[i]["cur_avail_exit"] = (cur_avail_exit_assert, 1.0)
-
-            out_avail_exit_assert = (out_avail / (exit_need_second + 1e-8))[exit_need_second > 0]
-            if not (out_avail_exit_assert > 1.0).all():
-                print("out_avail exit assert:", out_avail_exit_assert)
-                assert not fatal
-                plan_errors.append((i, "out_avail_exit", out_avail_exit_assert, 1.0))
-                need_abort = True
-            else:
-                plan_notes[i]["out_avail_exit"] = (out_avail_exit_assert, 1.0)
-
-            if norm(in_v) > 0:
-                # remaining path from first step from end of last accel to start of new accel
-                # performing with constant speed
-                #  remaining path
-                prev_plato = in_target - in_x
-                prev_plato -= enter_need_first
-                #  required time in ms
-                prev_t = norm(prev_plato) / norm(in_v)
-
-                # new accel start point
-                accel_start = in_x + in_v * prev_t
-            else:
-                assert(norm(enter_need_first) < 1e-6)
-                prev_t = 0
-                accel_start = in_x
-
-            # new decel finish_point
-            print("cur_target:", cur_target)
-            decel_end = cur_target + exit_need_second
-            print("decel_end:", decel_end)
-
-            decel_start = cur_target - exit_need_first
-            print("decel_start:", decel_start)
-
-            plato_t = ir(1000 * (norm(cur_d) / (norm(plato_v) + 1e-6) - enter_t_second[0] - exit_t_first[0]))
-            accel_t = ir(1000 * (enter_t_first[0] + enter_t_second[0]))
-            decel_t = ir(1000 * (exit_t_first[0] + exit_t_second[0]))
-
-            print("accel_start:", accel_start)
-            target_x = decel_start - accel_start
-            print("target_x:", target_x)
-
-            args_x = dict(
-                in_v=ir(in_v[0] * 80 * xtov_k / 1000),
-                target_v=ir(plato_v[0] * 80 * xtov_k / 1000),
-                target_x=ir(target_x[0] * 80),
-                accel_t=accel_t,
-                plato_t=plato_t,
-            )
-            print("args_x:", args_x)
-            solution_x = solve_model_simple(**args_x)
-            assert (solution_x)
-            print("cur_target:", cur_target)
-
-            args_y = dict(
-                in_v=ir(in_v[1] * 80 * xtov_k / 1000),
-                target_v=ir(plato_v[1] * 80 * xtov_k / 1000),
-                target_x=ir(target_x[1] * 80),
-                accel_t=accel_t,
-                plato_t=plato_t,
-            )
-
-            print("args_y:", args_y)
-            solution_y = solve_model_simple(**args_y)
-            assert (solution_x)
-            print("sol_x:", solution_x)
-            print("sol_y:", solution_y)
-
-            if (
-                    norm(in_v) > 0
-                    and norm(plato_v) > 0
-                    and norm(in_v) + norm(plato_v) - norm(in_v + plato_v) > 1
-            ):
-
-                print("non straigh factor:", norm(in_v) + norm(plato_v) - norm(in_v + plato_v))
-                accel_middle = array([solution_x["accel_middle_x"], solution_y["accel_middle_x"]]) / 80 + accel_start
-                middle_delta = norm(accel_middle - in_target)
-
-                if middle_delta > max_middle_delta:
-                    print("middle_delta too big", middle_delta)
-                    assert not fatal
-                    plan_errors.append((i, "middle_delta", [max_middle_delta / middle_delta], 1.0))
-                    need_abort = True
-                else:
-                    plan_notes[i]["middle_delta"] = (middle_delta, max_middle_delta)
-
-            if prev_t > 0:
-                pr_opt += [
-                    [int(round(prev_t * 1000)), [
-                        ProfileSegment(apg=apg_x, v=ir(in_v[0] * 80 * xtov_k /1000)),
-                        ProfileSegment(apg=apg_y, v=ir(in_v[1] * 80 * xtov_k /1000)),
-                        ProfileSegment(apg=apg_z, v=-400000),
-                    ]]
-                ]
-
-            pr_opt += [
-                [accel_t, [
-                    ProfileSegment(apg=apg_x, j=solution_x["accel_j"], jj=solution_x["accel_jj"]),
-                    ProfileSegment(apg=apg_y, j=solution_y["accel_j"], jj=solution_y["accel_jj"]),
-                    ProfileSegment(apg=apg_z, v=-400000),
-                ]]
-            ]
-
-            if i == len(path) - 1:
-                pr_opt += [
-                    [5, [
-                        ProfileSegment(apg=apg_x, v=0),
-                        ProfileSegment(apg=apg_y, v=0),
-                        ProfileSegment(apg=apg_z, v=0),
-
-                    ]]
-
-                ]
-
-            print("i:", i)
-            plato_v = array([solution_x["plato_v"], solution_y["plato_v"]]) / (80.0 * xtov_k / 1000)
-
-            print()
-            in_v = plato_v
-            in_target = cur_target
-            in_x = accel_start + array([solution_x["accel_x"], solution_y["accel_x"]]) / 80
-            in_avail = in_target - in_x
-
-            plan_notes[i]["path_details"] = {
-                "accel_t": accel_t,
-                "decel_t": decel_t,
-                "plato_t": plato_t,
-                "plato_v": plato_v,
-                "plato_start": in_x,
-                "plato_end": decel_start,
-            }
-
-            if need_abort:
-                print("Failed to plan full path")
-                break
-        except:
-            raise
-
-    return pr_opt
-
-
 PathSegment = namedtuple("PathSegment", "x y speed")
-PathLimits = namedtuple("PathLimits", "max_x_v max_y_v max_x_a max_y_a max_x_j max_y_j max_middle_delta")
+PathLimits = namedtuple(
+    "PathLimits", "max_x_v max_y_v max_x_a max_y_a max_x_j max_y_j max_middle_delta"
+)
 
 
 class PathPlanner:
@@ -604,10 +329,9 @@ class PathPlanner:
                 logger.warning("active segments speeds must be > 0")
                 return False
 
-            if abs(path[i].x - path[i-1].x) + abs(path[i].y - path[i-1].y)== 0:
+            if abs(path[i].x - path[i - 1].x) + abs(path[i].y - path[i - 1].y) == 0:
                 logger.warning("active segments length must be > 0")
                 return False
-
 
     def plan_path_in_floats(self, slowdowns=None):
         max_a = array([self.limits.max_x_a, self.limits.max_y_a])
@@ -616,12 +340,13 @@ class PathPlanner:
         plan = []
         plan_errors = []
         if slowdowns is None:
-            slowdowns = [ 1.0 ] * (len(self.path) - 1)
+            slowdowns = [1.0] * (len(self.path) - 1)
 
-        in_x = array([self.path[0].x * 1.0, self.path[0].y * 1.0])  # end of accel position for previous segment
+        in_x = array(
+            [self.path[0].x * 1.0, self.path[0].y * 1.0]
+        )  # end of accel position for previous segment
         in_target = array(in_x)  # target position of previous segment
         in_v = array([0.0, 0.0])  # plato speed of previous segment
-        in_avail = array([0.0, 0.0])  # length left in previous segment after end of accel
         need_abort = False
 
         start_x = in_x * 1.0
@@ -655,14 +380,12 @@ class PathPlanner:
 
                 if i >= len(path) - 2:
                     out_v = array([0.0, 0.0])  # next segment target speed
-                    out_avail = array([0.0, 0.0])  # available length in next segment for next speed accel
                 else:
                     next_x, next_y, next_v = path[i + 1]
                     next_v = next_v
                     next_target = array([next_x * 1.0, next_y * 1.0])
                     next_d = next_target - cur_target
                     out_v = next_v * next_d / norm(next_d)
-                    out_avail = next_d / 2
 
                 cur_avail = cur_d + 0.0  # full length is available for now
 
@@ -670,9 +393,11 @@ class PathPlanner:
                 cd_filter = abs(cur_d) > EPS
                 plato_v[cd_filter] = target_v * cur_d[cd_filter] / norm(cur_d)  # target plato speed
 
-                logger.debug("x: in {} in_target {} cur_target {}".format(in_x, in_target, cur_target))
+                logger.debug(
+                    "x: in {} in_target {} cur_target {}".format(in_x, in_target, cur_target)
+                )
                 logger.debug("speeds: prev {} current {} next {}".format(in_v, plato_v, out_v))
-                logger.debug("avails: prev {} current {} next {}".format(in_avail, cur_avail, out_avail))
+                logger.debug("avails: current {}".format(cur_avail))
 
                 # Enter
                 enter_delta_v = plato_v - in_v
@@ -689,13 +414,17 @@ class PathPlanner:
 
                 logger.debug("enter_a: %s", enter_a)
 
-                enter_delta_x = in_v * enter_time + enter_a * enter_time ** 2 / 2  # total required length of enter
+                enter_delta_x = (
+                    in_v * enter_time + enter_a * enter_time ** 2 / 2
+                )  # total required length of enter
                 logger.debug("enter_delta_x: %s", enter_delta_x)
 
                 edv_filter = abs(enter_delta_v) > EPS
 
                 enter_t_first = plato_v * 0.0
-                enter_t_first[edv_filter] = (enter_time * plato_v[edv_filter] - enter_delta_x[edv_filter]) / enter_delta_v[edv_filter]
+                enter_t_first[edv_filter] = (
+                    enter_time * plato_v[edv_filter] - enter_delta_x[edv_filter]
+                ) / enter_delta_v[edv_filter]
                 enter_t_first[enter_t_first <= EPS] = 0.0
 
                 enter_t_second = enter_time - enter_t_first
@@ -703,29 +432,15 @@ class PathPlanner:
 
                 logger.debug("enter_t_first: %s", enter_t_first)
                 logger.debug("enter_t_second: %s", enter_t_second)
-                assert ((enter_t_first >= 0).all())
-                assert ((enter_t_second >= 0).all())
+                assert (enter_t_first >= 0).all()
+                assert (enter_t_second >= 0).all()
 
-                enter_need_first = in_v * enter_t_first  # length required from prev and curremt segments
+                enter_need_first = (
+                    in_v * enter_t_first
+                )  # length required from prev and curremt segments
                 enter_need_second = plato_v * enter_t_second
                 logger.debug("enter_need_first: %s", enter_need_first)
                 logger.debug("enter_need_second: %s", enter_need_second)
-
-                enf_filter = abs(enter_need_first) > EPS
-                in_avail_enter_assert = in_avail[enf_filter] / enter_need_first[enf_filter]
-                if not (in_avail_enter_assert > 1.0).all():
-                    plan_errors.append((i, "in_avail_enter", in_avail_enter_assert, 1.0))
-                    need_abort = True
-                else:
-                    plan_notes[i]["in_avail_enter"] = (in_avail_enter_assert, 1.0)
-
-                ens_filter = abs(enter_need_second) > 0
-                cur_avail_enter_assert = cur_avail[ens_filter] / enter_need_second[ens_filter]
-                if not (cur_avail_enter_assert > 2.0).all():
-                    plan_errors.append((i, "cur_avail_enter", cur_avail_enter_assert, 2.0))
-                    need_abort = True
-                else:
-                    plan_notes[i]["cur_avail_enter"] = (cur_avail_enter_assert, 2.0)
 
                 cur_avail = cur_avail - enter_need_second  # adjust avail length
 
@@ -749,7 +464,9 @@ class PathPlanner:
 
                 exit_t_first = exit_delta_v * 0.0
                 edv_filter = abs(exit_delta_v) > EPS
-                exit_t_first[edv_filter] = (exit_time * out_v[edv_filter] - exit_delta_x[edv_filter]) / exit_delta_v[edv_filter]
+                exit_t_first[edv_filter] = (
+                    exit_time * out_v[edv_filter] - exit_delta_x[edv_filter]
+                ) / exit_delta_v[edv_filter]
                 exit_t_first[exit_t_first < EPS] = 0.0
 
                 exit_t_second = exit_time - exit_t_first
@@ -757,29 +474,25 @@ class PathPlanner:
 
                 logger.debug("exit_t_first: %s", exit_t_first)
                 logger.debug("exit_t_second: %s", exit_t_second)
-                assert ((exit_t_first >= 0).all())
-                assert ((exit_t_second >= 0).all())
+                assert (exit_t_first >= 0).all()
+                assert (exit_t_second >= 0).all()
 
                 exit_need_first = plato_v * exit_t_first
                 exit_need_second = out_v * exit_t_second
                 logger.debug("exit_need_first: %s", exit_need_first)
                 logger.debug("exit_need_second: %s", exit_need_second)
 
-                enf_filter = abs(exit_need_first) > EPS
-                cur_avail_exit_assert = cur_avail[enf_filter] / exit_need_first[enf_filter]
-                if not (cur_avail_exit_assert > 1.0).all():
-                    plan_errors.append((i, "cur_avail_exit", cur_avail_exit_assert, 1.0))
-                    need_abort = True
-                else:
-                    plan_notes[i]["cur_avail_exit"] = (cur_avail_exit_assert, 1.0)
+                cur_d_filter = abs(cur_d) > EPS
+                cur_avail = cur_avail - exit_need_first  # adjust avail length
+                cur_avail_assert = numpy.sqrt(
+                    (cur_avail + cur_d)[cur_d_filter] / cur_d[cur_d_filter]
+                )
 
-                ens_filter = abs(exit_need_second) > EPS
-                out_avail_exit_assert = out_avail[ens_filter] / exit_need_second[ens_filter]
-                if not (out_avail_exit_assert > 1.0).all():
-                    plan_errors.append((i, "out_avail_exit", out_avail_exit_assert, 1.0))
+                if not (cur_avail_assert > 1.0).all():
+                    plan_errors.append((i, "cur_avail", cur_avail_assert, 1.0))
                     need_abort = True
                 else:
-                    plan_notes[i]["out_avail_exit"] = (out_avail_exit_assert, 1.0)
+                    plan_notes[i]["cur_avail"] = (cur_avail_assert, 1.0)
 
                 if norm(in_v) > EPS:
                     # remaining path from first step from end of last accel to start of new accel
@@ -792,7 +505,7 @@ class PathPlanner:
                     # new accel start point
                     accel_start = in_x + in_v * prev_t
                 else:
-                    assert (norm(enter_need_first) < EPS)
+                    assert norm(enter_need_first) < EPS
                     prev_t = 0
                     accel_start = in_x
 
@@ -814,17 +527,26 @@ class PathPlanner:
                     plato_t = 0
 
                 if (
-                        norm(in_v) > 0
-                        and norm(plato_v) > 0
-                        and norm(in_v) + norm(plato_v) - norm(in_v + plato_v) > 1
+                    norm(in_v) > 0
+                    and norm(plato_v) > 0
+                    and norm(in_v) + norm(plato_v) - norm(in_v + plato_v) > 1
                 ):
 
-                    logger.debug("non straigh factor: %s", norm(in_v) + norm(plato_v) - norm(in_v + plato_v))
+                    logger.debug(
+                        "non straigh factor: %s", norm(in_v) + norm(plato_v) - norm(in_v + plato_v)
+                    )
                     accel_middle = accel_start + (in_v + (plato_v - in_v) / 4) * accel_t / 2
                     middle_delta = norm(accel_middle - in_target)
 
                     if middle_delta > self.limits.max_middle_delta:
-                        plan_errors.append((i, "middle_delta", [sqrt(self.limits.max_middle_delta / middle_delta)], 1.0))
+                        plan_errors.append(
+                            (
+                                i,
+                                "middle_delta",
+                                [sqrt(self.limits.max_middle_delta / middle_delta)],
+                                1.0,
+                            )
+                        )
                         need_abort = True
                     else:
                         plan_notes[i]["middle_delta"] = (middle_delta, self.limits.max_middle_delta)
@@ -840,9 +562,27 @@ class PathPlanner:
                     cur_log_id += "_{}".format(b)
 
                 if prev_t > 0:
-                    plan += [[prev_t, accel_start[0], accel_start[1], in_v[0], in_v[1], "plato_{}".format(prev_log_id)]]
+                    plan += [
+                        [
+                            prev_t,
+                            accel_start[0],
+                            accel_start[1],
+                            in_v[0],
+                            in_v[1],
+                            "plato_{}".format(prev_log_id),
+                        ]
+                    ]
 
-                plan += [[accel_t, accel_end[0], accel_end[1], plato_v[0], plato_v[1], "accel_{}".format(cur_log_id)]]
+                plan += [
+                    [
+                        accel_t,
+                        accel_end[0],
+                        accel_end[1],
+                        plato_v[0],
+                        plato_v[1],
+                        "accel_{}".format(cur_log_id),
+                    ]
+                ]
 
                 if i == len(path) - 1:
                     plan += [[5, accel_end[0], accel_end[1], 0.0, 0.0, "final"]]
@@ -852,7 +592,6 @@ class PathPlanner:
                 in_v = plato_v
                 in_target = cur_target
                 in_x = accel_end
-                in_avail = in_target - in_x
 
                 plan_notes[i]["path_details"] = {
                     "accel_t": accel_t,
@@ -861,7 +600,7 @@ class PathPlanner:
                     "plato_v": plato_v,
                     "plato_start": in_x,
                     "plato_end": decel_start,
-                    "log_id": log_ids[i]
+                    "log_id": log_ids[i],
                 }
 
                 if need_abort:
@@ -872,9 +611,8 @@ class PathPlanner:
 
         return plan, plan_errors, plan_notes
 
-
     def plan_with_slow_down(self):
-        slowdowns = [1.0] * (len(self.path) - 1)
+        slowdowns = numpy.array([1.0] * (len(self.path) - 1))
         while True:
             plan, errors, notes = self.plan_path_in_floats(slowdowns)
             if not errors:
@@ -883,13 +621,12 @@ class PathPlanner:
             k = 1.0
             for e in errors:
                 _, _, v, target_v = e
-                k = max(target_v/min(v), k)
+                k = max(target_v / min(v), k)
 
             if k > 1.0:
                 slowdowns = slowdowns / k / 1.05
             else:
                 raise RuntimeError()
-
 
     def plan_speedup(self, initial_slowdowns, initial_notes):
         slowdowns = list(initial_slowdowns)
@@ -901,44 +638,53 @@ class PathPlanner:
 
             orig_i, j = details["log_id"]
 
-            if type(slowdowns[orig_i]) is list: # not yet split
+            if type(slowdowns[orig_i]) is list:  # not yet split
                 continue
 
             cur_segment = self.path[orig_i + 1]
             prev_segment = self.path[orig_i]
-            segment_length = norm(array([prev_segment.x - cur_segment.x, prev_segment.y - cur_segment.y]))
+            segment_length = norm(
+                array([prev_segment.x - cur_segment.x, prev_segment.y - cur_segment.y])
+            )
 
             plato_len = norm(details["plato_end"] - details["plato_start"])
             current_plato_v = details["plato_v"]
-            print("current_plato_v", current_plato_v)
+            logger.debug("current_plato_v: %s", current_plato_v)
             current_k = slowdowns[orig_i]
             target_plato_v = current_plato_v / current_k
-            print("target_plato_v", target_plato_v)
+            logger.debug("target_plato_v: %s", target_plato_v)
             plato_delta_v = target_plato_v - current_plato_v
-            print("plato_delta_v", plato_delta_v)
-            print("plato_speedup_tv", plato_delta_v / array([self.limits.max_x_a, self.limits.max_y_a]))
+            logger.debug("plato_delta_v: %s", plato_delta_v)
+            logger.debug(
+                "plato_speedup_tv: %s",
+                plato_delta_v / array([self.limits.max_x_a, self.limits.max_y_a]),
+            )
             plato_speedup_t = max(plato_delta_v / array([self.limits.max_x_a, self.limits.max_y_a]))
-            print("plato_speedup_t", plato_speedup_t)
-            plato_min_len = norm(plato_speedup_t * (current_plato_v + target_plato_v)) # / 2 * 2
-            print("plato_min_len", plato_min_len)
+            logger.debug("plato_speedup_t: %s", plato_speedup_t)
+            plato_min_len = norm(plato_speedup_t * (current_plato_v + target_plato_v))  # / 2 * 2
+            logger.debug("plato_min_len: %s", plato_min_len)
 
-            if plato_len < 3: # 3mm of plato
+            if plato_len < 3:  # 3mm of plato
+                logger.info("plato is less than 3mm")
                 continue
 
-            if plato_len < plato_min_len * 3: # at least 2/3 of plato will be constant speed
+            if plato_len < plato_min_len * 2:  # at least half of plato will be constant speed
+                logger.info("plato is too short")
                 continue
 
             sd = slowdowns[orig_i]
             try_slowdowns = slowdowns[:]
             try_slowdown = [
-                [sd, segment_length/4],
-                [1.0, segment_length/2],
-                [sd, segment_length/4]
+                [sd, segment_length / 4],
+                [1.0, segment_length / 2],
+                [sd, segment_length / 4],
             ]
+            # print("try_slowdown", try_slowdown)
             try_slowdowns[orig_i] = try_slowdown
+            # print("try_slowdowns", try_slowdowns)
             try_plan, try_errors, try_notes = self.plan_path_in_floats(try_slowdowns)
             if try_errors:
-                print("errors", try_errors)
+                logger.info("first planning ended with errors: %s", try_errors)
                 continue
 
             new_notes = {0: None, 1: None, 2: None}
@@ -950,32 +696,34 @@ class PathPlanner:
 
             accel_notes = new_notes[0]
             accel_plato_len = norm(accel_notes["plato_end"] - accel_notes["plato_start"])
-            new_accel_len = (try_slowdown[0][1] - accel_plato_len) * 1.5
+            logger.debug("ACCEL old_len: %s plato_len: %s", try_slowdown[0][1], accel_plato_len)
+            new_accel_len = (try_slowdown[0][1] - accel_plato_len) * 1.2
+
             plato_notes = new_notes[1]
             decel_notes = new_notes[2]
             decel_plato_len = norm(decel_notes["plato_end"] - decel_notes["plato_start"])
-            new_decel_len = (try_slowdown[2][1] - decel_plato_len) * 1.5
+            logger.debug("DECEL old_len: %s plato_len: %s", try_slowdown[2][1], decel_plato_len)
+            new_decel_len = (try_slowdown[2][1] - decel_plato_len) * 1.2
 
             try_slowdown = [
                 [sd, new_accel_len],
                 [1.0, segment_length - new_accel_len - new_decel_len],
-                [sd, new_decel_len]
+                [sd, new_decel_len],
             ]
+            # print("try_slowdown", try_slowdown)
             try_slowdowns[orig_i] = try_slowdown
+            # print("try_slowdowns", try_slowdowns)
             try_plan, try_errors, try_notes = self.plan_path_in_floats(try_slowdowns)
             if try_errors:
                 print("errors", try_errors)
                 continue
 
-            print("final_notes", try_notes)
-            print("plan", try_plan)
+            # print("final_notes", try_notes)
+            # print("plan", try_plan)
             slowdowns[orig_i] = try_slowdown
             notes = try_notes
 
         return slowdowns
 
-
     def plan(self):
         plan, slowdowns, notes = self.plan_with_slow_down()
-
-
