@@ -822,25 +822,29 @@ class PathPlanner:
             next_t, next_x, next__y, next_vx, next_vy, _ = p
             assert next_t > 0
             if abs(next_vx - acc_vx) + abs(next_vy - acc_vy) > EPS:
-                int_plan.append(
-                    self.solve_segment(
-                        prev_x,
-                        prev_y,
-                        prev_vx,
-                        prev_vy,
-                        acc_t,
-                        acc_x,
-                        acc_y,
-                        acc_vx,
-                        acc_vy,
-                        plato_t,
-                        plato_x,
-                        plato_y,
-                        plato_vx,
-                        plato_vy,
-                    )
+                sol = self.solve_segment(
+                    prev_x,
+                    prev_y,
+                    prev_vx,
+                    prev_vy,
+                    acc_t,
+                    acc_x,
+                    acc_y,
+                    acc_vx,
+                    acc_vy,
+                    plato_t,
+                    plato_x,
+                    plato_y,
+                    plato_vx,
+                    plato_vy,
                 )
-                prev_x, prev_y, prev_vx, prev_vy = plato_x, plato_y, plato_vx, plato_vy
+                int_plan.append(sol)
+                prev_x, prev_y, prev_vx, prev_vy = (
+                    prev_x + (sol[0]["accel_x"] + sol[0]["plato_x"]) / 80,
+                    prev_y + (sol[1]["accel_x"] + sol[1]["plato_x"]) / 80,
+                    sol[0]["plato_v"] * 1000 / 80 / xtov_k,
+                    sol[1]["plato_v"] * 1000 / 80 / xtov_k,
+                )
                 acc_t, acc_x, acc_y, acc_vx, acc_vy, _ = p
                 _, plato_x, plato_y, plato_vx, plato_vy, _ = p
                 plato_t = 0
