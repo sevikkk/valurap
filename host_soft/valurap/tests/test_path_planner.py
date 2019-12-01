@@ -159,15 +159,15 @@ def test_solve_model():
 
     print(res)
     assert res == {
-        "accel_j": 594010105,
-        "accel_jj": -99001960,
-        "accel_middle_x": 1.8465536122391766,
-        "accel_x": 17.603783076580726,
-        "e_delta_v": 58.427742279251106,
-        "e_jerk": 0.0,
-        "e_target": 0.9712549345676962,
-        "plato_v": 274936.3346862793,
-        "plato_x": 7960.091628655518,
+        "accel_j": 594079295,
+        "accel_jj": -99013216,
+        "accel_middle_x": 1.8467694324897364,
+        "accel_x": 17.605868572800887,
+        "e_delta_v": 91.90221432514954,
+        "e_jerk": 0.2468719482421875,
+        "e_target": 1.031621650326997e-07,
+        "plato_v": 274969.8091583252,
+        "plato_x": 7961.060797990704,
         "target_v": 274877.90694400005,
     }
 
@@ -182,3 +182,13 @@ def test_intplan_zigzag_small():
         print()
         print(px)
         print(py)
+
+        if "e_target" in px:
+            assert abs(px["e_target"]) < 2
+            assert abs(px["e_jerk"]) < 500
+            assert abs(px["e_delta_v"]) < 1000
+
+        if "e_target" in py:
+            assert abs(py["e_target"]) < 2
+            assert abs(py["e_jerk"]) < 500
+            assert abs(py["e_delta_v"]) < 1000

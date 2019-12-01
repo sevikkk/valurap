@@ -225,10 +225,10 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
     print("int_accel_j:", int_accel_j)
     print("int_accel_jj:", int_accel_jj)
 
-    k_e_a = 1e-8
-    k_e_delta_v = 1e-6
-    k_e_jerk = 1e-4
-    k_e_target = 1e-5
+    k_e_a = 1e-5
+    k_e_delta_v = 1e-2
+    k_e_jerk = 1e-2
+    k_e_target = 1e-3
     k_dj = int_accel_j * 0.1
     k_djj = int_accel_jj * 0.1
 
@@ -242,8 +242,6 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
         target_plato_x = target_x * xtoa_k - int_accel_x
         int_plato_x1 = int_x(plato_t, int_accel_v, 0, 0, 0)
         int_plato_v = ir(int_accel_v * 1.0 * target_plato_x / int_plato_x1)
-        if abs(int_plato_v) > abs(int_accel_v):
-            int_plato_v = int_accel_v
 
         if abs(target_v) < EPS:
             int_plato_v = 0
@@ -255,6 +253,9 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
             e_delta_v += (e_delta_v - 100) * 100
 
         e_jerk = abs(int_plato_v - int_accel_v) / vtoa_k
+        if e_jerk > 100:
+            e_jerk += (e_jerk - 100) * 100
+
         e_a = int_accel_a  # residual acceleration
         e_target = abs(target_x - (int_plato_x + int_accel_x) / xtoa_k)  # target X error
         if e_target > 1:
@@ -288,8 +289,6 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
     target_plato_x = target_x * xtoa_k - int_accel_x
     int_plato_x1 = int_x(plato_t, int_accel_v, 0, 0, 0)
     int_plato_v = ir(int_accel_v * 1.0 * target_plato_x / int_plato_x1)
-    if abs(int_plato_v) > abs(int_accel_v):
-        int_plato_v = int_accel_v
     if abs(target_v) < EPS:
         int_plato_v = 0
 
