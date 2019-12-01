@@ -1,4 +1,4 @@
-from valurap.path_planning import PathPlanner, PathLimits
+from valurap.path_planning import PathPlanner, PathLimits, solve_model_simple, ir, xtov_k
 
 DEFAULT_LIMITS = PathLimits(None, None, 3000, 3000, None, None, 0.1)
 
@@ -140,3 +140,45 @@ def test_optimize_zigzag_small():
         [0.041355908725881234, 200.0, 3.0, 0.0, 0.0, "accel_3"],
         [5, 200.0, 3.0, 0.0, 0.0, "final"],
     ]
+
+
+def test_solve_model():
+    plan = [
+        [0.013333333333333334, 0.2666666666666668, 0.0, 40.0, 0.0, "accel_0"],
+        [2.486666666666667, 99.73333333333333, 0.0, 40.0, 0.0, "plato_0"],
+        [0.013333333333333334, 100.0, 0.2666666666666668, 0.0, 40.0, "accel_1"],
+        [2.486666666666667, 100.0, 99.73333333333333, 0.0, 40.0, "plato_1"],
+        [0.013333333333333334, 100.0, 100.0, 0.0, 0.0, "accel_2"],
+        [5, 100.0, 100.0, 0.0, 0.0, "final"],
+    ]
+    acc_t, acc_x, acc_y, acc_vx, ac_vy, _ = plan[0]
+    plato_t, plato_x, plato_y, _, _, _ = plan[1]
+    res = solve_model_simple(
+        0, acc_vx / 1000 * 80 * xtov_k, plato_x * 80, ir(acc_t * 1000), ir(plato_t * 1000)
+    )
+
+    print(res)
+    assert res == {
+        "accel_j": 594010105,
+        "accel_jj": -99001960,
+        "accel_middle_x": 1.8465536122391766,
+        "accel_x": 17.603783076580726,
+        "e_delta_v": 58.427742279251106,
+        "e_jerk": 0.0,
+        "e_target": 0.9712549345676962,
+        "plato_v": 274936.3346862793,
+        "plato_x": 7960.091628655518,
+        "target_v": 274877.90694400005,
+    }
+
+
+def test_intplan_zigzag_small():
+    pp = PathPlanner(
+        [[0, 0, 0], [100, 0, 40], [100, 3, 40], [200, 3, 40], [200, 3, 0]], SLOW_LIMITS
+    )
+
+    int_plan = pp.plan()
+    for px, py in int_plan:
+        print()
+        print(px)
+        print(py)

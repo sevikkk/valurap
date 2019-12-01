@@ -14,6 +14,8 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+EPS = 1e-3
+
 
 class ApgState(object):
     def __init__(self):
@@ -188,58 +190,75 @@ def int_a(t, v, a, j, jj):
     return ir(a + j * t + jj * t * (t - 1) / 2)
 
 
-vtoa_k = 65536
-xtov_k = 2 ** 32 / 50000
+vtoa_k = 65536.0
+xtov_k = 2 ** 32 / 50000.0
 xtoa_k = vtoa_k * xtov_k
 
 
-def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t, errors=None):
+def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
+    print("accel_t:", accel_t)
+    print("plato_t:", plato_t)
 
     if in_v == target_v or accel_t == 0:
+        int_target_v = ir(target_v * vtoa_k)
+        int_plato_x = int_x(plato_t, int_target_v, 0, 0, 0)
+        int_accel_x = int_x(plato_t, int_target_v, 0, 0, 0)
         return {
             "accel_j": 0,
             "accel_jj": 0,
-            "plato_v": target_v,
-            "accel_x": 0,
-            "accel_middle_x": 0,
-            "plato_x": target_x,
+            "plato_v": int_target_v / vtoa_k,
+            "accel_x": int_accel_x / xtoa_k,
+            "accel_middle_x": int_accel_x / 2 / xtoa_k,
+            "plato_x": int_plato_x / xtoa_k,
         }
 
     accel_a = (target_v - in_v) / accel_t * vtoa_k * 1.5
     accel_j = accel_a / accel_t * 2 * 2
     accel_jj = -accel_j / accel_t * 2
 
-    # print("accel_a:", accel_a)
-    # print("accel_j:", accel_j)
-    # print("accel_jj:", accel_jj)
+    print("accel_a:", accel_a)
+    print("accel_j:", accel_j)
+    print("accel_jj:", accel_jj)
 
     int_accel_jj = ir(accel_jj)
     int_accel_j = ir(-int_accel_jj * accel_t / 2)
-    # print("int_accel_j:", int_accel_j)
-    # print("int_accel_jj:", int_accel_jj)
+    print("int_accel_j:", int_accel_j)
+    print("int_accel_jj:", int_accel_jj)
 
     k_e_a = 1e-8
     k_e_delta_v = 1e-6
-    k_e_jerk = 1e-6
-    k_e_target = 0
-    k_dj = int_accel_j * 0.01
-    k_djj = int_accel_jj * 0.01
+    k_e_jerk = 1e-4
+    k_e_target = 1e-5
+    k_dj = int_accel_j * 0.1
+    k_djj = int_accel_jj * 0.1
+
+    int_in_v = ir(in_v * vtoa_k)
 
     def get_errors(dj, djj):
-        int_accel_x = int_x(accel_t, in_v * vtoa_k, 0, int_accel_j + dj, int_accel_jj + djj)
-        int_accel_v = int_v(accel_t, in_v * vtoa_k, 0, int_accel_j + dj, int_accel_jj + djj)
-        int_accel_a = int_a(accel_t, in_v * vtoa_k, 0, int_accel_j + dj, int_accel_jj + djj)
+        int_accel_x = int_x(accel_t, int_in_v, 0, int_accel_j + dj, int_accel_jj + djj)
+        int_accel_v = int_v(accel_t, int_in_v, 0, int_accel_j + dj, int_accel_jj + djj)
+        int_accel_a = int_a(accel_t, int_in_v, 0, int_accel_j + dj, int_accel_jj + djj)
 
-        plato_x = target_x * xtoa_k - int_accel_x
-        plato_v = plato_x / plato_t
+        target_plato_x = target_x * xtoa_k - int_accel_x
+        int_plato_x1 = int_x(plato_t, int_accel_v, 0, 0, 0)
+        int_plato_v = ir(int_accel_v * 1.0 * target_plato_x / int_plato_x1)
+        if abs(int_plato_v) > abs(int_accel_v):
+            int_plato_v = int_accel_v
 
-        int_plato_v = ir(plato_v)
+        if abs(target_v) < EPS:
+            int_plato_v = 0
+
         int_plato_x = int_x(plato_t, int_plato_v, 0, 0, 0)
 
-        e_delta_v = target_v - int_plato_v / vtoa_k
-        e_jerk = int_plato_v / vtoa_k - int_accel_v / vtoa_k
-        e_a = int_accel_a
-        e_target = target_x - int_plato_x + int_accel_x
+        e_delta_v = abs(int_plato_v / vtoa_k - target_v)
+        if e_delta_v > 100:
+            e_delta_v += (e_delta_v - 100) * 100
+
+        e_jerk = abs(int_plato_v - int_accel_v) / vtoa_k
+        e_a = int_accel_a  # residual acceleration
+        e_target = abs(target_x - (int_plato_x + int_accel_x) / xtoa_k)  # target X error
+        if e_target > 1:
+            e_target += (e_target - 1) * 100
 
         return e_a, e_delta_v, e_jerk, e_target
 
@@ -260,23 +279,41 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t, errors=None):
         int_accel_jj = ir(int_accel_jj + k_djj * res.x[1])
         print("new", int_accel_j, int_accel_jj)
 
-    int_accel_x = int_x(accel_t, in_v * vtoa_k, 0, int_accel_j, int_accel_jj)
-    int_accel_v = int_v(accel_t, in_v * vtoa_k, 0, int_accel_j, int_accel_jj)
-    int_accel_middle_x = int_x(int(accel_t / 2), in_v * vtoa_k, 0, int_accel_j, int_accel_jj)
+    int_accel_x = int_x(accel_t, int_in_v, 0, int_accel_j, int_accel_jj)
+    int_accel_v = int_v(accel_t, int_in_v, 0, int_accel_j, int_accel_jj)
+    int_accel_middle_x = int_x(ir(accel_t / 2), int_in_v, 0, int_accel_j, int_accel_jj)
+    print("int_accel_v:", int_accel_v, int_accel_v / vtoa_k / xtov_k / 80 * 1000)
+    print("int_accel_x:", int_accel_x, int_accel_x / xtoa_k / 80)
 
-    plato_x = target_x * xtoa_k - int_accel_x
-    plato_v = plato_x / plato_t
+    target_plato_x = target_x * xtoa_k - int_accel_x
+    int_plato_x1 = int_x(plato_t, int_accel_v, 0, 0, 0)
+    int_plato_v = ir(int_accel_v * 1.0 * target_plato_x / int_plato_x1)
+    if abs(int_plato_v) > abs(int_accel_v):
+        int_plato_v = int_accel_v
+    if abs(target_v) < EPS:
+        int_plato_v = 0
 
-    int_plato_v = ir(plato_v)
     int_plato_x = int_x(plato_t, int_plato_v, 0, 0, 0)
+
+    print("int_plato_v:", int_plato_v, int_plato_v / vtoa_k / xtov_k / 80 * 1000)
+    e_target = target_x - (int_plato_x + int_accel_x) / xtoa_k  # target X error
+    e_delta_v = int_plato_v / vtoa_k - target_v
+    e_jerk = (int_plato_v - int_accel_v) / vtoa_k
+    print("e_target:", e_target / 80)
+    print("e_delta_v:", e_delta_v)
+    print("e_jerk:", e_jerk)
 
     return {
         "accel_j": int_accel_j,
         "accel_jj": int_accel_jj,
+        "target_v": target_v,
         "plato_v": int_plato_v / vtoa_k,
         "accel_x": int_accel_x / xtoa_k,
         "accel_middle_x": int_accel_middle_x / xtoa_k,
         "plato_x": int_plato_x / xtoa_k,
+        "e_target": e_target,
+        "e_delta_v": e_delta_v,
+        "e_jerk": e_jerk,
     }
 
 
@@ -336,7 +373,6 @@ class PathPlanner:
     def plan_path_in_floats(self, slowdowns=None):
         max_a = array([self.limits.max_x_a, self.limits.max_y_a])
 
-        EPS = 1e-3
         plan = []
         plan_errors = []
         if slowdowns is None:
@@ -725,5 +761,119 @@ class PathPlanner:
 
         return slowdowns
 
+    def solve_segment(
+        self,
+        prev_x,
+        prev_y,
+        prev_vx,
+        prev_vy,
+        acc_t,
+        acc_x,
+        acc_y,
+        acc_vx,
+        acc_vy,
+        plato_t,
+        plato_x,
+        plato_y,
+        plato_vx,
+        plato_vy,
+    ):
+        print(
+            "solve_segment:",
+            prev_x,
+            prev_y,
+            prev_vx,
+            prev_vy,
+            "\n",
+            acc_t,
+            acc_x,
+            acc_y,
+            acc_vx,
+            acc_vy,
+            "\n",
+            plato_t,
+            plato_x,
+            plato_y,
+            plato_vx,
+            plato_vy,
+        )
+        res_x = solve_model_simple(
+            prev_vx / 1000 * 80 * xtov_k,
+            acc_vx / 1000 * 80 * xtov_k,
+            (plato_x - prev_x) * 80,
+            ir(acc_t * 1000),
+            ir(plato_t * 1000),
+        )
+        res_y = solve_model_simple(
+            prev_vy / 1000 * 80 * xtov_k,
+            acc_vy / 1000 * 80 * xtov_k,
+            (plato_y - prev_y) * 80,
+            ir(acc_t * 1000),
+            ir(plato_t * 1000),
+        )
+        return res_x, res_y
+
+    def plan_to_int(self, plan):
+        prev_x, prev_y, prev_vx, prev_vy = self.path[0].x, self.path[0].y, 0.0, 0.0
+        acc_t, acc_x, acc_y, acc_vx, acc_vy, _ = plan[0]
+        _, plato_x, plato_y, plato_vx, plato_vy, _ = plan[0]
+        plato_t = 0
+        int_plan = []
+        for p in plan[1:]:
+            next_t, next_x, next__y, next_vx, next_vy, _ = p
+            assert next_t > 0
+            if abs(next_vx - acc_vx) + abs(next_vy - acc_vy) > EPS:
+                int_plan.append(
+                    self.solve_segment(
+                        prev_x,
+                        prev_y,
+                        prev_vx,
+                        prev_vy,
+                        acc_t,
+                        acc_x,
+                        acc_y,
+                        acc_vx,
+                        acc_vy,
+                        plato_t,
+                        plato_x,
+                        plato_y,
+                        plato_vx,
+                        plato_vy,
+                    )
+                )
+                prev_x, prev_y, prev_vx, prev_vy = plato_x, plato_y, plato_vx, plato_vy
+                acc_t, acc_x, acc_y, acc_vx, acc_vy, _ = p
+                _, plato_x, plato_y, plato_vx, plato_vy, _ = p
+                plato_t = 0
+            else:
+                plato_t += next_t
+                _, plato_x, plato_y, plato_vx, plato_vy, _ = p
+
+        if acc_t > 0:
+            int_plan.append(
+                self.solve_segment(
+                    prev_x,
+                    prev_y,
+                    prev_vx,
+                    prev_vy,
+                    acc_t,
+                    acc_x,
+                    acc_y,
+                    acc_vx,
+                    acc_vy,
+                    plato_t,
+                    plato_x,
+                    plato_y,
+                    plato_vx,
+                    plato_vy,
+                )
+            )
+
+        return int_plan
+
     def plan(self):
         plan, slowdowns, notes = self.plan_with_slow_down()
+        speedup_slowdowns = self.plan_speedup(slowdowns, notes)
+        plan, errors, notes = self.plan_path_in_floats(speedup_slowdowns)
+        int_plan = self.plan_to_int(plan)
+        return int_plan
