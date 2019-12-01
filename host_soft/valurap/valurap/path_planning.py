@@ -11,6 +11,8 @@ from scipy.optimize import minimize
 
 import logging
 
+from valurap.asg import ProfileSegment
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -210,6 +212,8 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
             "accel_x": int_accel_x / xtoa_k,
             "accel_middle_x": int_accel_x / 2 / xtoa_k,
             "plato_x": int_plato_x / xtoa_k,
+            "accel_t": accel_t,
+            "plato_t": plato_t,
         }
 
     accel_a = (target_v - in_v) / accel_t * vtoa_k * 1.5
@@ -313,6 +317,8 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
         "e_target": e_target,
         "e_delta_v": e_delta_v,
         "e_jerk": e_jerk,
+        "accel_t": accel_t,
+        "plato_t": plato_t,
     }
 
 
@@ -880,3 +886,50 @@ class PathPlanner:
         plan, errors, notes = self.plan_path_in_floats(speedup_slowdowns)
         int_plan = self.plan_to_int(plan)
         return int_plan
+
+    def format(self, plan, apgs=None):
+        if apgs is None:
+            apgs = {}
+
+        apg_x = apgs.get("X", FakeApg("X"))
+        apg_y = apgs.get("Y", FakeApg("Y"))
+        apg_z = apgs.get("Z", FakeApg("Z"))
+
+        pr_opt = []
+
+        for sol_x, sol_y in plan:
+            if sol_x["accel_t"] > 0:
+                pr_opt += [
+                    [
+                        sol_x["accel_t"],
+                        [
+                            ProfileSegment(apg=apg_x, j=sol_x["accel_j"], jj=sol_x["accel_jj"]),
+                            ProfileSegment(apg=apg_y, j=sol_y["accel_j"], jj=sol_y["accel_jj"]),
+                            # ProfileSegment(apg=apg_z, v=-400000),
+                        ],
+                    ]
+                ]
+            if sol_x["plato_t"] > 0:
+                pr_opt += [
+                    [
+                        sol_x["plato_t"],
+                        [
+                            ProfileSegment(apg=apg_x, v=ir(sol_x["plato_v"])),
+                            ProfileSegment(apg=apg_y, v=ir(sol_y["plato_v"])),
+                            # ProfileSegment(apg=apg_z, v=-400000),
+                        ],
+                    ]
+                ]
+
+        pr_opt += [
+            [
+                5,
+                [
+                    ProfileSegment(apg=apg_x, v=0),
+                    ProfileSegment(apg=apg_y, v=0),
+                    ProfileSegment(apg=apg_z, v=0),
+                ],
+            ]
+        ]
+
+        return pr_opt
