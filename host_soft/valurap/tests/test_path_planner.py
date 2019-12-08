@@ -6,7 +6,7 @@ DEFAULT_LIMITS = PathLimits(None, None, 3000, 3000, None, None, 0.1)
 def test_simple():
     pp = PathPlanner([[0, 0, 0], [100, 0, 100], [100, 0, 0]], DEFAULT_LIMITS)
 
-    plan, errors, notes = pp.plan_path_in_floats()
+    plan, errors, notesi, extras_plan = pp.plan_path_in_floats()
     assert not errors
 
     assert plan == [
@@ -20,7 +20,7 @@ def test_simple():
 def test_corner_too_fast_for_precision():
     pp = PathPlanner([[0, 0, 0], [100, 0, 100], [100, 100, 100], [100, 100, 0]], DEFAULT_LIMITS)
 
-    plan, errors, notes = pp.plan_path_in_floats()
+    plan, errors, notes, extras_plan = pp.plan_path_in_floats()
     assert len(errors) == 1
     assert errors[0][1] == "middle_delta"
 
@@ -28,7 +28,7 @@ def test_corner_too_fast_for_precision():
 def test_corner_ok():
     pp = PathPlanner([[0, 0, 0], [100, 0, 40], [100, 100, 40], [100, 100, 0]], DEFAULT_LIMITS)
 
-    plan, errors, notes = pp.plan_path_in_floats()
+    plan, errors, notes, extras_plan = pp.plan_path_in_floats()
     assert not errors
     assert plan == [
         [0.013333333333333334, 0.2666666666666668, 0.0, 40.0, 0.0, "accel_0"],
@@ -45,7 +45,7 @@ def test_corner_with_useless_segment():
         [[0, 0, 0], [100, 0, 40], [100, 50, 40], [100, 100, 40], [100, 100, 0]], DEFAULT_LIMITS
     )
 
-    plan, errors, notes = pp.plan_path_in_floats()
+    plan, errors, notes, extras_plan = pp.plan_path_in_floats()
     assert not errors
     assert plan == [
         [0.013333333333333334, 0.2666666666666668, 0.0, 40.0, 0.0, "accel_0"],
@@ -64,7 +64,7 @@ def test_zigzag():
         [[0, 0, 0], [100, 0, 40], [100, 100, 40], [200, 100, 40], [200, 100, 0]], DEFAULT_LIMITS
     )
 
-    plan, errors, notes = pp.plan_path_in_floats()
+    plan, errors, notes, extras_plan = pp.plan_path_in_floats()
     assert not errors
     assert plan == [
         [0.013333333333333334, 0.2666666666666668, 0.0, 40.0, 0.0, "accel_0"],
@@ -86,7 +86,7 @@ def test_zigzag_small():
         [[0, 0, 0], [100, 0, 40], [100, 3, 40], [200, 3, 40], [200, 3, 0]], SLOW_LIMITS
     )
 
-    plan, errors, notes = pp.plan_path_in_floats()
+    plan, errors, notesi, extras_plan = pp.plan_path_in_floats()
     assert errors
     assert errors[0][1] == "cur_avail"
 
@@ -120,7 +120,7 @@ def test_optimize_zigzag_small():
     ]
     print(notes)
     speedup_slowdowns = pp.plan_speedup(slowdowns, notes)
-    plan, errors, notes = pp.plan_path_in_floats(speedup_slowdowns)
+    plan, errors, notes, extras_plan = pp.plan_path_in_floats(speedup_slowdowns)
     assert not errors
     assert plan == [
         [0.041355908725881234, 0.2565466779815129, 0.0, 12.40677261776437, 0.0, "accel_0"],
@@ -194,3 +194,44 @@ def test_intplan_zigzag_small():
             assert abs(py["e_target"]) < 2
             assert abs(py["e_jerk"]) < 500
             assert abs(py["e_delta_v"]) < 1000
+
+
+def test_corner_with_extras():
+    pp = PathPlanner(
+        [[0, 0, 0], [100, 0, 40], [100, 100, 40], [100, 100, 0]],
+        DEFAULT_LIMITS,
+        extras=[["E1", [0, 100, 200, 200]], ["E2", [0, 50, 100, 100]]],
+    )
+
+    plan, errors, notes, extras_plan = pp.plan_path_in_floats(with_extras=True)
+    assert not errors
+    assert plan == [
+        [0.013333333333333334, 0.2666666666666668, 0.0, 40.0, 0.0, "accel_0"],
+        [2.486666666666667, 99.73333333333333, 0.0, 40.0, 0.0, "plato_0"],
+        [0.013333333333333334, 100.0, 0.2666666666666668, 0.0, 40.0, "accel_1"],
+        [2.486666666666667, 100.0, 99.73333333333333, 0.0, 40.0, "plato_1"],
+        [0.013333333333333334, 100.0, 100.0, 0.0, 0.0, "accel_2"],
+        [5, 100.0, 100.0, 0.0, 0.0, "final"],
+    ]
+    assert extras_plan == [
+        [
+            "E1",
+            [
+                (0.013333333333333334, 0.2666666666666668, 40.0),
+                (2.486666666666667, 99.73333333333333, 40.0),
+                (0.013333333333333334, 100.26666666666667, 40.0),
+                (2.486666666666667, 199.73333333333332, 40.0),
+                (0.013333333333333334, 200.0, 0.0),
+            ],
+        ],
+        [
+            "E2",
+            [
+                (0.013333333333333334, 0.1333333333333334, 20.0),
+                (2.486666666666667, 49.86666666666667, 20.0),
+                (0.013333333333333334, 50.13333333333333, 20.0),
+                (2.486666666666667, 99.86666666666666, 20.0),
+                (0.013333333333333334, 100.0, 0.0),
+            ],
+        ],
+    ]

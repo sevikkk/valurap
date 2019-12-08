@@ -334,16 +334,30 @@ PathLimits = namedtuple(
 
 
 class PathPlanner:
-    def __init__(self, path: [PathSegment], limits: PathLimits):
+    def __init__(self, path: [PathSegment], limits: PathLimits, extras: [str, [float]] = None):
         path = self.cast_path(path)
         path_ok = self.check_path(path)
-        if path_ok is False:
+        if not path_ok:
             raise ValueError("bad path", path)
         self.path = path
         self.limits = limits
+        extras = self.cast_extras(extras)
+        extras_ok = self.check_extras(extras)
+        if not extras_ok:
+            raise ValueError("bad extras", extras)
+        self.extras = extras
 
     def cast_path(self, path):
         return [PathSegment(a[0], a[1], a[2]) for a in path]
+
+    def cast_extras(self, extras):
+        if not extras:
+            return []
+        new_extras = []
+        for name, data in extras:
+            new_data = [float(a) for a in data]
+            new_extras.append([name, new_data])
+        return new_extras
 
     def check_path(self, path):
         if len(path) < 3:
@@ -375,7 +389,17 @@ class PathPlanner:
                 logger.warning("active segments length must be > 0")
                 return False
 
-    def plan_path_in_floats(self, slowdowns=None):
+        return True
+
+    def check_extras(self, extras):
+        for name, data in extras:
+            if len(data) != len(self.path):
+                logger.warning("length of extras series must be the same as path")
+                return False
+
+        return True
+
+    def plan_path_in_floats(self, slowdowns=None, with_extras=False):
         max_a = array([self.limits.max_x_a, self.limits.max_y_a])
 
         plan = []
@@ -392,9 +416,19 @@ class PathPlanner:
 
         start_x = in_x * 1.0
         path = []
+        extras = []
+        in_extras = []
+        if with_extras:
+            for name, data in self.extras:
+                in_extras.append(data[0])
+
+        in_extras = array(in_extras)
+        start_extras = in_extras * 1.0
+
         log_ids = []
         for i, seg in enumerate(self.path[1:]):
             end_x = array([seg.x, seg.y])
+            seg_v = seg.speed
             splits = slowdowns[i]
             if not type(splits) == list:
                 splits = [[splits, 1.0]]
@@ -404,13 +438,36 @@ class PathPlanner:
                 total += split
 
             vec_x = (end_x - start_x) / total
+
+            if with_extras:
+                end_extras = []
+                for name, data in self.extras:
+                    end_extras.append(data[i + 1])
+                end_extras = array(end_extras)
+                vec_extras = (end_extras - start_extras) / total
+
+                if seg_v > EPS:
+                    seg_vec_time = norm(vec_x) / seg_v
+                else:
+                    assert norm(vec_extras) < EPS
+                    vec_extras = vec_extras * 0.0
+                    seg_vec_time = 1
+
             for j, (k, split) in enumerate(splits):
                 seg_x = start_x + vec_x * split
                 path.append(PathSegment(seg_x[0], seg_x[1], seg.speed * k))
                 log_ids.append((i, j))
                 start_x = seg_x
+                if with_extras:
+                    seg_extras = start_extras + vec_extras * split
+                    seg_time = seg_vec_time * split / k
+                    seg_speeds = (seg_extras - start_extras) / seg_time
+                    extras.append([seg_extras, seg_speeds])
+                    start_extras = seg_extras
 
         plan_notes = {i: {} for i in range(len(path))}
+        extras_plan = []
+        extras_in_target = start_extras
 
         for i, seg in enumerate(path):
             try:
@@ -613,6 +670,25 @@ class PathPlanner:
                             "plato_{}".format(prev_log_id),
                         ]
                     ]
+                    if with_extras:
+                        assert i > 0
+
+                        extras_in_target = extras[i - 1][0]
+                        extras_in_speed = extras[i - 1][1]
+
+                        if norm(in_v) > 0:
+                            equiv_in_time = norm(enter_need_first) / norm(in_v)
+                        else:
+                            equiv_in_time = 0
+
+                        extras_plan += [
+                            [
+                                prev_t,
+                                extras_in_target - extras_in_speed * equiv_in_time,
+                                extras_in_speed,
+                                "plato_{}".format(prev_log_id),
+                            ]
+                        ]
 
                 plan += [
                     [
@@ -624,6 +700,27 @@ class PathPlanner:
                         "accel_{}".format(cur_log_id),
                     ]
                 ]
+
+                if with_extras:
+                    if i > 0:
+                        extras_in_target = extras[i - 1][0]
+                    else:
+                        extras_in_target = in_extras
+
+                    extras_speed = extras[i][1]
+                    if norm(plato_v) > 0:
+                        equiv_out_time = norm(enter_need_second) / norm(plato_v)
+                    else:
+                        equiv_out_time = 0
+
+                    extras_plan += [
+                        [
+                            accel_t,
+                            extras_in_target + extras_speed * equiv_out_time,
+                            extras_speed,
+                            "accel_{}".format(prev_log_id),
+                        ]
+                    ]
 
                 if i == len(path) - 1:
                     plan += [[5, accel_end[0], accel_end[1], 0.0, 0.0, "final"]]
@@ -650,12 +747,17 @@ class PathPlanner:
             except:
                 raise
 
-        return plan, plan_errors, plan_notes
+        extras_out = []
+        if with_extras:
+            for i, (name, data) in enumerate(self.extras):
+                extras_out.append([name, [(p[0], p[1][i], p[2][i]) for p in extras_plan]])
+
+        return plan, plan_errors, plan_notes, extras_out
 
     def plan_with_slow_down(self):
         slowdowns = numpy.array([1.0] * (len(self.path) - 1))
         while True:
-            plan, errors, notes = self.plan_path_in_floats(slowdowns)
+            plan, errors, notes, _ = self.plan_path_in_floats(slowdowns)
             if not errors:
                 return plan, slowdowns, notes
 
@@ -723,7 +825,7 @@ class PathPlanner:
             # print("try_slowdown", try_slowdown)
             try_slowdowns[orig_i] = try_slowdown
             # print("try_slowdowns", try_slowdowns)
-            try_plan, try_errors, try_notes = self.plan_path_in_floats(try_slowdowns)
+            try_plan, try_errors, try_notes, _ = self.plan_path_in_floats(try_slowdowns)
             if try_errors:
                 logger.info("first planning ended with errors: %s", try_errors)
                 continue
@@ -754,7 +856,7 @@ class PathPlanner:
             # print("try_slowdown", try_slowdown)
             try_slowdowns[orig_i] = try_slowdown
             # print("try_slowdowns", try_slowdowns)
-            try_plan, try_errors, try_notes = self.plan_path_in_floats(try_slowdowns)
+            try_plan, try_errors, try_notes, _ = self.plan_path_in_floats(try_slowdowns)
             if try_errors:
                 print("errors", try_errors)
                 continue
@@ -883,7 +985,7 @@ class PathPlanner:
     def plan(self):
         plan, slowdowns, notes = self.plan_with_slow_down()
         speedup_slowdowns = self.plan_speedup(slowdowns, notes)
-        plan, errors, notes = self.plan_path_in_floats(speedup_slowdowns)
+        plan, errors, notes, _ = self.plan_path_in_floats(speedup_slowdowns)
         int_plan = self.plan_to_int(plan)
         return int_plan
 
