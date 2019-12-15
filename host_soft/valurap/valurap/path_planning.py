@@ -992,8 +992,14 @@ class PathPlanner:
     def plan(self):
         plan, slowdowns, notes = self.plan_with_slow_down()
         speedup_slowdowns = self.plan_speedup(slowdowns, notes)
-        plan, errors, notes, _ = self.plan_path_in_floats(speedup_slowdowns)
-        int_plan = self.plan_to_int(plan)
+        if not self.extras:
+            plan, errors, notes, _ = self.plan_path_in_floats(speedup_slowdowns)
+            int_plan = self.plan_to_int(plan)
+        else:
+            plan, errors, notes, plan_extras = self.plan_path_in_floats(
+                speedup_slowdowns, with_extras=True
+            )
+            int_plan = self.plan_to_int(plan, plan_extras)
         return int_plan
 
     def format(self, plan, apgs=None):
@@ -1006,29 +1012,31 @@ class PathPlanner:
 
         pr_opt = []
 
-        for sol_x, sol_y in plan:
+        for sols in plan:
+            sol_x = sols[0]
+            sol_y = sols[1]
+
             if sol_x["accel_t"] > 0:
-                pr_opt += [
-                    [
-                        sol_x["accel_t"],
-                        [
-                            ProfileSegment(apg=apg_x, j=sol_x["accel_j"], jj=sol_x["accel_jj"]),
-                            ProfileSegment(apg=apg_y, j=sol_y["accel_j"], jj=sol_y["accel_jj"]),
-                            # ProfileSegment(apg=apg_z, v=-400000),
-                        ],
-                    ]
+                segs = [
+                    ProfileSegment(apg=apg_x, j=sol_x["accel_j"], jj=sol_x["accel_jj"]),
+                    ProfileSegment(apg=apg_y, j=sol_y["accel_j"], jj=sol_y["accel_jj"]),
                 ]
+                if len(sols) > 2:
+                    sol_z = sols[2]
+                    segs.append(ProfileSegment(apg=apg_z, j=sol_z["accel_j"], jj=sol_z["accel_jj"]))
+
+                pr_opt += [[sol_x["accel_t"], segs]]
+
             if sol_x["plato_t"] > 0:
-                pr_opt += [
-                    [
-                        sol_x["plato_t"],
-                        [
-                            ProfileSegment(apg=apg_x, v=ir(sol_x["plato_v_int"])),
-                            ProfileSegment(apg=apg_y, v=ir(sol_y["plato_v_int"])),
-                            # ProfileSegment(apg=apg_z, v=-400000),
-                        ],
-                    ]
+                segs = [
+                    ProfileSegment(apg=apg_x, v=ir(sol_x["plato_v_int"])),
+                    ProfileSegment(apg=apg_y, v=ir(sol_y["plato_v_int"])),
                 ]
+                if len(sols) > 2:
+                    sol_z = sols[2]
+                    segs.append(ProfileSegment(apg=apg_z, v=ir(sol_z["plato_v_int"])))
+
+                pr_opt += [[sol_x["plato_t"], segs]]
 
         pr_opt += [
             [
