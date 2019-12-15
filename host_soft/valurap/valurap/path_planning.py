@@ -201,19 +201,27 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
     print("accel_t:", accel_t)
     print("plato_t:", plato_t)
 
-    if in_v == target_v or accel_t == 0:
+    if abs(in_v - target_v) < EPS or accel_t == 0:
         int_target_v = ir(target_v * vtoa_k)
+        int_in_v = ir(in_v * vtoa_k)
+        int_accel_x = int_x(accel_t, int_in_v, 0, 0, 0)
         int_plato_x = int_x(plato_t, int_target_v, 0, 0, 0)
-        int_accel_x = int_x(plato_t, int_target_v, 0, 0, 0)
+        e_target = target_x - (int_plato_x + int_accel_x) / xtoa_k  # target X error
+        e_delta_v = int_target_v / vtoa_k - target_v
+        e_jerk = (int_target_v - int_in_v) / vtoa_k
         return {
             "accel_j": 0,
             "accel_jj": 0,
+            "plato_x": int_plato_x / xtoa_k,
             "plato_v": int_target_v / vtoa_k,
             "accel_x": int_accel_x / xtoa_k,
             "accel_middle_x": int_accel_x / 2 / xtoa_k,
-            "plato_x": int_plato_x / xtoa_k,
             "accel_t": accel_t,
             "plato_t": plato_t,
+            "target_v": target_v,
+            "e_target": e_target,
+            "e_delta_v": e_delta_v,
+            "e_jerk": e_jerk,
         }
 
     accel_a = (target_v - in_v) / accel_t * vtoa_k * 1.5
@@ -309,16 +317,16 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
     return {
         "accel_j": int_accel_j,
         "accel_jj": int_accel_jj,
-        "target_v": target_v,
+        "plato_x": int_plato_x / xtoa_k,
         "plato_v": int_plato_v / vtoa_k,
         "accel_x": int_accel_x / xtoa_k,
         "accel_middle_x": int_accel_middle_x / xtoa_k,
-        "plato_x": int_plato_x / xtoa_k,
+        "accel_t": accel_t,
+        "plato_t": plato_t,
+        "target_v": target_v,
         "e_target": e_target,
         "e_delta_v": e_delta_v,
         "e_jerk": e_jerk,
-        "accel_t": accel_t,
-        "plato_t": plato_t,
     }
 
 
@@ -334,7 +342,9 @@ PathLimits = namedtuple(
 
 
 class PathPlanner:
-    def __init__(self, path: [PathSegment], limits: PathLimits, extras: [str, [float]] = None):
+    def __init__(
+        self, path: [PathSegment], limits: PathLimits, extras: [str, float, [float]] = None
+    ):
         path = self.cast_path(path)
         path_ok = self.check_path(path)
         if not path_ok:
@@ -354,9 +364,9 @@ class PathPlanner:
         if not extras:
             return []
         new_extras = []
-        for name, data in extras:
+        for name, spmm, data in extras:
             new_data = [float(a) for a in data]
-            new_extras.append([name, new_data])
+            new_extras.append([name, float(spmm), new_data])
         return new_extras
 
     def check_path(self, path):
@@ -392,7 +402,7 @@ class PathPlanner:
         return True
 
     def check_extras(self, extras):
-        for name, data in extras:
+        for name, spmm, data in extras:
             if len(data) != len(self.path):
                 logger.warning("length of extras series must be the same as path")
                 return False
@@ -419,7 +429,7 @@ class PathPlanner:
         extras = []
         in_extras = []
         if with_extras:
-            for name, data in self.extras:
+            for name, spmm, data in self.extras:
                 in_extras.append(data[0])
 
         in_extras = array(in_extras)
@@ -441,7 +451,7 @@ class PathPlanner:
 
             if with_extras:
                 end_extras = []
-                for name, data in self.extras:
+                for name, spmm, data in self.extras:
                     end_extras.append(data[i + 1])
                 end_extras = array(end_extras)
                 vec_extras = (end_extras - start_extras) / total
@@ -749,7 +759,7 @@ class PathPlanner:
 
         extras_out = []
         if with_extras:
-            for i, (name, data) in enumerate(self.extras):
+            for i, (name, spmm, data) in enumerate(self.extras):
                 extras_out.append([name, [(p[0], p[1][i], p[2][i]) for p in extras_plan]])
 
         return plan, plan_errors, plan_notes, extras_out
@@ -868,57 +878,14 @@ class PathPlanner:
 
         return slowdowns
 
-    def solve_segment(
-        self,
-        prev_x,
-        prev_y,
-        prev_vx,
-        prev_vy,
-        acc_t,
-        acc_x,
-        acc_y,
-        acc_vx,
-        acc_vy,
-        plato_t,
-        plato_x,
-        plato_y,
-        plato_vx,
-        plato_vy,
-    ):
-        print(
-            "solve_segment:",
-            prev_x,
-            prev_y,
-            prev_vx,
-            prev_vy,
-            "\n",
-            acc_t,
-            acc_x,
-            acc_y,
-            acc_vx,
-            acc_vy,
-            "\n",
-            plato_t,
-            plato_x,
-            plato_y,
-            plato_vx,
-            plato_vy,
-        )
-        res_x = solve_model_simple(
-            prev_vx / 1000 * 80 * xtov_k,
-            acc_vx / 1000 * 80 * xtov_k,
-            (plato_x - prev_x) * 80,
+    def solve_in_ints(self, acc_t, plato_t, prev_x, prev_v, target_x, target_v, steps_per_mm=80):
+        return solve_model_simple(
+            prev_v / 1000 * steps_per_mm * xtov_k,
+            target_v / 1000 * steps_per_mm * xtov_k,
+            (target_x - prev_x) * steps_per_mm,
             ir(acc_t * 1000),
             ir(plato_t * 1000),
         )
-        res_y = solve_model_simple(
-            prev_vy / 1000 * 80 * xtov_k,
-            acc_vy / 1000 * 80 * xtov_k,
-            (plato_y - prev_y) * 80,
-            ir(acc_t * 1000),
-            ir(plato_t * 1000),
-        )
-        return res_x, res_y
 
     def plan_to_int(self, plan):
         prev_x, prev_y, prev_vx, prev_vy = self.path[0].x, self.path[0].y, 0.0, 0.0
@@ -926,59 +893,28 @@ class PathPlanner:
         _, plato_x, plato_y, plato_vx, plato_vy, _ = plan[0]
         plato_t = 0
         int_plan = []
-        for p in plan[1:]:
-            next_t, next_x, next__y, next_vx, next_vy, _ = p
-            assert next_t > 0
-            if abs(next_vx - acc_vx) + abs(next_vy - acc_vy) > EPS:
-                sol = self.solve_segment(
-                    prev_x,
-                    prev_y,
-                    prev_vx,
-                    prev_vy,
-                    acc_t,
-                    acc_x,
-                    acc_y,
-                    acc_vx,
-                    acc_vy,
-                    plato_t,
-                    plato_x,
-                    plato_y,
-                    plato_vx,
-                    plato_vy,
-                )
-                int_plan.append(sol)
+        for p in plan[1:] + [None]:
+            if p:
+                next_t, next_x, next__y, next_vx, next_vy, _ = p
+                assert next_t > 0
+
+            if p is None or (abs(next_vx - acc_vx) + abs(next_vy - acc_vy) > EPS):
+                sol_x = self.solve_in_ints(acc_t, plato_t, prev_x, prev_vx, plato_x, plato_vx)
+                sol_y = self.solve_in_ints(acc_t, plato_t, prev_y, prev_vy, plato_y, plato_vy)
+                int_plan.append((sol_x, sol_y))
                 prev_x, prev_y, prev_vx, prev_vy = (
-                    prev_x + (sol[0]["accel_x"] + sol[0]["plato_x"]) / 80,
-                    prev_y + (sol[1]["accel_x"] + sol[1]["plato_x"]) / 80,
-                    sol[0]["plato_v"] * 1000 / 80 / xtov_k,
-                    sol[1]["plato_v"] * 1000 / 80 / xtov_k,
+                    prev_x + (sol_x["accel_x"] + sol_x["plato_x"]) / 80,
+                    prev_y + (sol_y["accel_x"] + sol_y["plato_x"]) / 80,
+                    sol_x["plato_v"] * 1000 / 80 / xtov_k,
+                    sol_y["plato_v"] * 1000 / 80 / xtov_k,
                 )
-                acc_t, acc_x, acc_y, acc_vx, acc_vy, _ = p
-                _, plato_x, plato_y, plato_vx, plato_vy, _ = p
-                plato_t = 0
+                if p:
+                    acc_t, acc_x, acc_y, acc_vx, acc_vy, _ = p
+                    _, plato_x, plato_y, plato_vx, plato_vy, _ = p
+                    plato_t = 0
             else:
                 plato_t += next_t
                 _, plato_x, plato_y, plato_vx, plato_vy, _ = p
-
-        if acc_t > 0:
-            int_plan.append(
-                self.solve_segment(
-                    prev_x,
-                    prev_y,
-                    prev_vx,
-                    prev_vy,
-                    acc_t,
-                    acc_x,
-                    acc_y,
-                    acc_vx,
-                    acc_vy,
-                    plato_t,
-                    plato_x,
-                    plato_y,
-                    plato_vx,
-                    plato_vy,
-                )
-            )
 
         return int_plan
 

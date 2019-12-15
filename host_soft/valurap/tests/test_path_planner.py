@@ -198,7 +198,7 @@ def test_corner_with_extras():
     pp = PathPlanner(
         [[0, 0, 0], [100, 0, 40], [100, 100, 40], [100, 100, 0]],
         DEFAULT_LIMITS,
-        extras=[["E1", [0, 100, 200, 200]], ["E2", [0, 50, 100, 100]]],
+        extras=[["E1", 837, [0, 100, 200, 200]], ["E2", 837, [0, 50, 100, 100]]],
     )
 
     plan, errors, notes, extras_plan = pp.plan_path_in_floats(with_extras=True)
@@ -239,7 +239,7 @@ def test_optimize_zigzag_small_with_extras():
     pp = PathPlanner(
         [[0, 0, 0], [100, 0, 40], [100, 3, 40], [200, 3, 40], [200, 3, 0]],
         SLOW_LIMITS,
-        extras=[["E", [0, 100, 103, 203, 203]]],
+        extras=[["E", 837, [0, 100, 103, 203, 203]]],
     )
 
     plan, slowdowns, notes = pp.plan_with_slow_down()
