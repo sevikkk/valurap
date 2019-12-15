@@ -295,8 +295,8 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
     int_accel_x = int_x(accel_t, int_in_v, 0, int_accel_j, int_accel_jj)
     int_accel_v = int_v(accel_t, int_in_v, 0, int_accel_j, int_accel_jj)
     int_accel_middle_x = int_x(ir(accel_t / 2), int_in_v, 0, int_accel_j, int_accel_jj)
-    print("int_accel_v:", int_accel_v, int_accel_v / vtoa_k / xtov_k / 80 * 1000)
-    print("int_accel_x:", int_accel_x, int_accel_x / xtoa_k / 80)
+    print("int_accel_v:", int_accel_v, int_accel_v / vtoa_k / xtov_k * 1000)
+    print("int_accel_x:", int_accel_x, int_accel_x / xtoa_k)
 
     target_plato_x = target_x * xtoa_k - int_accel_x
     int_plato_x1 = int_x(plato_t, int_accel_v, 0, 0, 0)
@@ -306,11 +306,11 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
 
     int_plato_x = int_x(plato_t, int_plato_v, 0, 0, 0)
 
-    print("int_plato_v:", int_plato_v, int_plato_v / vtoa_k / xtov_k / 80 * 1000)
+    print("int_plato_v:", int_plato_v, int_plato_v / vtoa_k / xtov_k * 1000)
     e_target = target_x - (int_plato_x + int_accel_x) / xtoa_k  # target X error
     e_delta_v = int_plato_v / vtoa_k - target_v
     e_jerk = (int_plato_v - int_accel_v) / vtoa_k
-    print("e_target:", e_target / 80)
+    print("e_target:", e_target)
     print("e_delta_v:", e_delta_v)
     print("e_jerk:", e_jerk)
 
@@ -878,7 +878,7 @@ class PathPlanner:
 
         return slowdowns
 
-    def solve_in_ints(self, acc_t, plato_t, prev_x, prev_v, target_x, target_v, steps_per_mm=80):
+    def solve_in_ints(self, acc_t, plato_t, prev_x, prev_v, target_x, target_v, steps_per_mm):
         return solve_model_simple(
             prev_v / 1000 * steps_per_mm * xtov_k,
             target_v / 1000 * steps_per_mm * xtov_k,
@@ -899,8 +899,8 @@ class PathPlanner:
                 assert next_t > 0
 
             if p is None or (abs(next_vx - acc_vx) + abs(next_vy - acc_vy) > EPS):
-                sol_x = self.solve_in_ints(acc_t, plato_t, prev_x, prev_vx, plato_x, plato_vx)
-                sol_y = self.solve_in_ints(acc_t, plato_t, prev_y, prev_vy, plato_y, plato_vy)
+                sol_x = self.solve_in_ints(acc_t, plato_t, prev_x, prev_vx, plato_x, plato_vx, 80)
+                sol_y = self.solve_in_ints(acc_t, plato_t, prev_y, prev_vy, plato_y, plato_vy, 80)
                 int_plan.append((sol_x, sol_y))
                 prev_x, prev_y, prev_vx, prev_vy = (
                     prev_x + (sol_x["accel_x"] + sol_x["plato_x"]) / 80,
