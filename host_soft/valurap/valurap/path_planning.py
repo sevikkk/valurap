@@ -879,13 +879,21 @@ class PathPlanner:
         return slowdowns
 
     def solve_in_ints(self, acc_t, plato_t, prev_x, prev_v, target_x, target_v, steps_per_mm):
-        return solve_model_simple(
+        res = solve_model_simple(
             prev_v / 1000 * steps_per_mm * xtov_k,
             target_v / 1000 * steps_per_mm * xtov_k,
             (target_x - prev_x) * steps_per_mm,
             ir(acc_t * 1000),
             ir(plato_t * 1000),
         )
+        res["accel_x"] /= steps_per_mm
+        res["accel_middle_x"] /= steps_per_mm
+        res["plato_x"] /= steps_per_mm
+        res["plato_v_int"] = res["plato_v"]
+        res["plato_v"] /= steps_per_mm / 1000 * xtov_k
+        res["target_v"] /= steps_per_mm / 1000 * xtov_k
+
+        return res
 
     def plan_to_int(self, plan):
         prev_x, prev_y, prev_vx, prev_vy = self.path[0].x, self.path[0].y, 0.0, 0.0
@@ -903,10 +911,10 @@ class PathPlanner:
                 sol_y = self.solve_in_ints(acc_t, plato_t, prev_y, prev_vy, plato_y, plato_vy, 80)
                 int_plan.append((sol_x, sol_y))
                 prev_x, prev_y, prev_vx, prev_vy = (
-                    prev_x + (sol_x["accel_x"] + sol_x["plato_x"]) / 80,
-                    prev_y + (sol_y["accel_x"] + sol_y["plato_x"]) / 80,
-                    sol_x["plato_v"] * 1000 / 80 / xtov_k,
-                    sol_y["plato_v"] * 1000 / 80 / xtov_k,
+                    prev_x + sol_x["accel_x"] + sol_x["plato_x"],
+                    prev_y + sol_y["accel_x"] + sol_y["plato_x"],
+                    sol_x["plato_v"],
+                    sol_y["plato_v"],
                 )
                 if p:
                     acc_t, acc_x, acc_y, acc_vx, acc_vy, _ = p
@@ -952,8 +960,8 @@ class PathPlanner:
                     [
                         sol_x["plato_t"],
                         [
-                            ProfileSegment(apg=apg_x, v=ir(sol_x["plato_v"])),
-                            ProfileSegment(apg=apg_y, v=ir(sol_y["plato_v"])),
+                            ProfileSegment(apg=apg_x, v=ir(sol_x["plato_v_int"])),
+                            ProfileSegment(apg=apg_y, v=ir(sol_y["plato_v_int"])),
                             # ProfileSegment(apg=apg_z, v=-400000),
                         ],
                     ]
