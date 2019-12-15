@@ -733,7 +733,16 @@ class PathPlanner:
                     ]
 
                 if i == len(path) - 1:
-                    plan += [[5, accel_end[0], accel_end[1], 0.0, 0.0, "final"]]
+                    plan += [[0.005, accel_end[0], accel_end[1], 0.0, 0.0, "final"]]
+                    if with_extras:
+                        extras_plan += [
+                            [
+                                0.005,
+                                extras_in_target + extras_speed * equiv_out_time,
+                                extras_speed * 0.0,
+                                "final",
+                            ]
+                        ]
 
                 logger.debug("i: %d", i)
 
@@ -895,34 +904,88 @@ class PathPlanner:
 
         return res
 
-    def plan_to_int(self, plan):
+    def plan_to_int(self, plan, extras_plan=None):
         prev_x, prev_y, prev_vx, prev_vy = self.path[0].x, self.path[0].y, 0.0, 0.0
         acc_t, acc_x, acc_y, acc_vx, acc_vy, _ = plan[0]
         _, plato_x, plato_y, plato_vx, plato_vy, _ = plan[0]
+
+        prev_extras = []
+        acc_extras = []
+        plato_extras = []
+        spmms = []
+        if extras_plan:
+            extras_num = len(self.extras)
+            for i, (name, spmm, data) in enumerate(self.extras):
+                prev_extras.append((data[0], 0))
+                spmms.append(spmm)
+                et, ex, ev = extras_plan[i][1][0]
+                assert et == acc_t
+                acc_extras.append((ex, ev))
+                plato_extras.append((ex, ev))
+
         plato_t = 0
         int_plan = []
-        for p in plan[1:] + [None]:
+        for i, p in enumerate(plan[1:] + [None]):
             if p:
                 next_t, next_x, next__y, next_vx, next_vy, _ = p
                 assert next_t > 0
+                if extras_plan:
+                    next_extras = []
+                    for j in range(extras_num):
+                        try:
+                            et, ex, ev = extras_plan[j][1][i + 1]
+                        except:
+                            print(extras_plan[j][1])
+                            print(i, len(extras_plan[j][1]))
+                            print(len(plan), len(extras_plan[0][1]))
+                            raise
+                        assert et == next_t
+                        next_extras.append((ex, ev))
 
             if p is None or (abs(next_vx - acc_vx) + abs(next_vy - acc_vy) > EPS):
                 sol_x = self.solve_in_ints(acc_t, plato_t, prev_x, prev_vx, plato_x, plato_vx, 80)
                 sol_y = self.solve_in_ints(acc_t, plato_t, prev_y, prev_vy, plato_y, plato_vy, 80)
-                int_plan.append((sol_x, sol_y))
+                cur_step = [sol_x, sol_y]
                 prev_x, prev_y, prev_vx, prev_vy = (
                     prev_x + sol_x["accel_x"] + sol_x["plato_x"],
                     prev_y + sol_y["accel_x"] + sol_y["plato_x"],
                     sol_x["plato_v"],
                     sol_y["plato_v"],
                 )
+                if extras_plan:
+                    end_extras = []
+                    for j in range(extras_num):
+                        sol_e = self.solve_in_ints(
+                            acc_t,
+                            plato_t,
+                            prev_extras[j][0],
+                            prev_extras[j][1],
+                            plato_extras[j][0],
+                            plato_extras[j][1],
+                            spmms[j],
+                        )
+                        end_extras.append(
+                            (
+                                prev_extras[j][0] + sol_e["accel_x"] + sol_e["plato_x"],
+                                sol_e["plato_v"],
+                            )
+                        )
+                        cur_step.append(sol_e)
+                    prev_extras = end_extras
+
+                int_plan.append(cur_step)
                 if p:
                     acc_t, acc_x, acc_y, acc_vx, acc_vy, _ = p
                     _, plato_x, plato_y, plato_vx, plato_vy, _ = p
                     plato_t = 0
+                    if extras_plan:
+                        plato_extras = next_extras
+                        acc_extras = next_extras
             else:
                 plato_t += next_t
                 _, plato_x, plato_y, plato_vx, plato_vy, _ = p
+                if extras_plan:
+                    plato_extras = next_extras
 
         return int_plan
 
