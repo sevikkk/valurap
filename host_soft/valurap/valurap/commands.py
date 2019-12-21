@@ -194,11 +194,11 @@ class S3GPort(S3GPortBase):
     OUT_ENDSTOPS_OPTIONS_ABORT_ENABLED_5 = 0x00080000
 
     OUT_ENDSTOPS_OPTIONS_MUX_6_NONE = 0x00000000
-    OUT_ENDSTOPS_OPTIONS_MUX_6_X = 0x001000000
-    OUT_ENDSTOPS_OPTIONS_MUX_6_Y = 0x002000000
-    OUT_ENDSTOPS_OPTIONS_MUX_6_Z = 0x003000000
-    OUT_ENDSTOPS_OPTIONS_ABORT_POLARITY_6 = 0x004000000
-    OUT_ENDSTOPS_OPTIONS_ABORT_ENABLED_6 = 0x008000000
+    OUT_ENDSTOPS_OPTIONS_MUX_6_X = 0x00100000
+    OUT_ENDSTOPS_OPTIONS_MUX_6_Y = 0x00200000
+    OUT_ENDSTOPS_OPTIONS_MUX_6_Z = 0x00300000
+    OUT_ENDSTOPS_OPTIONS_ABORT_POLARITY_6 = 0x00400000
+    OUT_ENDSTOPS_OPTIONS_ABORT_ENABLED_6 = 0x00800000
 
     OUT_ENDSTOPS_OPTIONS_MUX_7_NONE = 0x00000000
     OUT_ENDSTOPS_OPTIONS_MUX_7_X = 0x01000000
@@ -268,23 +268,22 @@ class S3GPort(S3GPortBase):
         """
         Set output to value
         """
-        if value > 2**31:
-            value = value - 2**32
+        if value > 2 ** 31:
+            value = value - 2 ** 32
 
-        payload = struct.pack('<BBi', 60, reg, value)
+        payload = struct.pack("<BBi", 60, reg, value)
 
         reply = self.send_and_wait_reply(payload, cmd_id)
         if reply[0] != 0x81:
             raise RuntimeError("Unexpected reply code")
         return
 
-
     def S3G_INPUT(self, reg, cmd_id=None):
         """
         Get value of input
         @return value
         """
-        payload = struct.pack('<BB', 61, reg)
+        payload = struct.pack("<BB", 61, reg)
 
         reply = self.send_and_wait_reply(payload, cmd_id)
         if reply[0] != 0x81 or len(reply) != 5:
@@ -292,42 +291,38 @@ class S3GPort(S3GPortBase):
         value = struct.unpack("<i", reply[1:5])[0]
         return value
 
-
     def S3G_STB(self, value, cmd_id=None):
         """
         Send strobe
         """
-        payload = struct.pack('<BI', 62, value)
+        payload = struct.pack("<BI", 62, value)
 
         reply = self.send_and_wait_reply(payload, cmd_id)
         if reply[0] != 0x81:
             raise RuntimeError("Unexpected reply code")
         return
-
 
     def S3G_CLEAR(self, value, cmd_id=None):
         """
         Clear pending interrupt
         """
-        payload = struct.pack('<BI', 63, value)
+        payload = struct.pack("<BI", 63, value)
 
         reply = self.send_and_wait_reply(payload, cmd_id)
         if reply[0] != 0x81:
             raise RuntimeError("Unexpected reply code")
         return
-
 
     def S3G_MASK(self, value, cmd_id=None):
         """
         Mask interrupts
         """
-        payload = struct.pack('<BI', 64, value)
+        payload = struct.pack("<BI", 64, value)
 
         reply = self.send_and_wait_reply(payload, cmd_id)
         if reply[0] != 0x81:
             raise RuntimeError("Unexpected reply code")
         return
-
 
     def S3G_WRITE_BUFFER(self, addr, *values, **kw):
         """
@@ -345,19 +340,14 @@ class S3GPort(S3GPortBase):
                 packet_data = data
                 data = None
             else:
-                packet_data = data[:40*5]
-                data = data[40*5:]
+                packet_data = data[: 40 * 5]
+                data = data[40 * 5 :]
 
-            packet_cmds = int(len(packet_data)/5)
-            payload = struct.pack(
-                '<BBH',
-                65,
-                packet_cmds,
-                addr
-            ) + packet_data
+            packet_cmds = int(len(packet_data) / 5)
+            payload = struct.pack("<BBH", 65, packet_cmds, addr) + packet_data
 
             addr += packet_cmds
-            #print(`payload`)
+            # print(`payload`)
             reply = self.send_and_wait_reply(payload, kw.get("cmd_id", None))
             if reply[0] != 0x81:
                 raise RuntimeError("Unexpected reply code")
@@ -371,13 +361,12 @@ class S3GPort(S3GPortBase):
         for v in args:
             val |= v
 
-        if val > 2**31:
-            val = val - 2**32
+        if val > 2 ** 31:
+            val = val - 2 ** 32
 
-        data = struct.pack('<iB', val, 64+reg)
+        data = struct.pack("<iB", val, 64 + reg)
 
         return data
-
 
     def _BUF_simple(self, cmd, args):
         """
@@ -387,7 +376,7 @@ class S3GPort(S3GPortBase):
         for v in args:
             val |= v
 
-        data = struct.pack('<iB', val, 128 + cmd)
+        data = struct.pack("<iB", val, 128 + cmd)
 
         return data
 
