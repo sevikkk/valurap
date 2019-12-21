@@ -306,3 +306,18 @@ def test_optimize_zigzag_small_int_with_extras():
         print("-----------")
         for pp in p:
             print(pp)
+
+
+def test_optimize_simple_int_with_extras():
+    pp = PathPlanner(
+        [[0, 0, 0], [100, 0, 40], [100, 0, 0]], SLOW_LIMITS, extras=[["E", 837, [0, 100, 100]]]
+    )
+
+    plan, slowdowns, notes = pp.plan_with_slow_down()
+    speedup_slowdowns = pp.plan_speedup(slowdowns, notes)
+    plan, errors, notes, extras_plan = pp.plan_path_in_floats(speedup_slowdowns, with_extras=True)
+    int_plan = pp.plan_to_int(plan, extras_plan)
+    for p in int_plan:
+        print("-----------")
+        for pp in p:
+            print(pp)
