@@ -5,9 +5,12 @@ from math import sqrt
 import numpy
 from numpy import array, absolute, isnan
 from numpy.linalg import norm
-import pandas as pd
 from scipy.optimize import minimize
 
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 
 import logging
 
@@ -167,7 +170,8 @@ def emulate(profile, verbose=0, apg_states=None):
                 )
 
     steps = [a[1] for a in sorted(steps.items())]
-    steps = pd.DataFrame(steps)
+    if pd:
+        steps = pd.DataFrame(steps)
     return steps
 
 
@@ -928,7 +932,6 @@ class PathPlanner:
         for i, p in enumerate(plan[1:] + [None]):
             if p:
                 next_t, next_x, next__y, next_vx, next_vy, _ = p
-                assert next_t > 0
                 if extras_plan:
                     next_extras = []
                     for j in range(extras_num):
