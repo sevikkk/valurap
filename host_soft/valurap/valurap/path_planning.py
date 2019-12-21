@@ -202,8 +202,8 @@ xtoa_k = vtoa_k * xtov_k
 
 
 def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
-    print("accel_t:", accel_t)
-    print("plato_t:", plato_t)
+    #print("accel_t:", accel_t)
+    #print("plato_t:", plato_t)
 
     if abs(in_v - target_v) < EPS or accel_t == 0:
         int_target_v = ir(target_v * vtoa_k)
@@ -232,14 +232,14 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
     accel_j = accel_a / accel_t * 2 * 2
     accel_jj = -accel_j / accel_t * 2
 
-    print("accel_a:", accel_a)
-    print("accel_j:", accel_j)
-    print("accel_jj:", accel_jj)
+    #print("accel_a:", accel_a)
+    #print("accel_j:", accel_j)
+    #print("accel_jj:", accel_jj)
 
     int_accel_jj = ir(accel_jj)
     int_accel_j = ir(-int_accel_jj * accel_t / 2)
-    print("int_accel_j:", int_accel_j)
-    print("int_accel_jj:", int_accel_jj)
+    #print("int_accel_j:", int_accel_j)
+    #print("int_accel_jj:", int_accel_jj)
 
     k_e_a = 1e-5
     k_e_delta_v = 1e-2
@@ -290,17 +290,17 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
 
     if 1:
         res = minimize(get_errors_2, [0, 0])
-        print(res)
-        print("old", int_accel_j, int_accel_jj)
+        #print(res)
+        #print("old", int_accel_j, int_accel_jj)
         int_accel_j = ir(int_accel_j + k_dj * res.x[0])
         int_accel_jj = ir(int_accel_jj + k_djj * res.x[1])
-        print("new", int_accel_j, int_accel_jj)
+        #print("new", int_accel_j, int_accel_jj)
 
     int_accel_x = int_x(accel_t, int_in_v, 0, int_accel_j, int_accel_jj)
     int_accel_v = int_v(accel_t, int_in_v, 0, int_accel_j, int_accel_jj)
     int_accel_middle_x = int_x(ir(accel_t / 2), int_in_v, 0, int_accel_j, int_accel_jj)
-    print("int_accel_v:", int_accel_v, int_accel_v / vtoa_k / xtov_k * 1000)
-    print("int_accel_x:", int_accel_x, int_accel_x / xtoa_k)
+    #print("int_accel_v:", int_accel_v, int_accel_v / vtoa_k / xtov_k * 1000)
+    #print("int_accel_x:", int_accel_x, int_accel_x / xtoa_k)
 
     target_plato_x = target_x * xtoa_k - int_accel_x
     int_plato_x1 = int_x(plato_t, int_accel_v, 0, 0, 0)
@@ -310,13 +310,13 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
 
     int_plato_x = int_x(plato_t, int_plato_v, 0, 0, 0)
 
-    print("int_plato_v:", int_plato_v, int_plato_v / vtoa_k / xtov_k * 1000)
+    #print("int_plato_v:", int_plato_v, int_plato_v / vtoa_k / xtov_k * 1000)
     e_target = target_x - (int_plato_x + int_accel_x) / xtoa_k  # target X error
     e_delta_v = int_plato_v / vtoa_k - target_v
     e_jerk = (int_plato_v - int_accel_v) / vtoa_k
-    print("e_target:", e_target)
-    print("e_delta_v:", e_delta_v)
-    print("e_jerk:", e_jerk)
+    #print("e_target:", e_target)
+    #print("e_delta_v:", e_delta_v)
+    #print("e_jerk:", e_jerk)
 
     return {
         "accel_j": int_accel_j,
@@ -881,7 +881,7 @@ class PathPlanner:
             # print("try_slowdowns", try_slowdowns)
             try_plan, try_errors, try_notes, _ = self.plan_path_in_floats(try_slowdowns)
             if try_errors:
-                print("errors", try_errors)
+                #print("errors", try_errors)
                 continue
 
             # print("final_notes", try_notes)
