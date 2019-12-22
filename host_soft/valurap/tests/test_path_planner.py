@@ -141,7 +141,39 @@ def test_optimize_zigzag_small():
     ]
 
 
-def test_solve_model():
+def test_solve_model_1():
+    plan = [
+        [0.023333333333333334, 0.2666666666666668, 0.0, 40.0, 0.0, "accel_0"],
+        [2.486666666666667, 99.73333333333333, 0.0, 40.0, 0.0, "plato_0"],
+        [0.013333333333333334, 100.0, 0.2666666666666668, 0.0, 40.0, "accel_1"],
+        [2.486666666666667, 100.0, 99.73333333333333, 0.0, 40.0, "plato_1"],
+        [0.013333333333333334, 100.0, 100.0, 0.0, 0.0, "accel_2"],
+        [0.005, 100.0, 100.0, 0.0, 0.0, "final"],
+    ]
+    acc_t, acc_x, acc_y, acc_vx, ac_vy, _ = plan[0]
+    plato_t, plato_x, plato_y, _, _, _ = plan[1]
+    res = solve_model_simple(
+        0, acc_vx / 1000 * 80 * xtov_k, plato_x * 80, ir(acc_t * 1000), ir(plato_t * 1000)
+    )
+
+    assert res == {
+        "accel_a": 0,
+        "accel_j": 195450425,
+        "accel_jj": -17765891,
+        "accel_middle_x": 6.076024564372061,
+        "accel_t": 23,
+        "accel_x": 33.54218909201734,
+        "e_delta_v": -458.5278241269989,
+        "e_jerk": -18.556732177734375,
+        "e_target": 6.426034815376624e-08,
+        "plato_t": 2487,
+        "plato_v": 274419.37911987305,
+        "plato_x": 7945.12447751039,
+        "target_v": 274877.90694400005,
+    }
+
+
+def test_solve_model_2():
     plan = [
         [0.013333333333333334, 0.2666666666666668, 0.0, 40.0, 0.0, "accel_0"],
         [2.486666666666667, 99.73333333333333, 0.0, 40.0, 0.0, "plato_0"],
@@ -157,18 +189,42 @@ def test_solve_model():
     )
 
     assert res == {
-        "accel_j": 594079295,
-        "accel_jj": -99013216,
-        "accel_middle_x": 1.8467694324897364,
+        "accel_a": 1385722962,
+        "accel_j": 0,
+        "accel_jj": 0,
+        "accel_middle_x": 9.599999998144426,
         "accel_t": 13,
-        "accel_x": 17.605868572800887,
-        "e_delta_v": 91.90221432514954,
-        "e_jerk": 0.2468719482421875,
-        "e_target": 1.031621650326997e-07,
+        "accel_x": 19.199999996288852,
+        "e_delta_v": -7.354537956416607e-06,
+        "e_jerk": 4.57763671875e-05,
+        "e_target": 1.066666883310063,
         "plato_t": 2487,
-        "plato_v": 274969.8091583252,
-        "plato_x": 7961.060797990704,
+        "plato_v": 274877.9069366455,
+        "plato_x": 7958.399999787069,
         "target_v": 274877.90694400005,
+    }
+
+
+def test_solve_model_3():
+    acc_vx = 100.0
+    plato_x = 100.0
+    plato_t = 1.0
+    res = solve_model_simple(0, acc_vx / 1000 * 80 * xtov_k, plato_x * 80, 0, ir(plato_t * 1000))
+
+    assert res == {
+        "accel_a": 0,
+        "accel_j": 0,
+        "accel_jj": 0,
+        "accel_middle_x": 0.0,
+        "accel_t": 0,
+        "accel_x": 0.0,
+        "e_delta_v": 4.501896910369396e-06,
+        "e_jerk": 687194.767364502,
+        "e_target": -5.240872269496322e-08,
+        "plato_t": 1000,
+        "plato_v": 687194.767364502,
+        "plato_x": 8000.000000052409,
+        "target_v": 687194.76736,
     }
 
 
