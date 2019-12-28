@@ -1,11 +1,21 @@
 version: "3"
 services:
    node:
-        build: docker
+        build: docker/node
         image: node-builder
         working_dir: /src
         command: sh -c "cd valurap-ui && yarn serve"
         ports:
                 - 8080:8080
+        volumes:
+                - .:/src
+   flask:
+        build: docker/backend
+        image: backend
+        working_dir: /src
+        command: python app.py
+        tty: true
+        ports:
+                - 5000:5000
         volumes:
                 - .:/src
