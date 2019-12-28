@@ -4,8 +4,8 @@ module.exports = {
     proxy: {
       '^/socket.io/': {
         target: 'http://flask:5000/',
-        ws: true,
-      },
+        ws: true
+      }
     }
   }
 }
