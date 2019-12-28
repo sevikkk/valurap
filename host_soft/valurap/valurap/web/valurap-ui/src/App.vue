@@ -4,7 +4,19 @@
       Valurap Control Panel
     </div>
     <div class="row">
-      <div class="col-sm-8"/>
+      <div class="col-sm-3"/>
+      <div class="col-sm-2">
+        <div class="row">
+          <div v-model="show" class="d-inline">X: {{$store.state.cur_x}}</div>
+        </div>
+        <div class="row">
+          <div v-model="show" class="d-inline">Y: {{$store.state.cur_y}}</div>
+        </div>
+        <div class="row">
+          <div v-model="show" class="d-inline">Z: {{$store.state.cur_z}}</div>
+        </div>
+      </div>
+      <div class="col-sm-3"/>
       <div class="col-sm-3">
         <div class="row">
           <div class="col-sm-12">
@@ -34,10 +46,10 @@
     name: 'app',
     components: {},
     methods: {
-    sendCommand: function (cmd) {
-      this.$socket.emit('send_command', cmd)
+      sendCommand: function (cmd) {
+        this.$socket.emit('send_command', cmd)
+      },
     }
-  }
   }
 </script>
 

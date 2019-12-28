@@ -28,6 +28,6 @@ def on_send_command(data):
     elif data == "right":
         current_state["X"] += 1
 
-    emit('cur_state', current_state)
+    emit('cur_state', current_state, broadcast=True)
 
 socketio.run(app, host="0.0.0.0")
