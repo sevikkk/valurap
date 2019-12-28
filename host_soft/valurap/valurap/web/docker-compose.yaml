@@ -9,6 +9,7 @@ services:
                 - 8080:8080
         volumes:
                 - .:/src
+        restart: always
    flask:
         build: docker/backend
         image: backend
@@ -19,3 +20,4 @@ services:
                 - 5000:5000
         volumes:
                 - .:/src
+        restart: always
