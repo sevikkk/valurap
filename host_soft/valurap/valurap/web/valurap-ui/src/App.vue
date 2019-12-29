@@ -16,35 +16,37 @@
           <div v-model="show" class="d-inline">Z: {{$store.state.cur_z}}</div>
         </div>
       </div>
-      <div class="col-sm-3"/>
-      <div class="col-sm-3">
+      <div class="col-sm-2"/>
+      <div class="col-sm-4">
         <div class="row">
           <div class="col-sm-12">
-            <b-button class="my-1" @click="sendCommand('up')">^</b-button>
+            <Button cmd="up" class="my-3" comment="^"/>
           </div>
         </div>
         <div class="row">
           <div class="col-sm-12">
-            <b-button class="my-1 mx-4" @click="sendCommand('left')">&lt;</b-button>
-            <b-button class="my-1 mx-4" @click="sendCommand('right')">&gt;</b-button>
+            <Button cmd="left" class="mx-5" comment="&lt;"/>
+            <Button cmd="right" class="mx-5" comment="&gt;"/>
           </div>
         </div>
         <div class="row">
           <div class="col-sm-12">
-            <b-button class="my-1" @click="sendCommand('down')">v</b-button>
+            <Button cmd="down" class="my-3" comment="v"/>
           </div>
         </div>
       </div>
-      <div class="col-sm-1"/>
     </div>
   </div>
 </template>
 
 <script>
+  import Button from './components/Button.vue'
 
   export default {
     name: 'app',
-    components: {},
+    components: {
+      Button
+    },
     methods: {
       sendCommand: function (cmd) {
         this.$socket.emit('send_command', cmd)
