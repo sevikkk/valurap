@@ -1,2 +1,2 @@
-flask 
-flask-socketio
+aiohttp
+python_socketio

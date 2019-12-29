@@ -1,11 +1,12 @@
-import time
+import asyncio
 
-from flask import Flask, render_template
-from flask_socketio import SocketIO, join_room, emit, send
+from aiohttp import web
 
-# initialize Flask
-app = Flask(__name__)
-socketio = SocketIO(app)
+import socketio
+
+sio = socketio.AsyncServer(async_mode='aiohttp')
+app = web.Application()
+sio.attach(app)
 
 current_state = {
     "X": 0,
@@ -19,13 +20,37 @@ current_speeds = {
     "Z": 0,
 }
 
-@app.route('/')
-def index():
-    """Serve the index HTML"""
-    return render_template('index.html')
+async def background_task():
+    """Example of how to send server generated events to clients."""
+    while True:
+        need_update = False
+        for k,v in current_speeds.items():
+            if v != 0:
+                current_state[k] += v
+                need_update = True
 
-@socketio.on('send_command')
-def on_send_command(data):
+        if need_update:
+            await sio.emit('cur_state', current_state)
+
+        await sio.sleep(0.2)
+
+async def index(request):
+    with open('valurap-ui/dist/index.html') as f:
+        return web.Response(text=f.read(), content_type='text/html')
+
+async def favicon(request):
+    with open('valurap-ui/dist/favicon.ico', 'rb') as f:
+        return web.Response(body=f.read(), content_type='image/vnd.microsoft.icon')
+
+@sio.event
+async def leave(sid, message):
+    sio.leave_room(sid, message['room'])
+    await sio.emit('my_response', {'data': 'Left room: ' + message['room']},
+                   room=sid)
+
+
+@sio.event
+async def send_command(sid, data):
     print("got_command:", data)
     if data == "up":
         current_state["Y"] += 1
@@ -52,26 +77,31 @@ def on_send_command(data):
     elif data == "stop-right":
         current_speeds["X"] = 0
 
-    emit('cur_state', current_state, broadcast=True)
+    await sio.emit('cur_state', current_state)
 
-import threading
+@sio.event
+async def disconnect_request(sid):
+    await sio.disconnect(sid)
 
-class Incrementer(threading.Thread):
-    def run(self):
-        while True:
-            need_update = False
-            for k,v in current_speeds.items():
-                if v != 0:
-                    current_state[k] += v
-                    need_update = True
 
-            if need_update:
-                socketio.emit('cur_state', current_state, broadcast=True)
+@sio.event
+async def connect(sid, environ):
+    await sio.emit('cur_state', current_state, room=sid)
 
-            time.sleep(0.2)
 
-t = Incrementer()
-t.setDaemon(True)
-t.start()
+@sio.event
+def disconnect(sid):
+    print('Client disconnected')
 
-socketio.run(app, host="0.0.0.0")
+
+app.router.add_get('/', index)
+app.router.add_get('/favicon.ico', favicon)
+app.router.add_static('/js', 'valurap-ui/dist/js')
+app.router.add_static('/css', 'valurap-ui/dist/css')
+app.router.add_static('/static', 'static')
+
+
+if __name__ == '__main__':
+    sio.start_background_task(background_task)
+    web.run_app(app, host='0.0.0.0', port=5000)
+
