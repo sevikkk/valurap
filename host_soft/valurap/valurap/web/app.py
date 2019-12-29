@@ -38,9 +38,9 @@ def on_send_command(data):
     elif data == "start-up":
         current_speeds["Y"] = 1
     elif data == "start-down":
-        current_speeds["Y"] = 1
+        current_speeds["Y"] = -1
     elif data == "start-left":
-        current_speeds["X"] = 1
+        current_speeds["X"] = -1
     elif data == "start-right":
         current_speeds["X"] = 1
     elif data == "stop-up":
