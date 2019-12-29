@@ -1,5 +1,6 @@
 <template>
   <b-button
+    :class="btn_class"
     @click="do_evt('click')"
     @touchstart.prevent="do_evt('touch')"
     @touchend.prevent="do_evt('touchend')"
@@ -19,6 +20,7 @@
       return {
         state: 'default',
         timeout: null,
+        btn_class: "btn-primary",
       }
     },
     props: {
@@ -32,6 +34,7 @@
             // nothing
           } else if (evt === 'mousedown') {
             this.state = 'mdown';
+            this.btn_class = "btn-info";
 
             if (this.timeout)
               clearTimeout(this.timeout);
@@ -42,6 +45,7 @@
             if (this.timeout)
               clearTimeout(this.timeout);
 
+            this.btn_class = "btn-info";
             this.timeout = setTimeout(() => this.do_evt("timeout"), 300);
           } else {
             console.log("Unexpected event: " + evt + "@" + this.state);
@@ -51,8 +55,10 @@
             this.state = 'active_mouse';
             this.timeout = null;
             this.sendCommand('start-');
+            this.btn_class = "btn-success";
           } else if (evt === "mouseup" || evt === "mouseleave") {
             this.state = 'default';
+            this.btn_class = "btn-primary";
             this.sendCommand('');
             if (this.timeout)
               clearTimeout(this.timeout);
@@ -62,15 +68,18 @@
           if (evt === "mouseup" || evt === "mouseleave") {
             this.state = 'default';
             this.sendCommand('stop-');
+            this.btn_class = "btn-primary";
           } else
             console.log("Unexpected event: " + evt + "@" + this.state);
         } else if (this.state === 'touch') {
           if (evt === "timeout") {
             this.state = 'active_touch';
             this.timeout = null;
+            this.btn_class = "btn-success";
             this.sendCommand('start-');
           } else if (evt === "touchend" || evt === "touchcancel") {
             this.state = 'default';
+            this.btn_class = "btn-primary";
             this.sendCommand('');
             if (this.timeout)
               clearTimeout(this.timeout);
@@ -80,6 +89,7 @@
           if (evt === "touchend" || evt === "touchcancel") {
             this.state = 'default';
             this.sendCommand('stop-');
+            this.btn_class = "btn-primary";
           } else
             console.log("Unexpected event: " + evt + "@" + this.state);
         }
