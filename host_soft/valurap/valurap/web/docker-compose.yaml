@@ -10,14 +10,3 @@ services:
         volumes:
                 - .:/src
         restart: always
-   flask:
-        build: docker/backend
-        image: backend
-        working_dir: /src
-        command: python app.py
-        tty: true
-        ports:
-                - 5000:5000
-        volumes:
-                - .:/src
-        restart: always
