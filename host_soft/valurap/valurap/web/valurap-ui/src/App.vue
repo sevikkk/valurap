@@ -1,8 +1,8 @@
 <template>
   <div id="app">
-    <div class="col-sm-12">
+    <h1 class="col-sm-12 mt-4" @click="openFullScreen">
       Valurap Control Panel
-    </div>
+    </h1>
     <div class="row">
       <div class="col-sm-1"/>
       <div class="col-sm-3">
@@ -16,30 +16,39 @@
           <div class="d-inline">Z: {{$store.state.cur_z}}</div>
         </div>
       </div>
-      <div class="col-sm-4"/>
+      <div class="col-sm-2"/>
       <div class="my-button-box">
         <div class="row">
           <div class="col-sm-4"/>
           <div class="col-sm-4 p-2">
-            <Button cmd="up" class="py-4 btn-block" comment="^"/>
+            <Button cmd="up" class="py-4 btn-block" def_class="btn-warning" comment="^"/>
           </div>
           <div class="col-sm-4"/>
         </div>
         <div class="row">
           <div class="col-sm-4 p-2">
-            <Button cmd="left" class="py-4 btn-block" comment="&lt;"/>
+            <Button cmd="left" class="py-4 btn-block" def_class="btn-warning" comment="&lt;"/>
           </div>
           <div class="col-sm-4"/>
           <div class="col-sm-4 p-2">
-            <Button cmd="right" class="py-4 btn-block" comment="&gt;"/>
+            <Button cmd="right" class="py-4 btn-block" def_class="btn-warning" comment="&gt;"/>
           </div>
         </div>
         <div class="row">
           <div class="col-sm-4"/>
           <div class="col-sm-4 p-2">
-            <Button cmd="down" class="py-4 btn-block" comment="v"/>
+            <Button cmd="down" class="py-4 btn-block" def_class="btn-warning" comment="v"/>
           </div>
           <div class="col-sm-4"/>
+        </div>
+      </div>
+      <div class="col-sm-1"/>
+      <div class="col-sm-1">
+        <div class="row mb-5 mt-2">
+          <Button cmd="home" class="py-4 btn-block" def_class="btn-dark" comment="Home"/>
+        </div>
+        <div class="row">
+          <Button cmd="abort" class="py-5 btn-block" def_class="btn-danger" comment="Abort"/>
         </div>
       </div>
       <div class="col-sm-1"/>
@@ -59,6 +68,18 @@
       sendCommand: function (cmd) {
         this.$socket.emit('send_command', cmd)
       },
+      openFullScreen() {
+        var elem = document.documentElement;
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen();
+        } else if (elem.mozRequestFullScreen) { /* Firefox */
+          elem.mozRequestFullScreen();
+        } else if (elem.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+          elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE/Edge */
+          elem.msRequestFullscreen();
+        }
+      },
     }
   }
 </script>
@@ -70,11 +91,11 @@
     -moz-osx-font-smoothing: grayscale;
     text-align: center;
     color: #2c3e50;
-    margin-top: 60px;
   }
+
   .my-button-box {
-     min-width: 20em;
-     max-width: 20em;
+    min-width: 20em;
+    max-width: 20em;
     min-height: 30em;
     max-height: 30em;
   }
