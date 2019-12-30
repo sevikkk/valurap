@@ -25,18 +25,18 @@ prns = [None]
 def valurap_processing_loop():
     prn = Valurap()
     prns[0] = prn
-    prn.setup()
     try:
+        prn.setup()
         while True:
             print("Waiting for command...")
             fut = asyncio.run_coroutine_threadsafe(prn_queue.get(), loop)
             q = fut.result()
             if prn.abort:
                 while True:
-                    fut = asyncio.run_coroutine_threadsafe(prn_queue.get_nowait(), loop)
                     try:
+                        fut = asyncio.run_coroutine_threadsafe(prn_queue.get_nowait(), loop)
                         fut.result()
-                    except asyncio.QueueEmpty:
+                    except asyncio.queues.QueueEmpty:
                         break
                 break
 
@@ -49,8 +49,8 @@ def valurap_processing_loop():
         print("Aborted")
     finally:
         prn = Valurap()
-        prns[0] = prn
         prn.setup()
+        prns[0] = prn
 
 
 async def background_task():
