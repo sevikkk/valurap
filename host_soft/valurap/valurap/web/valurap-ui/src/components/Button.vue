@@ -20,12 +20,13 @@
       return {
         state: 'default',
         timeout: null,
-        btn_class: "btn-primary",
+        btn_class: this.$props.def_class,
       }
     },
     props: {
       comment: String,
-      cmd: String
+      cmd: String,
+      def_class: String
     },
     methods: {
       do_evt: function (evt) {
@@ -58,7 +59,7 @@
             this.btn_class = "btn-success";
           } else if (evt === "mouseup" || evt === "mouseleave") {
             this.state = 'default';
-            this.btn_class = "btn-primary";
+            this.btn_class = this.$props.def_class;
             this.sendCommand('');
             if (this.timeout)
               clearTimeout(this.timeout);
@@ -68,7 +69,7 @@
           if (evt === "mouseup" || evt === "mouseleave") {
             this.state = 'default';
             this.sendCommand('stop-');
-            this.btn_class = "btn-primary";
+            this.btn_class = this.$props.def_class;
           } else
             console.log("Unexpected event: " + evt + "@" + this.state);
         } else if (this.state === 'touch') {
@@ -79,7 +80,7 @@
             this.sendCommand('start-');
           } else if (evt === "touchend" || evt === "touchcancel") {
             this.state = 'default';
-            this.btn_class = "btn-primary";
+            this.btn_class = this.$props.def_class;
             this.sendCommand('');
             if (this.timeout)
               clearTimeout(this.timeout);
@@ -89,7 +90,7 @@
           if (evt === "touchend" || evt === "touchcancel") {
             this.state = 'default';
             this.sendCommand('stop-');
-            this.btn_class = "btn-primary";
+            this.btn_class = this.$props.def_class;
           } else
             console.log("Unexpected event: " + evt + "@" + this.state);
         }
