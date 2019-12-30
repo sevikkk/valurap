@@ -65,6 +65,9 @@ except ImportError:
 
             return b'\x81'
 
+class ExecutionAborted(Exception):
+    pass
+
 class Valurap(object):
     def __init__(self):
         self.s3g = S3GPort()
@@ -113,6 +116,7 @@ class Valurap(object):
             "Y": self.apg_y,
             "Z": self.apg_z,
         }
+        self.abort = False
 
     def setup(self):
         self.spi.setup_tmc2130()
@@ -158,6 +162,9 @@ class Valurap(object):
             time.sleep(0.1)
 
     def check_be_busy(self):
+        if self.abort:
+            raise ExecutionAborted()
+
         s3g = self.s3g
         status = s3g.S3G_INPUT(s3g.IN_BE_STATUS)
         busy = (status & 0x80000000) >> 31
