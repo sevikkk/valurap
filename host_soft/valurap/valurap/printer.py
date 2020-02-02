@@ -69,10 +69,14 @@ class ExecutionAborted(Exception):
     pass
 
 class Valurap(object):
-    def __init__(self):
+    def __init__(self, oled=None):
         self.s3g = S3GPort()
         self.spi = SPIPort()
-        self.oled = OLED()
+
+        if oled is None:
+            oled = OLED()
+        self.oled = oled
+
         self.cap = None
 
         self.asg = Asg(self)
@@ -137,15 +141,18 @@ class Valurap(object):
         print("Executing reset code")
         self.exec_code(reset_code)
 
+        print("Update axes")
         for axe in self.axes.values():
             axe.enabled = False
             axe.apg = None
             axe.endstop_abort = False
         self.update_axes_config()
 
+        print("Reset OLED")
         with self.oled.draw() as draw:
             draw.rectangle(self.oled.bounding_box, outline="white", fill="black")
             draw.text((10, 10), "Ready", fill="white")
+        print("Setup done")
 
     def exec_code(self, code, addr=0, wait=True):
         s3g = self.s3g
@@ -414,21 +421,21 @@ class Valurap(object):
         self.axe_z.apg = None
         self.update_axes_config()
         for axe_name, delta in [
-            ("BRZ", 1280),
-            ("BLZ", -40),
-            ("FLZ", 4320),
-            ("FRZ", 2160),
+            ("BLZ",  312 - int(( 0.0 ) * 1600)),
+            ("BRZ", 4050 - int(( 0.0 ) * 1600)),
+            ("FLZ", 1645 - int(( 0.0 ) * 1600)),
+            ("FRZ", 4297 - int(( 0.0 ) * 1600)),
         ]:
             self.axes[axe_name].apg = self.apg_x
             self.update_axes_config()
-            self.move(**{axe_name: delta})
+            self.move(**{axe_name: 5000 + delta})
             self.axes[axe_name].apg = None
             self.update_axes_config()
 
-        self.set_positions(Z=0)
+        self.set_positions(Z=5000)
         self.axe_z.apg = self.apg_x
         self.update_axes_config()
-        self.move(Z=20000)
+        self.move(Z=15000)
         self.update_axes_positions()
 
         self.axe_z.apg = None
