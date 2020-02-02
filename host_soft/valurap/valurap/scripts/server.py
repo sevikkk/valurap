@@ -1,19 +1,14 @@
 import asyncio
+from concurrent.futures._base import CancelledError
 
 import aiomonitor
 from aiohttp import web
 import socketio
 import os.path
 
-from ..printer import Valurap, ExecutionAborted
+from ..printer import Valurap, ExecutionAborted, OLED
 
 UI_ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), "../web/valurap-ui/dist/"))
-
-loop = asyncio.get_event_loop()
-
-sio = socketio.AsyncServer(async_mode="aiohttp")
-app = web.Application(loop=loop)
-sio.attach(app)
 
 current_state = {"X": 0, "Y": 0, "Z": 0}
 
@@ -21,9 +16,18 @@ current_speeds = {"X": 0, "Y": 0, "Z": 0}
 
 prn_queue = asyncio.Queue()
 prns = [None]
+stopping = False
+
+loop = asyncio.get_event_loop()
+sio = socketio.AsyncServer(async_mode="aiohttp")
+app = web.Application()
+sio.attach(app)
+
+oled = OLED()
+
 
 def valurap_processing_loop():
-    prn = Valurap()
+    prn = Valurap(oled=oled)
     prns[0] = prn
     try:
         prn.setup()
@@ -45,18 +49,27 @@ def valurap_processing_loop():
                 break
             elif q[0] == "home":
                 prn.home()
+    except CancelledError:
+        print("Cancelled")
     except ExecutionAborted:
         print("Aborted")
     finally:
-        prn = Valurap()
+        prn = Valurap(oled=oled)
         prn.setup()
         prns[0] = prn
 
 
+async def stop_valurap(app):
+    global stopping
+
+    stopping = True
+
+app.on_cleanup.append(stop_valurap)
+
 async def background_task():
     """Example of how to send server generated events to clients."""
     prn_loop = None
-    while True:
+    while not stopping:
         if prn_loop is None:
             prn_loop = loop.run_in_executor(None, valurap_processing_loop)
         elif prn_loop.done():
@@ -82,6 +95,9 @@ async def background_task():
 
         await sio.sleep(0.2)
 
+    prns[0].abort = True
+    await prn_queue.put(["abort"])
+    #await prn_loop
 
 sio.start_background_task(background_task)
 
