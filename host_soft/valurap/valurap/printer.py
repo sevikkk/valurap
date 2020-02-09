@@ -162,13 +162,59 @@ class Valurap(object):
         s3g.S3G_STB(s3g.STB_ENDSTOPS_UNLOCK)
         s3g.S3G_STB(s3g.STB_BE_START)
         while wait:
-            busy = self.check_be_busy()
+            busy, pc = self.check_be_busy()
 
             if not busy:
                 break
             time.sleep(0.1)
 
-    def check_be_busy(self):
+    def exec_long_code(self, code, splits=1000, verbose=False):
+        addr = 0
+        s3g = self.s3g
+        s3g.S3G_OUTPUT(s3g.OUT_LEDS, 0x55)
+        current_code = code[:splits]
+        code = code[splits:]
+        #s3g.S3G_WRITE_BUFFER(addr, *current_code)
+        s3g.S3G_WRITE_BUFFER(addr, *(current_code + [s3g.BUF_STB(s3g.STB_BE_ABORT), s3g.BUF_DONE()]))
+        if verbose:
+            print("sent {} commands to addr {}, left {}".format(len(current_code), addr, len(code)))
+        s3g.S3G_OUTPUT(s3g.OUT_BE_START_ADDR, addr)
+        s3g.S3G_STB(s3g.STB_ENDSTOPS_UNLOCK)
+        s3g.S3G_STB(s3g.STB_BE_START)
+        addr += len(current_code)
+        last_free_buf = None
+        while True:
+            busy, pc = self.check_be_busy(addr, len(code), verbose)
+            if not busy:
+                break
+
+            if len(code) == 0:
+                time.sleep(0.1)
+            else:
+                free_buf = (pc - addr) % 8192
+                if free_buf < 0:
+                    free_buf += 8192
+
+                if free_buf < splits + 10:
+                    if free_buf != last_free_buf:
+                        print("too small free_buf: {}".format(free_buf))
+                        last_free_buf = free_buf
+                    time.sleep(0.1)
+                else:
+                    print("free_buf: {}".format(free_buf))
+                    last_free_buf = None
+                    current_code = code[:splits]
+                    code = code[splits:]
+                    s3g.S3G_WRITE_BUFFER(addr, *(current_code + [s3g.BUF_STB(s3g.STB_BE_ABORT), s3g.BUF_DONE()]))
+                    if verbose:
+                        print("sent {} commands to addr {}, left {}".format(len(current_code), addr, len(code)))
+                    addr += len(current_code)
+                    addr = addr % 8192
+
+        if code:
+            raise RuntimeError("Not all code sent, most probably system staled and got exec buffer underflow")
+
+    def check_be_busy(self, cur_addr=-1, cur_len=-1, verbose=False):
         if self.abort:
             raise ExecutionAborted()
 
@@ -178,10 +224,11 @@ class Valurap(object):
         waiting = (status & 0x40000000) >> 30
         error = (status & 0x00FF0000) >> 16
         pc = status & 0x0000FFFF
-        #print("Busy: {} Wait: {} Error: {} PC: {}".format(busy, waiting, error, pc))
+        if verbose:
+            print("Busy: {} Wait: {} Error: {} PC: {} Cur addr: {} Cur len: {}".format(busy, waiting, error, pc, cur_addr, cur_len))
         lines = []
         if busy:
-            lines.append("B {} W {} E {} P {}".format(busy, waiting, error, pc))
+            lines.append("B {} P {} A {} L {}".format(busy, pc, cur_addr, cur_len))
         else:
             lines.append("Idle")
 
@@ -191,7 +238,7 @@ class Valurap(object):
         with self.oled.draw() as draw:
             draw.rectangle(self.oled.bounding_box, outline="white", fill="black")
             draw.multiline_text((5, 3), "\n".join(lines), fill="white")
-        return busy
+        return busy, pc
 
     def update_axes_config(self):
         s3g = self.s3g
@@ -295,7 +342,7 @@ class Valurap(object):
 
         self.exec_code(path_code, wait=False)
         while True:
-            busy = self.check_be_busy()
+            busy, pc = self.check_be_busy()
             if not busy:
                 break
 
