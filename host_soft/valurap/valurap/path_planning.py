@@ -229,7 +229,7 @@ def solve_model_simple(in_v, target_v, target_x, accel_t, plato_t):
             "e_jerk": e_jerk,
         }
 
-    if accel_t < 20:
+    if True or accel_t < 20:
         int_target_v = ir(target_v * vtoa_k)
         int_in_v = ir(in_v * vtoa_k)
 
