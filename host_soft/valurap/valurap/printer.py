@@ -21,7 +21,8 @@ try:
     from .oled import OLED
 except ImportError:
     class SPIPort(object):
-        pass
+        def setup_tmc2130(self):
+            pass
 
     class FakeDraw(object):
         def __enter__(self, *args, **kw):
