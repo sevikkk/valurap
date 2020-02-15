@@ -136,7 +136,7 @@ def path_gen(lines):
 
 
 
-def gen_segments(pg):
+def gen_segments(pg, split_len=None):
     extras = [0]
     ext = 0
 
@@ -207,7 +207,7 @@ def gen_segments(pg):
                     ext += de
                     extras.append(ext)
 
-                    if len(path) > 100:
+                    if split_len and len(path) > split_len:
                         path.append([x, y, 0])
                         extras.append(ext)
 
