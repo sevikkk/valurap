@@ -4,7 +4,7 @@ from collections import namedtuple
 do_home = namedtuple("do_home", "cur_pos")
 do_path = namedtuple("do_path", "mode path")
 
-do_segment = namedtuple("do_segment", "path ext")
+do_segment = namedtuple("do_segment", "path")
 do_move = namedtuple("do_move", "deltas")
 
 
@@ -137,13 +137,12 @@ def path_gen(lines):
 
 
 def gen_segments(pg, split_len=None):
-    extras = [0]
-    ext = 0
-
-    path = [[0, 0, 0]]
+    path = [[0, 0, 0, 0]]
     x = 0
     y = 0
     z = 0
+    ext = 0
+    verify = False
 
     for gc_path in pg:
         if isinstance(gc_path, do_home):
@@ -153,9 +152,8 @@ def gen_segments(pg, split_len=None):
             y = gc_path.cur_pos["Y"]
             z = gc_path.cur_pos["Z"]
         elif isinstance(gc_path, do_path):
-            if 0:
+            if verify:
                 print("do_path", gc_path.mode, len(gc_path.path))
-                # print("do_path", gc_path.path)
 
                 print("   x:", x, gc_path.path[0]["X"])
                 print("   y:", y, gc_path.path[0]["Y"])
@@ -165,20 +163,12 @@ def gen_segments(pg, split_len=None):
             assert (abs(z - gc_path.path[0]["Z"]) < 0.1)
 
             gc_segment = gc_path.path[1:]
-            gc_seg_len = len(gc_segment)
             for i, p in enumerate(gc_segment):
-                # print(i, p)
-                if 0:
-                    if p["line"] in range(29, 33):
-                        print("Debug:", p)
                 if ("Z" in p) or ((not "X" in p) and (not "Y" in p)):
                     if len(path) > 1:
-                        path.append([x, y, 0])
-                        extras.append(ext)
+                        path.append([x, y, 0, ext])
+                        yield do_segment(path)
 
-                        yield do_segment(path, extras)
-                    if 0:
-                        print(f"break at {p} non standart move ({i} of {seg_len})")
                     yield do_move(p)
                     if "X" in p:
                         dx = p["X"]
@@ -193,8 +183,7 @@ def gen_segments(pg, split_len=None):
                         de = -p.get("E", 0)
                         ext += de
 
-                    extras = [ext]
-                    path = [[x, y, 0]]
+                    path = [[x, y, 0, ext]]
                 else:
                     dx = p["X"]
                     dy = p["Y"]
@@ -203,22 +192,18 @@ def gen_segments(pg, split_len=None):
 
                     x += dx
                     y += dy
-                    path.append([x, y, speed])
                     ext += de
-                    extras.append(ext)
+                    path.append([x, y, speed, ext])
 
                     if split_len and len(path) > split_len:
-                        path.append([x, y, 0])
-                        extras.append(ext)
+                        path.append([x, y, 0, ext])
 
-                        yield do_segment(path, extras)
+                        yield do_segment(path)
 
-                        extras = [ext]
-                        path = [[x, y, 0]]
+                        path = [[x, y, 0, ext]]
 
     if len(path) > 1:
-        path.append([x, y, 0])
-        extras.append(ext)
+        path.append([x, y, 0, ext])
 
-        yield do_segment(path, extras)
+        yield do_segment(path)
 

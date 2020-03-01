@@ -3,7 +3,7 @@ from collections import namedtuple
 from math import sqrt
 
 import numpy
-from numpy import array, absolute, isnan
+from numpy import array, absolute, isnan, minimum, maximum
 from numpy.linalg import norm
 from scipy.optimize import minimize
 
@@ -1128,3 +1128,226 @@ class PathPlanner:
         ]
 
         return pr_opt
+
+
+##################################
+# More pandas implementation
+
+def make_path(seg):
+    path = pd.DataFrame({
+        "x": seg[:, 0],
+        "y": seg[:, 1],
+        "v": seg[:, 2],
+        "e": seg[:, 3],
+    })
+
+    dx = path["x"] - path["x"].shift(1)
+    dy = path["y"] - path["y"].shift(1)
+    l = norm([dx, dy], axis=0)
+    l[0] = 1.0
+    l[len(l) - 1] = 1.0
+
+    path = path[l > 0.01]
+
+    px = path["x"].shift(1)
+    py = path["y"].shift(1)
+    pe = path["e"].shift(1)
+
+    dx = path["x"] - px
+    dy = path["y"] - py
+    de = path["e"] - pe
+
+    path["src_idx"] = range(len(dx))
+
+    path["dx"] = dx
+    path["dy"] = dy
+    path["l"] = norm([dx, dy], axis=0)
+    path["de"] = de
+
+    path["px"] = px
+    path["py"] = py
+    path["pe"] = pe
+    path["pv"] = path["v"].shift(1)
+    path["pdx"] = path["dx"].shift(1).fillna(0)
+    path["pdy"] = path["dy"].shift(1).fillna(0)
+    path["pl"] = path["l"].shift(1).fillna(0)
+    path["pde"] = path["de"].shift(1).fillna(0)
+
+    path["nx"] = path["x"].shift(-1)
+    path["ny"] = path["y"].shift(-1)
+    path["ne"] = path["e"].shift(-1)
+    path["nv"] = path["v"].shift(-1)
+    path["ndx"] = path["dx"].shift(-1)
+    path["ndy"] = path["dy"].shift(-1)
+    path["nde"] = path["de"].shift(-1)
+    path["nl"] = path["l"].shift(-1)
+
+    path["dt"] = path["l"] / path["v"]
+    path["t"] = path["dt"].cumsum().shift(1).fillna(0)
+
+    path = path[1:-1]
+
+    path = path.set_index("t")
+
+    slowdowns = pd.DataFrame()
+    slowdowns["corner"] = path["v"] * 0.0 + 1.0
+    slowdowns["plato"] = path["v"] * 0.0 + 1.0
+
+    return path, slowdowns
+
+
+def gen_speeds(path, slowdowns):
+    speeds = pd.DataFrame()
+    speeds["path"] = path["v"]
+    speeds["c_in"] = path["pv"]*slowdowns["corner"]
+    speeds["c_out"] = path["v"]*slowdowns["corner"]
+    speeds["out"] = path["v"]*(slowdowns["corner"].shift(-1).fillna(0))
+    speeds["plato_base"] = numpy.minimum(speeds["c_out"], speeds["out"])
+    speeds["plato_delta"] = path["v"] - speeds["plato_base"]
+    speeds["plato"] = speeds["plato_base"] + speeds["plato_delta"] * slowdowns["plato"]
+    for k in ["c_in", "c_out", "plato", "out"]:
+        if k == "c_in":
+            xp = "p"
+        else:
+            xp = ""
+        speeds[k + "_x"] = speeds[k] * path[xp + "dx"] / path[xp + "l"]
+        speeds[k + "_y"] = speeds[k] * path[xp + "dy"] / path[xp + "l"]
+        speeds[k + "_x"][speeds[k] == 0] = 0
+        speeds[k + "_y"][speeds[k] == 0] = 0
+
+    return speeds
+
+
+max_xa = 1000
+max_ya = 1000
+max_delta = 0.1
+
+
+def process_corner_errors(path, slowdowns):
+    speeds = gen_speeds(path, slowdowns)
+
+    cc = pd.DataFrame()
+    cc["dvx"] = speeds["c_out_x"] - speeds["c_in_x"]
+    cc["dvy"] = speeds["c_out_y"] - speeds["c_in_y"]
+    cc["dtx"] = numpy.abs(cc["dvx"] / max_xa)
+    cc["dty"] = numpy.abs(cc["dvy"] / max_ya)
+    cc["dt"] = numpy.maximum(cc["dtx"], cc["dty"])
+    cc["ax"] = (cc["dvx"] / cc["dt"]).fillna(0)
+    cc["ay"] = (cc["dvy"] / cc["dt"]).fillna(0)
+    cc["mdx"] = cc["ax"] * numpy.square(cc["dt"] / 2) / 2
+    cc["mdy"] = cc["ay"] * numpy.square(cc["dt"] / 2) / 2
+    cc["mvx"] = (speeds["c_out_x"] + speeds["c_in_x"]) / 2
+    cc["mvy"] = (speeds["c_out_y"] + speeds["c_in_y"]) / 2
+    cc["md"] = norm(cc[['mdx', 'mdy']].values, axis=1)
+    cc["md"][0] = 0
+
+    cc["error_slowdown"] = 1.0 / numpy.sqrt(numpy.maximum(cc["md"] / max_delta, 1.0))
+
+    new_slowdowns = slowdowns.copy()
+    new_slowdowns["corner"] = slowdowns["corner"] * cc["error_slowdown"]
+    return new_slowdowns, cc
+
+
+def process_corner_space(path, slowdowns):
+    speeds = gen_speeds(path, slowdowns)
+
+    cc = pd.DataFrame()
+    cc["dvx"] = speeds["c_out_x"] - speeds["c_in_x"]
+    cc["dvy"] = speeds["c_out_y"] - speeds["c_in_y"]
+    cc["dtx"] = numpy.abs(cc["dvx"] / max_xa)
+    cc["dty"] = numpy.abs(cc["dvy"] / max_ya)
+    cc["dt"] = numpy.maximum(cc["dtx"], cc["dty"])
+    cc["cdt"] = cc["dt"] / 2
+
+    cc["in_l"] = cc["cdt"] * speeds["c_in"]
+    cc["in_dx"] = -cc["cdt"] * speeds["c_in_x"]
+    cc["in_dy"] = -cc["cdt"] * speeds["c_in_y"]
+    cc["pl"] = path["pl"]
+    cc["in_slowdown"] = 1.0 / numpy.sqrt(numpy.maximum(1.0, cc["in_l"] / path["pl"] * 2))
+    cc["in_slowdown"][cc["in_l"] == 0] = 1.0
+    cc["out_l"] = cc["cdt"] * speeds["c_out"]
+    cc["out_dx"] = cc["cdt"] * speeds["c_out_x"]
+    cc["out_dy"] = cc["cdt"] * speeds["c_out_y"]
+    cc["l"] = path["l"]
+    cc["out_slowdown"] = 1.0 / numpy.sqrt(numpy.maximum(1.0, cc["out_l"] / path["l"] * 2))
+    cc["out_slowdown"][cc["out_l"] == 0] = 1.0
+    cc["slowdown"] = numpy.minimum(cc["in_slowdown"], cc["out_slowdown"])
+    new_slowdowns = slowdowns.copy()
+    new_slowdowns["corner"] = slowdowns["corner"] * cc["slowdown"]
+    return new_slowdowns, cc
+
+
+def process_plato(path, slowdowns):
+    speeds = gen_speeds(path, slowdowns)
+
+    cc = pd.DataFrame()
+    # corner in and out
+    cc["c_dvx"] = speeds["c_out_x"] - speeds["c_in_x"]
+    cc["c_dvy"] = speeds["c_out_y"] - speeds["c_in_y"]
+    cc["c_dtx"] = numpy.abs(cc["c_dvx"] / max_xa)
+    cc["c_dty"] = numpy.abs(cc["c_dvy"] / max_ya)
+    cc["c_dt"] = numpy.maximum(cc["c_dtx"], cc["c_dty"])
+    cc["c_cdt"] = cc["c_dt"] / 2
+    cc["c_l"] = cc["c_cdt"] * speeds["c_out"]
+    cc["c_pl"] = cc["c_cdt"] * speeds["c_in"]
+
+    # next corner in from next step
+    cc["o_l"] = cc["c_pl"].shift(-1).fillna(0)
+
+    # skip plato
+    nc = pd.DataFrame()
+
+    nc["n_dvx"] = speeds["out_x"] - speeds["c_out_x"]
+    nc["n_dvy"] = speeds["out_y"] - speeds["c_out_y"]
+    nc["n_dtx"] = numpy.abs(nc["n_dvx"] / max_xa)
+    nc["n_dty"] = numpy.abs(nc["n_dvy"] / max_ya)
+    nc["n_dt"] = numpy.maximum(nc["n_dtx"], nc["n_dty"])
+
+    nc["n_ax"] = (nc["n_dvx"] / nc["n_dt"]).fillna(0)
+    nc["n_ay"] = (nc["n_dvy"] / nc["n_dt"]).fillna(0)
+    nc["n_dx"] = nc["n_ax"] * numpy.square(nc["n_dt"]) / 2 + speeds["c_out_x"] * nc["n_dt"]
+    nc["n_dy"] = nc["n_ay"] * numpy.square(nc["n_dt"]) / 2 + speeds["c_out_y"] * nc["n_dt"]
+
+    nc["n_l"] = norm(nc[['n_dx', 'n_dy']].values, axis=1)
+    nc["n_avail_l"] = path["l"] - cc["c_l"] - cc["o_l"]
+    nc["n_k"] = nc["n_avail_l"] / nc["n_l"]
+
+    nc["n_real_dt"] = nc["n_dt"] * nc["n_k"]
+    nc["n_real_ax"] = (nc["n_dvx"] / nc["n_real_dt"]).fillna(0)
+    nc["n_real_ay"] = (nc["n_dvy"] / nc["n_real_dt"]).fillna(0)
+
+    nc["n_dvx_in"] = speeds["plato_x"] - speeds["c_out_x"]
+    nc["n_dvy_in"] = speeds["plato_y"] - speeds["c_out_y"]
+    nc["n_dvx_out"] = speeds["out_x"] - speeds["plato_x"]
+    nc["n_dvy_out"] = speeds["out_y"] - speeds["plato_y"]
+
+    for part, base_speed in [("in", "c_out_"), ("out", "plato_")]:
+        nc["n_dtx_" + part] = numpy.abs(nc["n_dvx_" + part] / max_xa)
+        nc["n_dty_" + part] = numpy.abs(nc["n_dvy_" + part] / max_ya)
+        nc["n_dt_" + part] = numpy.maximum(nc["n_dtx_" + part], nc["n_dty_" + part])
+        nc["n_ax_" + part] = (nc["n_dvx_" + part] / nc["n_dt_" + part]).fillna(0)
+        nc["n_ay_" + part] = (nc["n_dvy_" + part] / nc["n_dt_" + part]).fillna(0)
+
+        nc["n_dx_" + part] = nc["n_ax_" + part] * numpy.square(nc["n_dt_" + part]) / 2 + speeds[base_speed + "x"] * nc["n_dt_" + part]
+        nc["n_dy_" + part] = nc["n_ay_" + part] * numpy.square(nc["n_dt_" + part]) / 2 + speeds[base_speed + "y"] * nc["n_dt_" + part]
+        nc["n_l_" + part] = norm(nc[['n_dx_' + part, 'n_dy_' + part]].values, axis=1)
+
+    # summary
+    sc = pd.DataFrame()
+
+    sc["l"] = path["l"]
+    sc["c_l"] = cc["c_l"]
+    sc["o_l"] = cc["o_l"]
+    sc["n_l"] = nc["n_l"]
+    sc["free_l_n"] = sc["l"] - sc["c_l"] - sc["o_l"] - sc["n_l"]
+    sc["slowdown_1"] = 1.0 / numpy.sqrt(numpy.maximum((sc["c_l"] + sc["o_l"] + sc["n_l"]) / sc["l"] * 1.01, 1.0))
+    sc["slowdown_2"] = sc["slowdown_1"].shift(1).fillna(1.0)
+    sc["slowdown"] = numpy.minimum(sc["slowdown_1"], sc["slowdown_2"])
+
+    new_slowdowns = slowdowns.copy()
+    new_slowdowns["corner"] = slowdowns["corner"] * sc["slowdown"]
+    stage_ok = (sc["slowdown"] > 0.999).all()
+    return new_slowdowns, stage_ok, cc, nc, sc
+
+
+
