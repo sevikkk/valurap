@@ -3,7 +3,7 @@ from collections import namedtuple
 from math import sqrt
 
 import numpy
-from numpy import array, absolute, isnan, minimum, maximum
+from numpy import array, absolute, isnan, minimum, maximum, arange
 from numpy.linalg import norm
 from scipy.optimize import minimize
 
@@ -23,7 +23,7 @@ EPS = 1e-6
 
 
 class ApgState(object):
-    def __init__(self):
+    def __init__(self, accel_step=50000):
         self.x = 0
         self.v = 0
         self.a = 0
@@ -31,6 +31,10 @@ class ApgState(object):
         self.jj = 0
         self.target_v = 0
         self.target_v_set = False
+        self.accel_step = accel_step
+
+    def __str__(self):
+        return f"<ApgState x={self.x} v={self.v} a={self.a} j={self.j} jj={self.jj}>"
 
     def load(self, seg):
         if seg.x is not None:
@@ -50,7 +54,7 @@ class ApgState(object):
             self.target_v_set = False
 
     def step(self):
-        next_x = self.x + self.v * 50000
+        next_x = self.x + self.v * self.accel_step
         next_v = int(self.v + (self.a / 65536))
         next_a = self.a + self.j
         next_j = self.j + self.jj
@@ -79,12 +83,12 @@ class ApgState(object):
         self.jj = next_jj
 
 
-def emulate(profile, verbose=0, apg_states=None):
+def emulate(profile, verbose=0, apg_states=None, accel_step=50000):
     if apg_states is None:
         apg_states = {}
 
     for a in ["X", "Y", "Z"]:
-        apg_states.setdefault(a, ApgState())
+        apg_states.setdefault(a, ApgState(accel_step=accel_step))
 
     ts = 0
     steps = {}
@@ -172,6 +176,7 @@ def emulate(profile, verbose=0, apg_states=None):
     steps = [a[1] for a in sorted(steps.items())]
     if pd:
         steps = pd.DataFrame(steps)
+        steps["t"] = steps["ts"] * accel_step / 50000000.0
     return steps
 
 
@@ -1305,16 +1310,20 @@ def process_plato(path, slowdowns):
 
     nc["n_ax"] = (nc["n_dvx"] / nc["n_dt"]).fillna(0)
     nc["n_ay"] = (nc["n_dvy"] / nc["n_dt"]).fillna(0)
+
     nc["n_dx"] = nc["n_ax"] * numpy.square(nc["n_dt"]) / 2 + speeds["c_out_x"] * nc["n_dt"]
     nc["n_dy"] = nc["n_ay"] * numpy.square(nc["n_dt"]) / 2 + speeds["c_out_y"] * nc["n_dt"]
 
     nc["n_l"] = norm(nc[['n_dx', 'n_dy']].values, axis=1)
     nc["n_avail_l"] = path["l"] - cc["c_l"] - cc["o_l"]
-    nc["n_k"] = nc["n_avail_l"] / nc["n_l"]
+    nc["n_k"] = (nc["n_avail_l"] / nc["n_l"]).fillna(1.0).replace([numpy.inf, -numpy.inf], 1.0)
 
     nc["n_real_dt"] = nc["n_dt"] * nc["n_k"]
     nc["n_real_ax"] = (nc["n_dvx"] / nc["n_real_dt"]).fillna(0)
     nc["n_real_ay"] = (nc["n_dvy"] / nc["n_real_dt"]).fillna(0)
+
+    stable_dt = nc["n_avail_l"] / norm(speeds[['out_x', 'out_y']].values, axis=1)
+    nc["n_real_dt"][nc["n_dt"] == 0] = stable_dt[nc["n_dt"] == 0]
 
     nc["n_dvx_in"] = speeds["plato_x"] - speeds["c_out_x"]
     nc["n_dvy_in"] = speeds["plato_y"] - speeds["c_out_y"]
@@ -1350,4 +1359,225 @@ def process_plato(path, slowdowns):
     return new_slowdowns, stage_ok, cc, nc, sc
 
 
+def build_segments(path, slowdowns):
+    final_slowdowns, stage_ok, cc1, nc1, sc1 = process_plato(path, slowdowns)
+    ce_slowdowns, ce1 = process_corner_errors(path, slowdowns)
+    cs_slowdowns, cs1 = process_corner_space(path, slowdowns)
+    speeds = gen_speeds(path, slowdowns)
+
+    start_segments = pd.DataFrame()
+    start_segments["x0"] = path["px"] + ce1["mdx"]
+    start_segments["y0"] = path["py"] + ce1["mdy"]
+    start_segments["vx0"] = ce1["mvx"]
+    start_segments["vy0"] = ce1["mvy"]
+    start_segments["ax0"] = ce1["ax"]
+    start_segments["ay0"] = ce1["ay"]
+    start_segments["x1"] = path["px"] + cs1["out_dx"]
+    start_segments["y1"] = path["py"] + cs1["out_dy"]
+    start_segments["vx1"] = speeds["c_out_x"]
+    start_segments["vy1"] = speeds["c_out_y"]
+    start_segments["ax1"] = ce1["ax"]
+    start_segments["ay1"] = ce1["ay"]
+    start_segments["dt"] = ce1["dt"] / 2
+
+    start_segments["idx"] = arange(len(ce1)) * 10 + 1
+    start_segments["src_idx"] = path["src_idx"]
+    start_segments["src_part"] = norm([cs1["out_dx"], cs1["out_dy"]], axis=0) / path["l"]
+    start_segments["seg_type"] = "start"
+
+    start_segments.iloc[0, start_segments.columns.get_loc('x0')] = path.iloc[0]["px"]
+    start_segments.iloc[0, start_segments.columns.get_loc('y0')] = path.iloc[0]["py"]
+    start_segments.iloc[0, start_segments.columns.get_loc('vx0')] = 0.0
+    start_segments.iloc[0, start_segments.columns.get_loc('vy0')] = 0.0
+    start_segments.iloc[0, start_segments.columns.get_loc('dt')] = ce1.iloc[0]["dt"]
+
+    end_segments = pd.DataFrame()
+    end_segments["x0"] = path["x"] + cs1["in_dx"].shift(-1).fillna(0)
+    end_segments["y0"] = path["y"] + cs1["in_dy"].shift(-1).fillna(0)
+    end_segments["vx0"] = speeds["c_in_x"].shift(-1).fillna(0)
+    end_segments["vy0"] = speeds["c_in_y"].shift(-1).fillna(0)
+    end_segments["ax0"] = ce1["ax"].shift(-1).fillna(0)
+    end_segments["ay0"] = ce1["ay"].shift(-1).fillna(0)
+
+    end_segments["x1"] = path["x"] + ce1["mdx"].shift(-1).fillna(0)
+    end_segments["y1"] = path["y"] + ce1["mdy"].shift(-1).fillna(0)
+    end_segments["vx1"] = ce1["mvx"].shift(-1).fillna(0)
+    end_segments["vy1"] = ce1["mvy"].shift(-1).fillna(0)
+    end_segments["ax1"] = ce1["ax"].shift(-1).fillna(0)
+    end_segments["ay1"] = ce1["ay"].shift(-1).fillna(0)
+    end_segments["dt"] = ce1["dt"].shift(-1).fillna(0) / 2
+
+    end_segments["idx"] = arange(len(ce1)) * 10 + 9
+    end_segments["src_idx"] = path["src_idx"]
+    end_segments["src_part"] = norm([cs1["in_dx"].shift(-1).fillna(0), cs1["in_dy"].shift(-1).fillna(0)],
+                                              axis=0) / path["l"]
+    end_segments["seg_type"] = "end"
+
+    plato_segments = pd.DataFrame()
+    plato_segments["x0"] = path["px"] + cs1["out_dx"]
+    plato_segments["y0"] = path["py"] + cs1["out_dy"]
+    plato_segments["vx0"] = speeds["c_out_x"]
+    plato_segments["vy0"] = speeds["c_out_y"]
+    plato_segments["ax0"] = nc1["n_real_ax"]
+    plato_segments["ay0"] = nc1["n_real_ay"]
+    plato_segments["x1"] = path["x"] + cs1["in_dx"].shift(-1).fillna(0)
+    plato_segments["y1"] = path["y"] + cs1["in_dy"].shift(-1).fillna(0)
+    plato_segments["vx1"] = speeds["c_in_x"].shift(-1).fillna(0)
+    plato_segments["vy1"] = speeds["c_in_y"].shift(-1).fillna(0)
+    plato_segments["ax1"] = nc1["n_real_ax"]
+    plato_segments["ay1"] = nc1["n_real_ay"]
+    plato_segments["dt"] = nc1["n_real_dt"]
+
+    plato_segments["idx"] = arange(len(ce1)) * 10 + 5
+    plato_segments["src_idx"] = path["src_idx"]
+    plato_segments["src_part"] = norm([
+        plato_segments["x1"] - plato_segments["x0"],
+        plato_segments["y1"] - plato_segments["y0"]
+    ], axis=0) / path["l"]
+
+    plato_segments["src_idx"] = path["src_idx"]
+    plato_segments["seg_type"] = "plato"
+
+    if 1:
+        short_start_segments = start_segments["dt"] < 1e-3
+        ok_start_segments = numpy.logical_not(short_start_segments)
+
+        plato_segments.loc[short_start_segments, "x0"] = start_segments["x0"][short_start_segments]
+        plato_segments.loc[short_start_segments, "y0"] = start_segments["y0"][short_start_segments]
+        plato_segments.loc[short_start_segments, "vx0"] = start_segments["vx0"][short_start_segments]
+        plato_segments.loc[short_start_segments, "vy0"] = start_segments["vy0"][short_start_segments]
+        plato_segments.loc[short_start_segments, "dt"] = plato_segments["dt"][short_start_segments] + \
+                                                         start_segments["dt"][short_start_segments]
+        plato_segments.loc[short_start_segments, "src_part"] = plato_segments["src_part"][short_start_segments] + \
+                                                               start_segments["src_part"][short_start_segments]
+
+        start_segments = start_segments[ok_start_segments]
+
+        short_end_segments = end_segments["dt"] < 1e-3
+        ok_end_segments = numpy.logical_not(short_end_segments)
+
+        plato_segments.loc[short_end_segments, "x1"] = end_segments["x1"][short_end_segments]
+        plato_segments.loc[short_end_segments, "y1"] = end_segments["y1"][short_end_segments]
+        plato_segments.loc[short_end_segments, "vx1"] = end_segments["vx1"][short_end_segments]
+        plato_segments.loc[short_end_segments, "vy1"] = end_segments["vy1"][short_end_segments]
+        plato_segments.loc[short_end_segments, "dt"] = plato_segments["dt"][short_end_segments] + end_segments["dt"][
+            short_end_segments]
+        plato_segments.loc[short_end_segments, "src_part"] = plato_segments["src_part"][short_end_segments] + \
+                                                             end_segments["src_part"][short_end_segments]
+        end_segments = end_segments[ok_end_segments]
+
+    can_speedup = (cs1["l"] - cs1["in_l"] - cs1["out_l"]) > 1
+    can_speedup_fully = (cs1["l"] - nc1["n_l_in"] - nc1["n_l_out"] - cs1["in_l"] - cs1["out_l"]) > 1
+
+    cannot_speedup = ~ can_speedup
+    can_speedup[can_speedup_fully] = False
+    cannot_speedup[can_speedup_fully] = False
+
+    short_plato_segments = plato_segments[cannot_speedup].copy()
+    short_plato_segments["seg_type"] = "short_plato"
+
+    middle_plato_segments = plato_segments[can_speedup].copy()
+    middle_plato_segments["seg_type"] = "middle_plato"
+
+    lps = plato_segments[can_speedup_fully].copy()
+    lp_nc = nc1[can_speedup_fully]
+    lp_path = path[can_speedup_fully]
+    lp_speeds = speeds[can_speedup_fully]
+    lps["x2"] = lps["x0"] + lp_nc["n_dx_in"]
+    lps["y2"] = lps["y0"] + lp_nc["n_dy_in"]
+    lps["x3"] = lps["x1"] - lp_nc["n_dx_out"]
+    lps["y3"] = lps["y1"] - lp_nc["n_dy_out"]
+
+    lps_in = pd.DataFrame()
+    lps_in["x0"] = lps["x0"]
+    lps_in["y0"] = lps["y0"]
+    lps_in["vx0"] = lps["vx0"]
+    lps_in["vy0"] = lps["vy0"]
+    lps_in["ax0"] = lp_nc["n_ax_in"]
+    lps_in["ay0"] = lp_nc["n_ay_in"]
+    lps_in["x1"] = lps["x2"]
+    lps_in["y1"] = lps["y2"]
+    lps_in["vx1"] = lp_speeds["plato_x"]
+    lps_in["vy1"] = lp_speeds["plato_y"]
+    lps_in["ax1"] = lp_nc["n_ax_in"]
+    lps_in["ay1"] = lp_nc["n_ay_in"]
+    lps_in["dt"] = lp_nc["n_dt_in"]
+
+    lps_in["src_idx"] = lps["src_idx"]
+    lps_in["src_part"] = norm([
+        lps_in["x1"] - lps_in["x0"],
+        lps_in["y1"] - lps_in["y0"]
+    ], axis=0) / lp_path["l"]
+
+    lps_in["idx"] = lps["idx"] - 1
+    lps_in["seg_type"] = "long_plato_in"
+
+    lps_main = pd.DataFrame()
+    lps_main["x0"] = lps["x2"]
+    lps_main["y0"] = lps["y2"]
+    lps_main["vx0"] = lp_speeds["plato_x"]
+    lps_main["vy0"] = lp_speeds["plato_y"]
+    lps_main["ax0"] = 0
+    lps_main["ay0"] = 0
+    lps_main["x1"] = lps["x3"]
+    lps_main["y1"] = lps["y3"]
+    lps_main["vx1"] = lp_speeds["plato_x"]
+    lps_main["vy1"] = lp_speeds["plato_y"]
+    lps_main["ax1"] = 0
+    lps_main["ay1"] = 0
+
+    lps_main["dt"] = norm([
+        lps_main["x1"] - lps_main["x0"],
+        lps_main["y1"] - lps_main["y0"]
+    ], axis=0) / lp_speeds["plato"]
+
+    lps_main["src_idx"] = lps["src_idx"]
+    lps_main["src_part"] = norm([
+        lps_main["x1"] - lps_main["x0"],
+        lps_main["y1"] - lps_main["y0"]
+    ], axis=0) / lp_path["l"]
+
+    lps_main["idx"] = lps["idx"]
+    lps_main["seg_type"] = "long_plato_main"
+
+    lps_out = pd.DataFrame()
+    lps_out["x0"] = lps["x3"]
+    lps_out["y0"] = lps["y3"]
+    lps_out["vx0"] = lp_speeds["plato_x"]
+    lps_out["vy0"] = lp_speeds["plato_y"]
+    lps_out["ax0"] = lp_nc["n_ax_out"]
+    lps_out["ay0"] = lp_nc["n_ay_out"]
+    lps_out["x1"] = lps["x1"]
+    lps_out["y1"] = lps["y1"]
+    lps_out["vx1"] = lps["vx1"]
+    lps_out["vy1"] = lps["vy1"]
+    lps_out["ax1"] = lp_nc["n_ax_out"]
+    lps_out["ay1"] = lp_nc["n_ay_out"]
+    lps_out["dt"] = lp_nc["n_dt_out"]
+
+    lps_out["src_idx"] = lps["src_idx"]
+    lps_out["src_part"] = norm([
+        lps_out["x1"] - lps_out["x0"],
+        lps_out["y1"] - lps_out["y0"]
+    ], axis=0) / lp_path["l"]
+    lps_out["idx"] = lps["idx"] + 1
+    lps_out["seg_type"] = "long_plato_out"
+
+    all_segments = start_segments.append(short_plato_segments, sort=False)
+    all_segments = all_segments.append(middle_plato_segments, sort=False)
+    all_segments = all_segments.append(lps_in[lps_in["dt"] > 0], sort=False)
+    all_segments = all_segments.append(lps_main, sort=False)
+    all_segments = all_segments.append(lps_out[lps_out["dt"] > 0], sort=False)
+    all_segments = all_segments.append(end_segments, sort=False)
+
+    all_segments = all_segments.set_index('idx').sort_index()
+    all_segments["t"] = numpy.cumsum(all_segments["dt"])
+
+    ext_path = pd.DataFrame()
+    ext_path["src_idx"] = path["src_idx"]
+    ext_path["src_de"] = path["de"]
+    all_segments = all_segments.merge(ext_path, on='src_idx')
+    all_segments["de"] = all_segments["src_de"] * all_segments["src_part"]
+
+    return all_segments
 
