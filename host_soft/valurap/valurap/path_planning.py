@@ -1201,6 +1201,11 @@ def make_path(seg):
     return path, slowdowns
 
 
+max_xa = 1000
+max_ya = 1000
+max_delta = 0.1
+
+
 def gen_speeds(path, slowdowns):
     speeds = pd.DataFrame()
     speeds["path"] = path["v"]
@@ -1220,12 +1225,12 @@ def gen_speeds(path, slowdowns):
         speeds[k + "_x"][speeds[k] == 0] = 0
         speeds[k + "_y"][speeds[k] == 0] = 0
 
+    max_a_x = numpy.abs(speeds["plato"] * max_xa / speeds["plato_x"].fillna(numpy.inf))
+    max_a_y = numpy.abs(speeds["plato"] * max_ya / speeds["plato_y"].fillna(numpy.inf))
+    max_a = numpy.minimum(max_a_x, max_a_y)
+    speeds["max_a"] = max_a
+
     return speeds
-
-
-max_xa = 1000
-max_ya = 1000
-max_delta = 0.1
 
 
 def process_corner_errors(path, slowdowns):
@@ -1340,6 +1345,7 @@ def process_plato(path, slowdowns):
         nc["n_dx_" + part] = nc["n_ax_" + part] * numpy.square(nc["n_dt_" + part]) / 2 + speeds[base_speed + "x"] * nc["n_dt_" + part]
         nc["n_dy_" + part] = nc["n_ay_" + part] * numpy.square(nc["n_dt_" + part]) / 2 + speeds[base_speed + "y"] * nc["n_dt_" + part]
         nc["n_l_" + part] = norm(nc[['n_dx_' + part, 'n_dy_' + part]].values, axis=1)
+        nc["n_avail_" + part] = (path["l"] - cc["c_l"] - cc["o_l"])/2 - nc["n_l_" + part]
 
     # summary
     sc = pd.DataFrame()
