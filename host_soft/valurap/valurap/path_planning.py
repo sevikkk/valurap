@@ -3,7 +3,7 @@ from collections import namedtuple
 from math import sqrt
 
 import numpy
-from numpy import array, absolute, isnan, minimum, maximum, arange
+from numpy import array, absolute, isnan, minimum, maximum, arange, around
 from numpy.linalg import norm
 from scipy.optimize import minimize
 
@@ -1587,3 +1587,213 @@ def build_segments(path, slowdowns):
 
     return all_segments
 
+
+def format_segments(all_segments, apgs=None, acc_step=1000):
+    if apgs is None:
+        apgs = {}
+
+    apg_states = {}
+
+    apg_x = apgs.get("X", FakeApg("X"))
+    apg_y = apgs.get("Y", FakeApg("Y"))
+    apg_z = apgs.get("Z", FakeApg("Z"))
+
+    v_step = 50000000
+    v_mult = v_step / acc_step
+    spm = 80
+    spme = 837
+
+    pr_opt = []
+    first_row = all_segments.iloc[0]
+    last_x = first_row["x0"]
+    last_y = first_row["y0"]
+    last_vx = first_row["vx0"]
+    last_vy = first_row["vy0"]
+    assert last_vx == 0
+    assert last_vy == 0
+    segs = [
+        ProfileSegment(
+            apg=apg_x, x=last_x * spm, v=0, a=0
+        ),
+        ProfileSegment(
+            apg=apg_y, x=last_y * spm, v=0, a=0
+        ),
+    ]
+
+    sub_profile = [[5, segs]]
+    pr_opt += sub_profile
+
+    emulate(sub_profile, apg_states=apg_states, accel_step=50000000 / acc_step)
+    print(apg_states["X"], apg_states["Y"])
+
+    for index, up_row in all_segments.iterrows():
+        if 0:
+            if index > 55:
+                print("last_x:", last_x, "last_y:", last_y)
+                print("last_vx:", last_vx, "last_vy:", last_vy)
+                break
+
+        print("index:", index, up_row["seg_type"])
+
+        if up_row["dt"] < 0.2:
+            rows = [up_row]
+        else:
+            splits = int(up_row["dt"] / 0.15)
+            print("long segment, split up", splits)
+            tx0 = up_row["x0"]
+            ty0 = up_row["y0"]
+            tx1 = up_row["x1"]
+            ty1 = up_row["y1"]
+            tvx0 = up_row["vx0"]
+            tvy0 = up_row["vy0"]
+            tvx1 = up_row["vx1"]
+            tvy1 = up_row["vy1"]
+            lx1 = tx0
+            ly1 = ty0
+            lvx1 = tvx0
+            lvy1 = tvy0
+            dvx = (tvx1 - tvx0) / splits
+            dvy = (tvy1 - tvy0) / splits
+            dt = up_row["dt"] / splits
+            rows = []
+            for i in range(splits):
+                cvx1 = lvx1 + dvx
+                cvy1 = lvy1 + dvy
+                cx1 = lx1 + (lvx1 + dvx / 2) * dt
+                cy1 = ly1 + (lvy1 + dvy / 2) * dt
+                if i == splits - 1:
+                    cvx1 = tvx1
+                    cvy1 = tvy1
+                    cx1 = tx1
+                    cy1 = ty1
+                rows.append(
+                    {
+                        "x0": lx1,
+                        "y0": ly1,
+                        "x1": cx1,
+                        "y1": cy1,
+                        "vx0": lvx1,
+                        "vy0": lvy1,
+                        "vx1": cvx1,
+                        "vy1": cvy1,
+                        "dt": dt,
+                        "de": 0
+                    }
+                )
+                lx1 = cx1
+                ly1 = cy1
+                lvx1 = cvx1
+                lvy1 = cvy1
+
+        for row in rows:
+            next_x = row["x1"]
+            next_y = row["y1"]
+            next_vx = row["vx1"]
+            next_vy = row["vy1"]
+            de = row["de"]
+
+            dx = next_x - last_x
+            dy = next_y - last_y
+            dvx = next_vx - last_vx
+            dvy = next_vy - last_vy
+            avg_vx = last_vx + 0.5 * dvx
+            avg_vy = last_vy + 0.5 * dvy
+
+            print("x:", last_x, row["x0"])
+            print("y:", last_y, row["y0"])
+            print("vx:", last_vx, row["vx0"])
+            print("vy:", last_vy, row["vy0"])
+            print("dx:", dx)
+            print("dy:", dy)
+            print("dvx:", dvx)
+            print("dvy:", dvy)
+
+            dt = row["dt"]
+            int_dt = around(dt * acc_step)
+
+            if int_dt == 0:
+                int_dt = 1
+
+            print("int_dt:", int_dt)
+
+            int_vx0 = around(last_vx * 2 ** 32 * spm / v_step)
+            int_vy0 = around(last_vy * 2 ** 32 * spm / v_step)
+            int_vx1 = around(next_vx * 2 ** 32 * spm / v_step)
+            int_vy1 = around(next_vy * 2 ** 32 * spm / v_step)
+            int_ax = around((int_vx1 - int_vx0) / int_dt * 65536)
+            int_ay = around((int_vy1 - int_vy0) / int_dt * 65536)
+            print("int_vx1:", int_vx1, "int_vy1:", int_vy1)
+
+            real_dx = int_x(int_dt, int_vx0 * 65536, int_ax, 0, 0) / 65536 * v_mult
+            real_dy = int_x(int_dt, int_vy0 * 65536, int_ay, 0, 0) / 65536 * v_mult
+            x_error = dx * 2.0 ** 32 * spm - real_dx
+
+            int_jx = around(-12 * x_error / int_dt / int_dt / int_dt * 65536 / v_mult)
+            int_ax = around(int_ax - int_jx * int_dt / 2)
+            print("x_error:", x_error / 2.0 ** 32 / spm, "int_jx:", int_jx, "int_ax:", int_ax)
+
+            y_error = dy * 2.0 ** 32 * spm - real_dy
+            int_jy = around(-12 * y_error / int_dt / int_dt / int_dt * 65536 / v_mult)
+            int_ay = around(int_ay - int_jy * int_dt / 2)
+            print("y_error:", y_error / 2.0 ** 32 / spm, "int_jy:", int_jy, "int_ay:", int_ay)
+
+            segs = [
+                ProfileSegment(
+                    apg=apg_x, a=int(int_ax), j=int(int_jx)
+                ),
+                ProfileSegment(
+                    apg=apg_y, a=int(int_ay), j=int(int_jy)
+                ),
+            ]
+
+            sub_profile = [[int(int_dt), segs]]
+            pr_opt += sub_profile
+
+            res = emulate(sub_profile, apg_states=apg_states, accel_step=50000000 / acc_step)
+            res["xv"] = res["X_v"] * 65536 / 2 ** 32 / 80 * 50000000
+            res["yv"] = res["Y_v"] * 65536 / 2 ** 32 / 80 * 50000000
+
+            print("ApgStates:", apg_states["X"].x / 2 ** 32 / spm, apg_states["Y"].x / 2 ** 32 / spm)
+            print("        V:", apg_states["X"].v / 2 ** 32 / spm * v_step, apg_states["Y"].v / 2 ** 32 / spm * v_step)
+            print("   max_xv:", res["xv"].max(), res["xv"].min())
+            print("   max_yv:", res["yv"].max(), res["yv"].min())
+
+            last_x = apg_states["X"].x / 2 ** 32 / spm
+            last_y = apg_states["Y"].x / 2 ** 32 / spm
+            last_vx = apg_states["X"].v / 2 ** 32 / spm * v_step
+            last_vy = apg_states["Y"].v / 2 ** 32 / spm * v_step
+
+            print("final x_error:", last_x - next_x)
+            print("final y_error:", last_y - next_y)
+            print("final vx_error:", last_vx - next_vx)
+            print("final vy_error:", last_vy - next_vy)
+
+            if 1:
+                assert res["xv"].max() < 300
+                assert res["xv"].min() > -300
+                assert res["yv"].max() < 300
+                assert res["yv"].min() > -300
+
+                assert abs(last_x - next_x) < 0.1
+                assert abs(last_y - next_y) < 0.1
+                assert abs(last_vx - next_vx) < 5
+                assert abs(last_vy - next_vy) < 5
+
+            if 0:
+                if abs(last_vx) < 0.001:
+                    last_vx = 0
+                if abs(last_vy) < 0.001:
+                    last_vy = 0
+
+    pr_opt += [
+        [
+            5,
+            [
+                ProfileSegment(apg=apg_x, v=0),
+                ProfileSegment(apg=apg_y, v=0),
+                ProfileSegment(apg=apg_z, v=0),
+            ],
+        ]
+    ]
+
+    return pr_opt
