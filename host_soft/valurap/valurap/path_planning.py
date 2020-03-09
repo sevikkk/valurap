@@ -38,24 +38,24 @@ class ApgState(object):
 
     def load(self, seg):
         if seg.x is not None:
-            self.x = seg.x * 2 ** 32
+            self.x = int(seg.x * 2 ** 32)
         if seg.v is not None:
-            self.v = seg.v
+            self.v = int(seg.v)
         if seg.a is not None:
-            self.a = seg.a
+            self.a = int(seg.a)
         if seg.j is not None:
-            self.j = seg.j
+            self.j = int(seg.j)
         if seg.jj is not None:
-            self.jj = seg.jj
+            self.jj = int(seg.jj)
         if seg.target_v is not None:
-            self.target_v = seg.target_v
+            self.target_v = int(seg.target_v)
             self.target_v_set = True
         else:
             self.target_v_set = False
 
     def step(self):
         next_x = self.x + self.v * self.accel_step
-        next_v = int(self.v + (self.a / 65536))
+        next_v = int(self.v + (self.a >> 16))
         next_a = self.a + self.j
         next_j = self.j + self.jj
         next_jj = self.jj
@@ -1720,30 +1720,68 @@ def format_segments(all_segments, apgs=None, acc_step=1000):
             int_vy0 = around(last_vy * 2 ** 32 * spm / v_step)
             int_vx1 = around(next_vx * 2 ** 32 * spm / v_step)
             int_vy1 = around(next_vy * 2 ** 32 * spm / v_step)
-            int_ax = around((int_vx1 - int_vx0) / int_dt * 65536)
-            int_ay = around((int_vy1 - int_vy0) / int_dt * 65536)
+            int_ax = around((int_vx1 - int_vx0) / int_dt) * 65536
+            int_ay = around((int_vy1 - int_vy0) / int_dt) * 65536
+            print("int_dx:", dx * 2 ** 32 * spm, "int_dy:", dy * 2**32 * spm)
+            print("int_vx0:", int_vx0, "int_vy0:", int_vy0)
             print("int_vx1:", int_vx1, "int_vy1:", int_vy1)
+            print("int_ax:", int_ax, int_ax / 2**32, "int_ay1:", int_ay, int_ay / 2**32)
 
             real_dx = int_x(int_dt, int_vx0 * 65536, int_ax, 0, 0) / 65536 * v_mult
             real_dy = int_x(int_dt, int_vy0 * 65536, int_ay, 0, 0) / 65536 * v_mult
             x_error = dx * 2.0 ** 32 * spm - real_dx
+            y_error = dy * 2.0 ** 32 * spm - real_dy
 
-            int_jx = around(-12 * x_error / int_dt / int_dt / int_dt * 65536 / v_mult)
-            int_ax = around(int_ax - int_jx * int_dt / 2)
+            if abs(x_error / 2**32/spm) > 0.001:
+                print("x_error to big", x_error / 2**32/spm)
+                int_max_a = max_xa * 2**32 * spm * 65536 / 50000000 / acc_step * 1.2
+                while True:
+                    print("x_error:", x_error / 2 ** 32 / spm)
+                    int_jx = around(-12 * x_error / int_dt / int_dt / int_dt * 65536 / v_mult)
+                    int_ax0 = around(int_ax - int_jx * int_dt / 2)
+                    int_ax1 = around(int_ax + int_jx * int_dt / 2)
+                    corrected_ax = max(abs(int_ax0), abs(int_ax1))
+                    if corrected_ax > int_max_a:
+                        x_error = x_error * 0.8
+                        print("max_ax violation, slow down", x_error, corrected_ax, int_max_a)
+                    else:
+                        break
+                int_jx = int(int_jx)
+                int_ax = int(int_ax0)
+            else:
+                int_jx = 0
             print("x_error:", x_error / 2.0 ** 32 / spm, "int_jx:", int_jx, "int_ax:", int_ax)
 
-            y_error = dy * 2.0 ** 32 * spm - real_dy
-            int_jy = around(-12 * y_error / int_dt / int_dt / int_dt * 65536 / v_mult)
-            int_ay = around(int_ay - int_jy * int_dt / 2)
+            if abs(y_error / 2**32/spm) > 0.001:
+                print("y_error to big", y_error/2**32/spm)
+                int_max_a = max_ya * 2**32 * spm * 65536 / 50000000 / acc_step * 1.2
+                retry = True
+                while retry:
+                    print("y_error:", y_error / 2 ** 32 / spm)
+                    int_jy = around(-12 * y_error / int_dt / int_dt / int_dt * 65536 / v_mult)
+                    int_ay0 = around(int_ay - int_jy * int_dt / 2)
+                    int_ay1 = around(int_ay + int_jy * int_dt / 2)
+                    corrected_ay = max(abs(int_ay0), abs(int_ay1))
+                    if corrected_ay > int_max_a:
+                        print("max_ay violation, slow down", y_error, corrected_ay, int_max_a)
+                        y_error = y_error * 0.8
+                    else:
+                        break
+                int_jy = int(int_jy)
+                int_ay = int(int_ay0)
+            else:
+                int_jy = 0
             print("y_error:", y_error / 2.0 ** 32 / spm, "int_jy:", int_jy, "int_ay:", int_ay)
 
             segs = [
                 ProfileSegment(
-                    apg=apg_x, a=int(int_ax), j=int(int_jx)
-                ),
+                    #apg=apg_x, v = int(int_vx0), a=int(int_ax), j=int(int_jx)
+                    apg = apg_x, a = int(int_ax), j = int(int_jx)
+            ),
                 ProfileSegment(
-                    apg=apg_y, a=int(int_ay), j=int(int_jy)
-                ),
+                    #apg=apg_y, v = int(int_vy0), a=int(int_ay), j=int(int_jy)
+                    apg = apg_y, a = int(int_ay), j = int(int_jy)
+            ),
             ]
 
             sub_profile = [[int(int_dt), segs]]
@@ -1773,6 +1811,14 @@ def format_segments(all_segments, apgs=None, acc_step=1000):
                 assert res["xv"].min() > -300
                 assert res["yv"].max() < 300
                 assert res["yv"].min() > -300
+                assert res["X_a"].max() < 2 ** 30
+                assert res["X_a"].min() > - 2 ** 30
+                assert res["Y_a"].max() < 2 ** 30
+                assert res["Y_a"].min() > - 2 ** 30
+                assert res["X_j"].max() < 2 ** 30
+                assert res["X_j"].min() > - 2 ** 30
+                assert res["Y_j"].max() < 2 ** 30
+                assert res["Y_j"].min() > - 2 ** 30
 
                 assert abs(last_x - next_x) < 0.1
                 assert abs(last_y - next_y) < 0.1
