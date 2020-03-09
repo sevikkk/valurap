@@ -81,7 +81,7 @@ class Asg(object):
         ]
         return code
 
-    def gen_path_code(self, steps):
+    def gen_path_code(self, steps, accel_step=50000, real_apgs=None):
         s3g = self.bot.s3g
         first_step = True
 
@@ -104,10 +104,13 @@ class Asg(object):
                     s3g.OUT_ASG_CONTROL_SET_DT_LIMIT,
                     s3g.OUT_ASG_CONTROL_RESET_DT,
                 ]
-                regs[s3g.OUT_ASG_DT_VAL] = 50000
+                regs[s3g.OUT_ASG_DT_VAL] = accel_step
 
             for seg in segments:
                 apg = seg.apg
+                if real_apgs:
+                    apg = real_apgs[apg.name]
+
                 if seg.x is not None:
                     control.append(apg.control_set_x)
                     regs[apg.val_x_lo] = 0
