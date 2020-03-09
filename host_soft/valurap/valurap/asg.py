@@ -104,7 +104,7 @@ class Asg(object):
                     s3g.OUT_ASG_CONTROL_SET_DT_LIMIT,
                     s3g.OUT_ASG_CONTROL_RESET_DT,
                 ]
-                regs[s3g.OUT_ASG_DT_VAL] = accel_step
+                regs[s3g.OUT_ASG_DT_VAL] = int(accel_step)
 
             for seg in segments:
                 apg = seg.apg
