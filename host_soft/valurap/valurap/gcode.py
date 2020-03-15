@@ -5,7 +5,8 @@ do_home = namedtuple("do_home", "cur_pos")
 do_path = namedtuple("do_path", "mode path")
 
 do_segment = namedtuple("do_segment", "path")
-do_move = namedtuple("do_move", "deltas")
+do_move = namedtuple("do_move", "deltas target")
+do_ext = namedtuple("do_ext", "deltas")
 
 
 def reader(fn):
@@ -169,26 +170,46 @@ def gen_segments(pg, split_len=None):
                         path.append([x, y, 0, ext])
                         yield do_segment(path)
 
-                    yield do_move(p)
+                    deltas = {}
+                    deltas_ext = {}
                     if "X" in p:
                         dx = p["X"]
                         x += dx
+                        deltas["X"] = dx
                     if "Y" in p:
                         dy = p["Y"]
                         y += dy
+                        deltas["Y"] = dy
                     if "Z" in p:
                         dz = p["Z"]
                         z += dz
+                        deltas["Z"] = dz
                     if "E" in p:
                         de = -p.get("E", 0)
                         ext += de
+                        deltas_ext["E"] = de
+
+                    if deltas:
+                        if "F" in p:
+                            deltas["F"] = p["F"]
+                        if "line" in p:
+                            deltas["line"] = p["line"]
+                        yield do_move(deltas, {"X": x, "Y": y, "Z": z})
+
+                    if deltas_ext:
+                        if "F" in p:
+                            deltas_ext["F"] = p["F"]
+                        if "line" in p:
+                            deltas_ext["line"] = p["line"]
+
+                        yield do_ext(deltas_ext)
 
                     path = [[x, y, 0, ext]]
                 else:
                     dx = p["X"]
                     dy = p["Y"]
                     de = -p.get("E", 0)
-                    speed = p["F"] / 60.0 * 3
+                    speed = p["F"] / 60.0
 
                     x += dx
                     y += dy
