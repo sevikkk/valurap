@@ -1,11 +1,16 @@
 import math
+import os
+import pickle
 from collections import namedtuple
 from math import sqrt, copysign
+from time import time
 
 import numpy
 from numpy import array, absolute, isnan, minimum, maximum, arange
 from numpy.linalg import norm
 from scipy.optimize import minimize
+
+from valurap import gcode
 
 try:
     import pandas as pd
@@ -1024,8 +1029,8 @@ class PathPlanner:
                         next_extras.append((ex, ev))
 
             if p is None or (abs(next_vx - acc_vx) + abs(next_vy - acc_vy) > EPS):
-                sol_x = self.solve_in_ints(acc_t, plato_t, prev_x, prev_vx, plato_x, plato_vx, 80)
-                sol_y = self.solve_in_ints(acc_t, plato_t, prev_y, prev_vy, plato_y, plato_vy, 80)
+                sol_x = self.solve_in_ints(acc_t, plato_t, prev_x, prev_vx, plato_x, plato_vx, spm)
+                sol_y = self.solve_in_ints(acc_t, plato_t, prev_y, prev_vy, plato_y, plato_vy, spm)
                 cur_step = [sol_x, sol_y]
                 prev_x, prev_y, prev_vx, prev_vy = (
                     prev_x + sol_x["accel_x"] + sol_x["plato_x"],
@@ -1211,6 +1216,13 @@ max_xa = 1000
 max_ya = 1000
 max_ea = 1000
 max_delta = 0.1
+
+spm = 80
+spme = 837
+
+acc_step = 10000
+v_step = 50000000
+v_mult = v_step / acc_step
 
 
 def gen_speeds(path, slowdowns):
@@ -1604,8 +1616,6 @@ def format_segments(all_segments, apgs=None, acc_step=1000):
 
     v_step = 50000000
     v_mult = v_step / acc_step
-    spm = 80
-    spme = 837
 
     k_xxy = 2.0 ** 32 * spm
     k_vxy = 2.0 ** 32 * spm / v_step
@@ -1950,3 +1960,120 @@ def format_segments(all_segments, apgs=None, acc_step=1000):
     ]
 
     return pr_opt
+
+
+def ext_to_code(e, f, apg_z=FakeApg("Z")):
+    segs = []
+    abs_e = abs(e)
+    acc_dt = f / max_ea
+    full_de = max_ea * acc_dt * acc_dt  # / 2 * 2
+    if abs_e > full_de:
+        plato_de = abs_e - full_de
+        plato_dt = plato_de / f
+        plato_v = f
+    else:
+        acc_dt = math.sqrt(abs_e / max_ea)
+        plato_v = max_ea * acc_dt
+        plato_dt = 0
+
+    int_acc_dt = int(acc_dt * acc_step)
+    int_plato_dt = int(plato_dt * acc_step)
+    int_ve = int(plato_v * 2 ** 32 * spme / v_step)
+    int_ae = int(int_ve / int_acc_dt) * 65536
+
+    if e < 0:
+        int_ve = -int_ve
+        int_ae = -int_ae
+
+    segs.append([int_acc_dt, [ProfileSegment(apg=apg_z, v=0, a=int_ae)]])
+    if int_plato_dt > 0:
+        segs.append([int_plato_dt, [ProfileSegment(apg=apg_z, v=int_ve, a=0)]])
+    segs.append([int_acc_dt, [ProfileSegment(apg=apg_z, v=int_ve, a=-int_ae)]])
+    segs.append([1, [ProfileSegment(apg=apg_z, v=0, a=0)]])
+    return segs
+
+
+def segment_to_code(seg):
+    seg = numpy.array(seg)
+    t0 = time()
+    path, slowdowns = make_path(seg)
+    corner_errors_slowdowns, cc = process_corner_errors(path, slowdowns)
+    corner_space_slowdowns, cc = process_corner_space(path, corner_errors_slowdowns)
+    plato_slowdowns = corner_space_slowdowns
+    for i in range(20):
+        new_plato_slowdowns, stage_ok, cc, nc, sc = process_plato(path, plato_slowdowns)
+        plato_slowdowns = new_plato_slowdowns
+        print("Result", i, len(sc[sc["slowdown"] < 0.999]))
+
+        if stage_ok:
+            break
+
+    final_slowdowns, stage_ok, cc1, nc1, sc1 = process_plato(path, plato_slowdowns)
+
+    if not stage_ok:
+        print("WARNING: Plato stage is not finished!!!")
+
+    t1 = time()
+    print("Planning time:", t1 - t0)
+
+    all_segments = build_segments(path, plato_slowdowns)
+    return format_segments(all_segments, acc_step=acc_step)
+
+
+def gen_layers(fn):
+    lines = gcode.reader(fn + ".gcode")
+    pg = gcode.path_gen(lines)
+    sg = gcode.gen_segments(pg)
+    layer_num = 0
+    layer_data = []
+    current_segment = []
+    fn_tpl = fn + "_{:05d}.layer"
+    for i, s in enumerate(sg):
+        # print(str(s)[:100])
+        if isinstance(s, gcode.do_move):
+            print(i, s)
+            if "Z" in s.deltas:
+                tupled_segment = []
+                for dt, segs in current_segment:
+                    tupled_segment.append((dt, tuple([s.to_tuple() for s in segs])))
+
+                layer_data.append(("segment", tupled_segment))
+                with open(fn_tpl.format(layer_num) + ".tmp", "wb") as f:
+                    pickle.dump(layer_data, f)
+                os.rename(fn_tpl.format(layer_num) + ".tmp", fn_tpl.format(layer_num))
+                layer_num += 1
+                layer_data = [("start", s.target, s.deltas)]
+                current_segment = []
+            else:
+                assert (False)
+        elif isinstance(s, gcode.do_ext):
+            print(i, s)
+            current_segment.extend(ext_to_code(s.deltas["E"], s.deltas["F"] / 60.0))
+        elif isinstance(s, gcode.do_home):
+            print(i, s)
+            if current_segment:
+                tupled_segment = []
+                for dt, segs in current_segment:
+                    tupled_segment.append((dt, tuple([s.to_tuple() for s in segs])))
+
+                layer_data.append(("segment", tupled_segment))
+                current_segment = []
+            layer_data.append(("do_home",))
+        elif isinstance(s, gcode.do_segment):
+            current_segment.extend(segment_to_code(s.path))
+
+            print("segment", i, len(s.path))
+        else:
+            assert (False)
+
+    if current_segment:
+        tupled_segment = []
+        for dt, segs in current_segment:
+            tupled_segment.append((dt, tuple([s.to_tuple() for s in segs])))
+        layer_data.append(("segment", tupled_segment))
+        current_segment = []
+
+    if layer_data:
+        with open(fn_tpl.format(layer_num) + ".tmp", "wb") as f:
+            pickle.dump(layer_data, f)
+        os.rename(fn_tpl.format(layer_num) + ".tmp", fn_tpl.format(layer_num))
