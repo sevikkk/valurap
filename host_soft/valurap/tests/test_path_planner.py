@@ -1,4 +1,5 @@
-from valurap.path_planning import PathPlanner, PathLimits, solve_model_simple, ir, xtov_k
+from valurap.path_planning import PathPlanner, PathLimits, solve_model_simple
+from valurap.emulate import ir, xtov_k
 
 DEFAULT_LIMITS = PathLimits(None, None, 3000, 3000, None, None, 0.1)
 
