@@ -7,6 +7,9 @@ class ProfileSegment(object):
         self.j = j
         self.jj = jj
         self.target_v = target_v
+        if x is not None:
+            print("Warning, explicit X in segment")
+
 
     def __repr__(self):
         s = ['<ProfileSegment apg={}'.format(self.apg.name)]
@@ -71,6 +74,7 @@ class ProfileSegment(object):
                 break
             kws[fld] = l.pop(0)
 
+        kws["x"] = None
         return cls(**kws)
 
 class PathSegment(object):
@@ -285,5 +289,37 @@ class Asg(object):
                 s3g.BUF_OUTPUT(s3g.OUT_LEDS, 0x3),
                 s3g.BUF_DONE()
             ]
+
+        return code
+
+
+    def gen_map_code(self, map):
+        code = []
+        s3g = self.bot.s3g
+        controls = {}
+        print("Map: {}".format(map))
+        for axe in self.bot.axes.values():
+            controls.setdefault(axe._msg_control, 0)
+            control = 0
+
+            if axe.name in map:
+                apg = self.bot.apgs[map[axe.name]]
+                control |= axe._control_mux[apg.name]
+                print("Axe {} mapped to {}".format(axe.name, apg.name))
+
+                controls.setdefault(apg.val_abort_a, axe.abort_a)
+                controls[apg.val_abort_a] = min(controls[apg.val_abort_a], axe.abort_a)
+
+            if axe.enabled:
+                control |= axe._control_enable
+                print("Axe {} enabled".format(axe.name))
+
+            controls[axe._msg_control] |= control
+
+
+        for k, v in controls.items():
+            code += [s3g.BUF_OUTPUT(k, v)]
+
+        code += [s3g.BUF_DONE()]
 
         return code
