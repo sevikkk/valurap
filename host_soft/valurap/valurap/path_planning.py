@@ -1398,23 +1398,23 @@ def build_segments(path, slowdowns):
     return all_segments
 
 
-def ext_to_code(e, f, apg_z=FakeApg("Z")):
+def ext_to_code(e, f, apg_z=FakeApg("Z"), spm=spme, max_a=max_ea):
     segs = []
     abs_e = abs(e)
-    acc_dt = f / max_ea
-    full_de = max_ea * acc_dt * acc_dt  # / 2 * 2
+    acc_dt = f / max_a
+    full_de = max_a * acc_dt * acc_dt  # / 2 * 2
     if abs_e > full_de:
         plato_de = abs_e - full_de
         plato_dt = plato_de / f
         plato_v = f
     else:
-        acc_dt = math.sqrt(abs_e / max_ea)
-        plato_v = max_ea * acc_dt
+        acc_dt = math.sqrt(abs_e / max_a)
+        plato_v = max_a * acc_dt
         plato_dt = 0
 
     int_acc_dt = int(acc_dt * acc_step)
     int_plato_dt = int(plato_dt * acc_step)
-    int_ve = int(plato_v * 2 ** 32 * spme / v_step)
+    int_ve = int(plato_v * 2 ** 32 * spm / v_step)
     int_ae = int(int_ve / int_acc_dt) * 65536
 
     if e < 0:
@@ -1429,7 +1429,7 @@ def ext_to_code(e, f, apg_z=FakeApg("Z")):
     return segs
 
 
-def segment_to_code(seg):
+def segment_to_code(seg, apg_states=None):
     seg = numpy.array(seg)
     t0 = time()
     path, slowdowns = make_path(seg)
@@ -1453,7 +1453,7 @@ def segment_to_code(seg):
     print("Planning time:", t1 - t0)
 
     all_segments = build_segments(path, plato_slowdowns)
-    return format_segments(all_segments, acc_step=acc_step)
+    return format_segments(all_segments, acc_step=acc_step, add_reset=False, apg_states=apg_states)
 
 
 def gen_layers(fn):
@@ -1463,22 +1463,20 @@ def gen_layers(fn):
     layer_num = 0
     layer_data = []
     current_segment = []
+    apg_states = {}
+
     fn_tpl = fn + "_{:05d}.layer"
     for i, s in enumerate(sg):
         # print(str(s)[:100])
         if isinstance(s, gcode.do_move):
             print(i, s)
             if "Z" in s.deltas:
-                tupled_segment = []
-                for dt, segs in current_segment:
-                    tupled_segment.append((dt, tuple([s.to_tuple() for s in segs])))
+                if save_layer(current_segment, fn_tpl, layer_data, layer_num):
+                    layer_num += 1
 
-                layer_data.append(("segment", tupled_segment))
-                with open(fn_tpl.format(layer_num) + ".tmp", "wb") as f:
-                    pickle.dump(layer_data, f)
-                os.rename(fn_tpl.format(layer_num) + ".tmp", fn_tpl.format(layer_num))
-                layer_num += 1
-                layer_data = [("start", s.target, s.deltas)]
+                layer_data = [
+                    ("start", s.target, s.deltas)
+                ]
                 current_segment = []
             else:
                 assert (False)
@@ -1487,29 +1485,33 @@ def gen_layers(fn):
             current_segment.extend(ext_to_code(s.deltas["E"], s.deltas["F"] / 60.0))
         elif isinstance(s, gcode.do_home):
             print(i, s)
-            if current_segment:
-                tupled_segment = []
-                for dt, segs in current_segment:
-                    tupled_segment.append((dt, tuple([s.to_tuple() for s in segs])))
-
-                layer_data.append(("segment", tupled_segment))
-                current_segment = []
-            layer_data.append(("do_home",))
+            if save_layer(current_segment, fn_tpl, layer_data, layer_num):
+                layer_num += 1
+            current_segment = []
+            layer_data = [("do_home", s.cur_pos)]
         elif isinstance(s, gcode.do_segment):
-            current_segment.extend(segment_to_code(s.path))
+            current_segment.extend(segment_to_code(s.path, apg_states=apg_states))
 
             print("segment", i, len(s.path))
         else:
             assert (False)
 
+    save_layer(current_segment, fn_tpl, layer_data, layer_num)
+
+
+def save_layer(current_segment, fn_tpl, layer_data, layer_num):
     if current_segment:
         tupled_segment = []
         for dt, segs in current_segment:
             tupled_segment.append((dt, tuple([s.to_tuple() for s in segs])))
-        layer_data.append(("segment", tupled_segment))
-        current_segment = []
 
+        layer_data.append(("segment", {
+            "map": {"X1": "X", "Y": "Y", "E1": "Z"},
+            "acc_step": acc_step,
+        }, tupled_segment))
     if layer_data:
         with open(fn_tpl.format(layer_num) + ".tmp", "wb") as f:
             pickle.dump(layer_data, f)
         os.rename(fn_tpl.format(layer_num) + ".tmp", fn_tpl.format(layer_num))
+        return True
+    return False
