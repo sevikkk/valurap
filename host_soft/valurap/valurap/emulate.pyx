@@ -5,16 +5,18 @@ from numpy.linalg import norm
 
 from valurap.asg import ProfileSegment
 
+from libc.stdint cimport int32_t, int64_t
+
 
 cdef class ApgState(object):
-    cdef public long x
-    cdef public long v
-    cdef public long a
-    cdef public long j
-    cdef public long jj
-    cdef public long target_v
+    cdef public int64_t x
+    cdef public int64_t v
+    cdef public int64_t a
+    cdef public int64_t j
+    cdef public int64_t jj
+    cdef public int64_t target_v
     cdef public int target_v_set
-    cdef public long accel_step
+    cdef public int64_t accel_step
 
     def __init__(self, accel_step=50000):
         self.x = 0
@@ -224,11 +226,12 @@ v_step = 50000000
 v_mult = v_step / acc_step
 
 
-def format_segments(all_segments, apgs=None, acc_step=1000):
+def format_segments(all_segments, apgs=None, acc_step=1000, add_reset=True, apg_states=None):
     if apgs is None:
         apgs = {}
 
-    apg_states = {}
+    if apg_states is None:
+        apg_states = {}
 
     apg_x = apgs.get("X", FakeApg("X"))
     apg_y = apgs.get("Y", FakeApg("Y"))
@@ -271,9 +274,22 @@ def format_segments(all_segments, apgs=None, acc_step=1000):
     ]
 
     sub_profile = [[5, segs]]
-    pr_opt += sub_profile
+    if add_reset:
+        pr_opt += sub_profile
 
-    emulate(sub_profile, apg_states=apg_states, accel_step=50000000 / acc_step, no_tracking=True)
+    if add_reset or not apg_states:
+        emulate(sub_profile, apg_states=apg_states, accel_step=50000000 / acc_step, no_tracking=True)
+    else:
+        last_x_n = apg_states["X"].x / 2 ** 32 / spm
+        last_y_n = apg_states["Y"].x / 2 ** 32 / spm
+        last_e_n = apg_states["Z"].x / 2 ** 32 / spme
+        print("Restarting from old state, deltas:", last_x - last_x_n, last_y - last_y_n)
+        print("      Speeds:", apg_states["X"].v, apg_states["Y"].v)
+        last_x = last_x_n
+        last_y = last_y_n
+        last_e = last_e_n
+        next_e = last_e
+
     #print(apg_states["X"], apg_states["Y"])
 
     for index, up_row in all_segments.iterrows():
@@ -568,7 +584,7 @@ def format_segments(all_segments, apgs=None, acc_step=1000):
                 if abs(last_vy) < 0.001:
                     last_vy = 0
 
-    pr_opt += [
+    sub_profile = [
         [
             5,
             [
@@ -578,5 +594,8 @@ def format_segments(all_segments, apgs=None, acc_step=1000):
             ],
         ]
     ]
+
+    pr_opt += sub_profile
+    emulate(sub_profile, apg_states=apg_states, accel_step=50000000 / acc_step, no_tracking=True)
 
     return pr_opt
