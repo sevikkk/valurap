@@ -571,12 +571,26 @@ def format_segments(all_segments, apgs=None, acc_step=1000, add_reset=True, apg_
                 assert res["Z_j"].min() > - k2_30
 
             if 1:
-                assert abs(last_x - next_x) < 0.1
-                assert abs(last_y - next_y) < 0.1
-                assert abs(last_e - next_e) < 0.1
-                assert abs(last_vx - next_vx) < 5
-                assert abs(last_vy - next_vy) < 5
-                assert abs(last_ve - next_ve) < 5
+                try:
+                    assert abs(last_x - next_x) < 0.1
+                    assert abs(last_y - next_y) < 0.1
+                    assert abs(last_e - next_e) < 0.1
+                    assert abs(last_vx - next_vx) < 5
+                    assert abs(last_vy - next_vy) < 5
+                    assert abs(last_ve - next_ve) < 5
+                except:
+                    print("d:", dx, dy, de)
+                    print("dv:", dvx, dvy)
+                    print("err x", abs(last_x - next_x), 0.1)
+                    print("err y", abs(last_y - next_y), 0.1)
+                    print("err e", abs(last_e - next_e), 0.1)
+                    print("err vx", abs(last_vx - next_vx), 5)
+                    print("err vy", abs(last_vy - next_vy), 5)
+                    print("err ve", abs(last_ve - next_ve), 5)
+                    if abs(dx) > 0.5 or abs(dy) > 0.5:
+                        raise
+                    else:
+                        print("big error on small segment, ignoring")
 
             if 0:
                 if abs(last_vx) < 0.001:
