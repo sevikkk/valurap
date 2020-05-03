@@ -14,8 +14,8 @@ int __errno;
 
 volatile int32_t pid_targets[3] = {0, 0, 0};
 volatile double pid_integrals[3];
-volatile int32_t pid_k_i[3] = {500, 500, 500};
-volatile int32_t pid_k_p[3] = {4000, 4000, 4000};
+volatile int32_t pid_k_i[3] = {400, 400, 400};
+volatile int32_t pid_k_p[3] = {20000, 20000, 20000};
 
 volatile int32_t k_type_temp = 0;
 volatile int32_t adc_reads[5];
@@ -35,6 +35,8 @@ int32_t fch_ids[3] = {
     TIM_CHANNEL_2,
     TIM_CHANNEL_1,
 };
+
+void set_fan_value(int32_t ch, int32_t val);
 
 void StartThermoRead(void const* argument) {
     uint8_t in_buffer[2];
@@ -174,8 +176,10 @@ void sfvFunction(void) {
 
     ch = cmdlineGetArgInt(1);
     val = cmdlineGetArgInt(2);
-    if (ch > 0 && ch <= 3) __HAL_TIM_SET_COMPARE(&htim1, fch_ids[ch - 1], val);
+    if (ch > 0 && ch <= 3) set_fan_value(ch, val);
 }
+
+void set_fan_value(int32_t ch, int32_t val) { __HAL_TIM_SET_COMPARE(&htim1, fch_ids[ch - 1], val); }
 
 void sptFunction(void) {
     int32_t ch;

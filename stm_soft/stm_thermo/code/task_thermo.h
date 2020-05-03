@@ -24,5 +24,7 @@ void sfvFunction(void);
 void sptFunction(void);
 void sppFunction(void);
 void shpidFunction(void);
+void set_fan_value(int32_t ch, int32_t val);
+
 
 #endif  // STM_THERMO_TASK_THERMO_H

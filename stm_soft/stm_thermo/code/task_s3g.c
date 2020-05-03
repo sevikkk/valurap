@@ -15,6 +15,7 @@
 #define CMD_QUERY 1
 #define CMD_SET_PID_TARGET 2
 #define CMD_SET_PID_PARAMS 3
+#define CMD_SET_FAN 4
 
 enum S3G_State {
     S_START = 0,
@@ -185,6 +186,12 @@ void process_command() {
         append16(pid_targets[0]);
         append16(pid_targets[1]);
         append16(pid_targets[2]);
+        append16(adc_temps[0]);
+        append16(adc_temps[1]);
+        append16(adc_temps[2]);
+        append16(fan_values[0]);
+        append16(fan_values[1]);
+        append16(fan_values[2]);
         send_packet();
     } else if (cmd == CMD_SET_PID_TARGET) {
         uint8_t channel = read8(3);
@@ -206,6 +213,16 @@ void process_command() {
             pid_k_p[channel - 1] = k_p;
             pid_k_i[channel - 1] = k_i;
             pid_integrals[channel - 1] = 0;
+            reset_send_buffer();
+            append16(cmd_id);
+            append8(0x81);
+            send_packet();
+        }
+    } else if (cmd == CMD_SET_FAN) {
+        uint8_t channel = read8(3);
+        int target = read16(4);
+        if (channel >= 1 && channel <= 3) {
+            set_fan_value(channel, target);
             reset_send_buffer();
             append16(cmd_id);
             append8(0x81);
