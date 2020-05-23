@@ -167,7 +167,7 @@ def gen_segments(pg, split_len=None):
             for i, p in enumerate(gc_segment):
                 if ("Z" in p) or ((not "X" in p) and (not "Y" in p)):
                     if len(path) > 1:
-                        path.append([x, y, 0, ext])
+                        path.append([x, y, 0, ext, path[-1][4]])
                         yield do_segment(path)
 
                     deltas = {}
@@ -204,27 +204,28 @@ def gen_segments(pg, split_len=None):
 
                         yield do_ext(deltas_ext)
 
-                    path = [[x, y, 0, ext]]
+                    path = [[x, y, 0, ext, p["line"]]]
                 else:
                     dx = p["X"]
                     dy = p["Y"]
                     de = -p.get("E", 0)
                     speed = p["F"] / 60.0
+                    line = p["line"]
 
                     x += dx
                     y += dy
                     ext += de
-                    path.append([x, y, speed, ext])
+                    path.append([x, y, speed, ext, line])
 
                     if split_len and len(path) > split_len:
-                        path.append([x, y, 0, ext])
+                        path.append([x, y, 0, ext, path[-1][4]])
 
                         yield do_segment(path)
 
-                        path = [[x, y, 0, ext]]
+                        path = [[x, y, 0, ext, path[-1][4]]]
 
     if len(path) > 1:
-        path.append([x, y, 0, ext])
+        path.append([x, y, 0, ext, path[-1][4]])
 
         yield do_segment(path)
 
