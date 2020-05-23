@@ -962,6 +962,7 @@ def make_path(seg):
         "y": seg[:, 1],
         "v": seg[:, 2],
         "e": seg[:, 3],
+        "line": numpy.int32(seg[:, 4]),
     })
 
     dx = path["x"] - path["x"].shift(1)
@@ -1009,8 +1010,9 @@ def make_path(seg):
     path["t"] = path["dt"].cumsum().shift(1).fillna(0)
 
     path = path[1:-1]
+    path["idx"] = range(len(path))
 
-    path = path.set_index("t")
+    path = path.set_index("idx")
 
     slowdowns = pd.DataFrame()
     slowdowns["corner"] = path["v"] * 0.0 + 1.0
