@@ -956,7 +956,7 @@ class PathPlanner:
 ##################################
 # More pandas implementation
 
-def make_path(seg):
+def make_path(seg, speed_k=1.0):
     path = pd.DataFrame({
         "x": seg[:, 0],
         "y": seg[:, 1],
@@ -964,6 +964,8 @@ def make_path(seg):
         "e": seg[:, 3],
         "line": numpy.int32(seg[:, 4]),
     })
+
+    path["v"] *= speed_k
 
     dx = path["x"] - path["x"].shift(1)
     dy = path["y"] - path["y"].shift(1)
@@ -1024,13 +1026,13 @@ def make_path(seg):
 def gen_speeds(path, slowdowns):
     speeds = pd.DataFrame()
     speeds["path"] = path["v"]
-    speeds["c_in"] = path["pv"]*slowdowns["corner"]
-    speeds["c_out"] = path["v"]*slowdowns["corner"]
-    speeds["out"] = path["v"]*(slowdowns["corner"].shift(-1).fillna(0))
+    speeds["c_in"] = path["pv"]*slowdowns["corner"]  # this corner, prev segment
+    speeds["c_out"] = path["v"]*slowdowns["corner"]  # this corner, this segment
+    speeds["out"] = path["v"]*(slowdowns["corner"].shift(-1).fillna(0))  # next corner c_in
     speeds["plato_base"] = numpy.minimum(speeds["c_out"], speeds["out"])
     speeds["plato_delta"] = path["v"] - speeds["plato_base"]
     speeds["plato"] = speeds["plato_base"] + speeds["plato_delta"] * slowdowns["plato"]
-    for k in ["c_in", "c_out", "plato", "out"]:
+    for k in ["c_in", "c_out", "plato", "out", "plato_base"]:
         if k == "c_in":
             xp = "p"
         else:
@@ -1057,6 +1059,13 @@ def process_corner_errors(path, slowdowns):
     cc["dtx"] = numpy.abs(cc["dvx"] / max_xa)
     cc["dty"] = numpy.abs(cc["dvy"] / max_ya)
     cc["dt"] = numpy.maximum(cc["dtx"], cc["dty"])
+    cc["cdt"] = cc["dt"] / 2
+    cc["cdt"][0] = cc["dt"][0]
+
+    cc["l_in"] = (cc["cdt"] * speeds["c_in"]).shift(-1).fillna(0)
+    cc["l_out"] = cc["cdt"] * speeds["c_out"]
+    cc["l_free"] = path["l"] - cc["l_in"] - cc["l_out"]
+
     cc["ax"] = (cc["dvx"] / cc["dt"]).fillna(0)
     cc["ay"] = (cc["dvy"] / cc["dt"]).fillna(0)
     cc["mdx"] = cc["ax"] * numpy.square(cc["dt"] / 2) / 2
@@ -1067,9 +1076,12 @@ def process_corner_errors(path, slowdowns):
     cc["md"][0] = 0
 
     cc["error_slowdown"] = 1.0 / numpy.sqrt(numpy.maximum(cc["md"] / max_delta, 1.0))
+    cc["in_slowdown"] = 1.0 / numpy.sqrt(numpy.maximum(1.0, cc["l_in"] / path["l"] * 2.1)).shift(1).fillna(1.0)
+    cc["out_slowdown"] = 1.0 / numpy.sqrt(numpy.maximum(1.0, cc["l_out"] / path["l"] * 2.1))
+    cc["slowdown"] = numpy.minimum(numpy.minimum(cc["out_slowdown"], cc["in_slowdown"]), cc["error_slowdown"])
 
     new_slowdowns = slowdowns.copy()
-    new_slowdowns["corner"] = slowdowns["corner"] * cc["error_slowdown"]
+    new_slowdowns["corner"] = slowdowns["corner"] * cc["slowdown"]
     return new_slowdowns, cc
 
 
