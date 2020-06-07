@@ -48,6 +48,17 @@ cdef class ApgState(object):
         else:
             self.target_v_set = False
 
+    def copy(self):
+        c = ApgState(self.accel_step)
+        c.x = self.x
+        c.v = self.v
+        c.a = self.a
+        c.j = self.j
+        c.jj = self.jj
+        c.target_v = self.target_v
+        c.target_v_set = self.target_v_set
+        return c
+
     def step(self):
         next_x = self.x + self.v * self.accel_step
         next_v = int(self.v + (self.a >> 16))
