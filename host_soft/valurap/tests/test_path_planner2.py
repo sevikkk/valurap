@@ -100,30 +100,31 @@ def test_slowdowns():
     assert_allclose(scaled_speeds, array(expected_scaled_speeds))
 
 
+SIMPLE_PATH = [
+    [1.0, -40.0, 0, 0.0, 4],
+    [4.0, -40.0, 50.0, -1.0, 5],
+    [4.0, -43.0, 50.0, -2.0, 6],
+    [7.0, -43.0, 70.0, -3.0, 7],
+    [7.0, -43.0, 0, -3.0, 7],
+]
+
+
 @pytest.mark.parametrize(
-    "comment, gcode_path, expected_slowdown",
+    "comment, gcode_path, max_delta, expected_slowdown",
     [
-        (
-            "simple case",
-            [
-                [1.0, -40.0, 0, 0.0, 4],
-                [4.0, -40.0, 50.0, -1.0, 5],
-                [4.0, -43.0, 50.0, -2.0, 6],
-                [7.0, -43.0, 70.0, -3.0, 7],
-                [7.0, -43.0, 0, -3.0, 7],
-            ],
-            [],
-        )
+        ("simple case with no corner limit", SIMPLE_PATH, 100, []),
+        ("simple case with corner limit", SIMPLE_PATH, 0.2, []),
     ],
 )
-def test_corners(comment, gcode_path, expected_slowdown):
+def test_corners(comment, gcode_path, max_delta, expected_slowdown):
     planner = PathPlanner()
-    planner.max_delta = 100
+    planner.max_delta = max_delta
     path, slowdowns = planner.make_path(gcode_path, 1.0)
     new_slowdowns, updated, cc = planner.process_corner_errors(path, slowdowns)
 
     assert_no_nans(cc)
     assert_no_nans(new_slowdowns)
+    print(new_slowdowns)
 
     second_slowdowns, updated, cc = planner.process_corner_errors(path, new_slowdowns)
 
