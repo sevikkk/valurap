@@ -25,7 +25,8 @@ class PathPlanner:
 
     min_seg = 0.1
     max_delta = 0.1
-    max_seg = 10.0
+    max_seg = 1000.0
+    max_seg_num = 5
     spm = 80
     spme = 837
     spmz = 1600
@@ -76,7 +77,6 @@ class PathPlanner:
     def apg_z(self):
         return self.apgs["Z"]
 
-
     def make_path(self, gcode_path, speed_k=1.0):
         filtered_path = self.filter_path(gcode_path)
         path = self.path_from_gcode(filtered_path, speed_k)
@@ -110,7 +110,7 @@ class PathPlanner:
         path["pdy"] = path["dy"].shift(1).fillna(0)
         path["pl"] = path["l"].shift(1).fillna(0)
         path["pde"] = path["de"].shift(1).fillna(0)
-        path["dt"] = path["l"] / path["v"]
+        path["dt"] = (path["l"] / path["v"]).fillna(0)
         path["t"] = path["dt"].cumsum().shift(1).fillna(0)
         path = path[1:].copy()
         path["idx"] = range(len(path))
@@ -118,7 +118,7 @@ class PathPlanner:
         return path
 
     def filter_path(self, path):
-        new_path = [path[0]]
+        new_path = []
         last_x, last_y, last_v, last_e, last_line = path[0]
         for x, y, v, e, line in path:
 
@@ -126,19 +126,19 @@ class PathPlanner:
             dy = y - last_y
             de = e - last_e
             l = hypot(dx, dy)
-            if l < self.min_seg:
-                continue
 
             if l > self.max_seg:
-                splits = min(10, ceil(l / self.max_seg))
+                splits = min(self.max_seg_num, ceil(l / self.max_seg))
                 for i in range(1, splits):
-                    new_path.append((
-                        last_x + dx * i / splits,
-                        last_y + dy * i / splits,
-                        v,
-                        last_e + de * i / splits,
-                        line
-                    ))
+                    new_path.append(
+                        (
+                            last_x + dx * i / splits,
+                            last_y + dy * i / splits,
+                            v,
+                            last_e + de * i / splits,
+                            line,
+                        )
+                    )
 
             new_path.append((x, y, v, e, line))
             last_x, last_y, last_v, last_e, last_line = new_path[-1]
@@ -147,41 +147,47 @@ class PathPlanner:
 
     def path_from_gcode(self, gcode_path, speed_k):
         seg = np.array(gcode_path)
-        path = pd.DataFrame({
-            "x": seg[:, 0],
-            "y": seg[:, 1],
-            "v": seg[:, 2],
-            "e": seg[:, 3],
-            "line": np.int32(seg[:, 4]),
-        })
+        path = pd.DataFrame(
+            {
+                "x": seg[:, 0],
+                "y": seg[:, 1],
+                "v": seg[:, 2],
+                "e": seg[:, 3],
+                "line": np.int32(seg[:, 4]),
+            }
+        )
         path["v"] *= speed_k
         return path
 
     def gen_speeds(self, path, slowdowns):
         speeds = pd.DataFrame()
         speeds["path"] = path["v"]
-        speeds["c_in"] = path["pv"] * slowdowns["corner"]  # this corner, prev segment
-        speeds["c_out"] = path["v"] * slowdowns["corner"]  # this corner, this segment
-        speeds["out"] = path["v"] * (slowdowns["corner"].shift(-1).fillna(0))  # next corner c_in
-        speeds["plato_base"] = np.minimum(speeds["c_out"], speeds["out"])
-        speeds["plato_delta"] = path["v"] - speeds["plato_base"]
+
+        speeds["entry"] = path["v"] * slowdowns["corner"]
+        speeds["exit"] = path["v"] * (slowdowns["corner"].shift(-1).fillna(0))
+
+        speeds["plato_base"] = np.minimum(speeds["entry"], speeds["exit"])
+        speeds["plato_delta"] = speeds["path"] - speeds["plato_base"]
         speeds["plato"] = speeds["plato_base"] + speeds["plato_delta"] * slowdowns["plato"]
-        for k in ["c_in", "c_out", "plato", "out", "plato_base"]:
-            if k == "c_in":
-                xp = "p"
-            else:
-                xp = ""
-            speeds[k + "_x"] = speeds[k] * path[xp + "dx"] / path[xp + "l"]
-            speeds[k + "_y"] = speeds[k] * path[xp + "dy"] / path[xp + "l"]
-            speeds[k + "_x"][speeds[k] == 0] = 0
-            speeds[k + "_y"][speeds[k] == 0] = 0
 
         speeds["unit_x"] = (path["dx"] / path["l"]).fillna(1.0)
         speeds["unit_y"] = (path["dy"] / path["l"]).fillna(0.0)
-        max_a_x = np.abs(speeds["plato"] * self.max_xa / speeds["plato_x"].fillna(np.inf))
-        max_a_y = np.abs(speeds["plato"] * self.max_ya / speeds["plato_y"].fillna(np.inf))
+
+        for k in ["entry", "exit", "plato", "path"]:
+            speeds[k + "_x"] = speeds[k] * speeds["unit_x"]
+            speeds[k + "_y"] = speeds[k] * speeds["unit_y"]
+
+        max_a_x = np.abs(self.max_xa / speeds["unit_x"].fillna(np.inf))
+        max_a_y = np.abs(self.max_ya / speeds["unit_y"].fillna(np.inf))
         max_a = np.minimum(max_a_x, max_a_y)
-        speeds["max_a"] = max_a
+        speeds["max_a"] = max_a  # max accell for not componentized move
+
+        speeds["p_unit_x"] = speeds["unit_x"].shift(1).fillna(1.0)
+        speeds["p_unit_y"] = speeds["unit_x"].shift(1).fillna(1.0)
+
+        speeds["p_exit"] = speeds["exit"].shift(1).fillna(0)
+        speeds["p_exit_x"] = speeds["exit_x"].shift(1).fillna(0)
+        speeds["p_exit_y"] = speeds["exit_y"].shift(1).fillna(0)
 
         return speeds
 
@@ -189,32 +195,52 @@ class PathPlanner:
         speeds = self.gen_speeds(path, slowdowns)
 
         cc = pd.DataFrame()
-        cc["dvx"] = speeds["c_out_x"] - speeds["c_in_x"]
-        cc["dvy"] = speeds["c_out_y"] - speeds["c_in_y"]
+        cc["dvx"] = speeds["entry_x"] - speeds["p_exit_x"]
+        cc["dvy"] = speeds["entry_y"] - speeds["p_exit_y"]
+
         cc["dtx"] = np.abs(cc["dvx"] / self.max_xa)
         cc["dty"] = np.abs(cc["dvy"] / self.max_ya)
         cc["dt"] = np.maximum(cc["dtx"], cc["dty"])
-        cc["cdt"] = cc["dt"] / 2
-        cc["cdt"][0] = cc["dt"][0]
 
-        cc["l_in"] = (cc["cdt"] * speeds["c_in"]).shift(-1).fillna(0)
-        cc["l_out"] = cc["cdt"] * speeds["c_out"]
-        cc["l_out"][0] = cc["dt"][0] * speeds["c_out"][0] / 2
-        cc["l_free"] = path["l"] - cc["l_in"] - cc["l_out"]
+        cc["entry_dt"] = cc["dt"] / 2
+        cc["entry_dt"][0] = cc["dt"][0]
 
-        cc["ax"] = (cc["dvx"] / cc["dt"]).fillna(0)
-        cc["ay"] = (cc["dvy"] / cc["dt"]).fillna(0)
-        cc["mdx"] = cc["ax"] * np.square(cc["dt"] / 2) / 2
-        cc["mdy"] = cc["ay"] * np.square(cc["dt"] / 2) / 2
-        cc["mvx"] = (speeds["c_out_x"] + speeds["c_in_x"]) / 2
-        cc["mvy"] = (speeds["c_out_y"] + speeds["c_in_y"]) / 2
-        cc["md"] = norm(cc[['mdx', 'mdy']].values, axis=1)
-        cc["md"][0] = 0
+        last_i = len(cc["dvx"]) - 1
+
+        cc["exit_dt"] = cc["entry_dt"].shift(-1).fillna(0)
+        cc["exit_dt"][last_i - 1] += cc["entry_dt"][last_i]
+        cc["entry_dt"][last_i] = 0
+
+        cc["l_entry"] = cc["entry_dt"] * speeds["entry"]
+        cc["l_entry"][0] = cc["entry_dt"][0] * speeds["entry"][0] / 2
+        cc["l_exit"] = cc["exit_dt"] * speeds["exit"]
+        cc["l_exit"][last_i - 1] = cc["exit_dt"][last_i - 1] * speeds["exit"][last_i - 1] / 2
+        cc["l_free"] = path["l"] - cc["l_entry"] - cc["l_exit"]
+
+        cc["entry_ax"] = (cc["dvx"] / cc["dt"]).fillna(0)
+        cc["entry_ay"] = (cc["dvy"] / cc["dt"]).fillna(0)
+        cc["exit_ax"] = cc["entry_ax"].shift(-1).fillna(0)
+        cc["exit_ay"] = cc["entry_ay"].shift(-1).fillna(0)
+
+        cc["mdx"] = cc["entry_ax"] * np.square(cc["entry_dt"]) / 2
+        cc["mdy"] = cc["entry_ay"] * np.square(cc["entry_dt"]) / 2
+        cc["mvx"] = speeds["entry_x"] - cc["entry_ax"] * cc["entry_dt"]
+        cc["mvy"] = speeds["entry_y"] - cc["entry_ay"] * cc["entry_dt"]
+        cc["md"] = norm(cc[["mdx", "mdy"]].values, axis=1)
 
         cc["error_slowdown"] = 1.0 / np.sqrt(np.maximum(cc["md"] / self.max_delta, 1.0))
-        cc["in_slowdown"] = 1.0 / np.sqrt(np.maximum(1.0, cc["l_in"] / path["l"] * 2.0)).shift(1).fillna(1.0)
-        cc["out_slowdown"] = 1.0 / np.sqrt(np.maximum(1.0, cc["l_out"] / path["l"] * 2.0))
-        cc["slowdown"] = np.minimum(np.minimum(cc["out_slowdown"], cc["in_slowdown"]), cc["error_slowdown"])
+        cc["error_slowdown"][0] = 1.0
+        cc["error_slowdown"][last_i] = 1.0
+
+        cc["entry_slowdown"] = 1.0 / np.sqrt(
+            np.maximum(1.0, cc["l_entry"] / path["l"] * 2.0)
+        ).fillna(1.0)
+        cc["prev_exit_slowdown"] = 1.0 / np.sqrt(
+            np.maximum(1.0, cc["l_exit"] / path["l"] * 2.0)
+        ).shift(1).fillna(1.0)
+        cc["slowdown"] = np.minimum(
+            np.minimum(cc["entry_slowdown"], cc["prev_exit_slowdown"]), cc["error_slowdown"]
+        )
 
         updated = np.sum(cc["slowdown"] < 0.9999)
         if updated > 0:
@@ -234,10 +260,7 @@ class PathPlanner:
         for i in range(len(path) - 1, -1, -1):
             s_speeds = speeds.iloc[i]
             s_cc = cc.iloc[i]
-            max_in_speed = sqrt(
-                pow(next_speed, 2)
-                + 2 * s_cc["l_free"] * 0.9 * s_speeds["max_a"]
-            )
+            max_in_speed = sqrt(pow(next_speed, 2) + 2 * s_cc["l_free"] * 0.9 * s_speeds["max_a"])
             k = min(1.0, max_in_speed / s_speeds["c_out"])
             if k < 0.999:
                 new_slowdowns["corner"].iloc[i] = slowdowns["corner"].iloc[i] * k
@@ -262,8 +285,7 @@ class PathPlanner:
             if i > 0:
                 p_speeds = speeds.iloc[i - 1]
                 max_out_speed = sqrt(
-                    pow(start_speed, 2)
-                    + 2 * s_cc["l_free"] * 0.9 * p_speeds["max_a"]
+                    pow(start_speed, 2) + 2 * s_cc["l_free"] * 0.9 * p_speeds["max_a"]
                 )
                 k = min(1.0, max_out_speed / s_speeds["c_in"])
             else:
@@ -279,7 +301,6 @@ class PathPlanner:
             print("fp updated:", updated)
 
         return new_slowdowns, updated
-
 
     def gen_segments_float(self, path, slowdowns):
         self.init_coefs()
@@ -302,6 +323,8 @@ class PathPlanner:
         plato["end_vy"] = speeds["out_y"]
         plato["end_v"] = speeds["out"]
 
+        emu_in_loop = False
+
         segments = []
 
         first_seg = path.iloc[0]
@@ -315,19 +338,19 @@ class PathPlanner:
         next_e = last_e
         last_ve = 0.0
 
-        segs = [
-            ProfileSegment(
-                apg=self.apg_x, x=last_x * self.spm, v=0, a=0
-            ),
-            ProfileSegment(
-                apg=self.apg_y, x=last_y * self.spm, v=0, a=0
-            ),
-            ProfileSegment(
-                apg=self.apg_z, x=last_e * self.spme, v=0, a=0
-            ),
-        ]
-        sub_profile = [[5, segs]]
-        emulate(sub_profile, apg_states=self.apg_states, accel_step=self.accel_step, no_tracking=True)
+        if emu_in_loop:
+            segs = [
+                ProfileSegment(apg=self.apg_x, x=last_x * self.spm, v=0, a=0),
+                ProfileSegment(apg=self.apg_y, x=last_y * self.spm, v=0, a=0),
+                ProfileSegment(apg=self.apg_z, x=last_e * self.spme, v=0, a=0),
+            ]
+            sub_profile = [[5, segs]]
+            emulate(
+                sub_profile,
+                apg_states=self.apg_states,
+                accel_step=self.accel_step,
+                no_tracking=True,
+            )
 
         for i in range(0, len(path)):
             print("======== {} =========".format(i))
@@ -343,10 +366,11 @@ class PathPlanner:
             target_vy = s_plato["start_vy"]
             max_a = s_speeds["max_a"]
 
-            print("corner: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
-                last_x, last_y, target_x, target_y,
-                last_vx, last_vy, target_vx, target_vy,
-            ))
+            print(
+                "corner: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
+                    last_x, last_y, target_x, target_y, last_vx, last_vy, target_vx, target_vy,
+                )
+            )
 
             dvx = target_vx - last_vx
             dvy = target_vy - last_vy
@@ -360,40 +384,49 @@ class PathPlanner:
             if dt > 0:
                 split_points = [dt]
 
-                if (last_vx * target_vx < 0):
-                    dtx = abs(last_vx/ax)
+                if last_vx * target_vx < 0:
+                    dtx = abs(last_vx / ax)
                     split_points.append(dtx)
 
-                if (last_vy * target_vy < 0):
-                    dty = abs(last_vy/ay)
+                if last_vy * target_vy < 0:
+                    dty = abs(last_vy / ay)
                     split_points.append(dty)
 
                 split_points.sort()
                 st_x = last_x
                 st_y = last_y
-                st_vx =last_vx
-                st_vy =last_vy
+                st_vx = last_vx
+                st_vy = last_vy
                 pdt = 0.0
                 for sn, dts in enumerate(split_points):
-                    sp_x = st_x + st_vx * dts + ax * pow(dts, 2)/2
-                    sp_y = st_y + st_vy * dts + ay * pow(dts, 2)/2
+                    sp_x = st_x + st_vx * dts + ax * pow(dts, 2) / 2
+                    sp_y = st_y + st_vy * dts + ay * pow(dts, 2) / 2
                     sp_vx = st_vx + ax * dts
                     sp_vy = st_vy + ay * dts
-                    print("corner_{} ({} {}): x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
-                        sn, dts, dt,
-                        last_x, last_y, sp_x, sp_y,
-                        last_vx, last_vy, sp_vx, sp_vy,
-                    ))
-                    segments.append((
-                        1.0 * i, 1.0 + sn,
-                        dts - pdt, ax, ay,
-                        last_x, last_y,
-                        sp_x, sp_y,
-                        last_vx, last_vy,
-                        sp_vx, sp_vy,
-                    ))
+                    print(
+                        "corner_{} ({} {}): x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
+                            sn, dts, dt, last_x, last_y, sp_x, sp_y, last_vx, last_vy, sp_vx, sp_vy,
+                        )
+                    )
+                    segments.append(
+                        (
+                            1.0 * i,
+                            1.0 + sn,
+                            dts - pdt,
+                            ax,
+                            ay,
+                            last_x,
+                            last_y,
+                            sp_x,
+                            sp_y,
+                            last_vx,
+                            last_vy,
+                            sp_vx,
+                            sp_vy,
+                        )
+                    )
 
-                    if 1:
+                    if emu_in_loop:
                         subprofile = self.calculate_single_segment2(*segments[-1])
                         last_x = self.last_x
                         last_y = self.last_y
@@ -417,10 +450,20 @@ class PathPlanner:
             top_vy = s_plato["top_vy"]
             top_v = s_plato["top_v"]
 
-            print("plato: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {}) -> ({}, {})".format(
-                last_x, last_y, target_x, target_y,
-                last_vx, last_vy, top_vx, top_vy, target_vx, target_vy,
-            ))
+            print(
+                "plato: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {}) -> ({}, {})".format(
+                    last_x,
+                    last_y,
+                    target_x,
+                    target_y,
+                    last_vx,
+                    last_vy,
+                    top_vx,
+                    top_vy,
+                    target_vx,
+                    target_vy,
+                )
+            )
 
             l = hypot(target_x - last_x, target_y - last_y)
             if l > 0:
@@ -517,21 +560,31 @@ class PathPlanner:
                 decel_y = s_plato["end_y"] - unit_y * l2
 
                 if dt1 > 0:
-                    print("plato accel: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
-                        last_x, last_y, accel_x, accel_y,
-                        last_vx, last_vy, top_vx, top_vy,
-                    ))
+                    print(
+                        "plato accel: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
+                            last_x, last_y, accel_x, accel_y, last_vx, last_vy, top_vx, top_vy,
+                        )
+                    )
 
-                    segments.append((
-                        1.0 * i, 10.0,
-                        dt1, ax1, ay1,
-                        last_x, last_y,
-                        accel_x, accel_y,
-                        last_vx, last_vy,
-                        top_vx, top_vy,
-                    ))
+                    segments.append(
+                        (
+                            1.0 * i,
+                            10.0,
+                            dt1,
+                            ax1,
+                            ay1,
+                            last_x,
+                            last_y,
+                            accel_x,
+                            accel_y,
+                            last_vx,
+                            last_vy,
+                            top_vx,
+                            top_vy,
+                        )
+                    )
 
-                    if 1:
+                    if emu_in_loop:
                         subprofile = self.calculate_single_segment2(*segments[-1])
                         last_x = self.last_x
                         last_y = self.last_y
@@ -548,21 +601,31 @@ class PathPlanner:
                 dtl = plato_l / top_v
 
                 if dtl > 0:
-                    print("plato feed: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
-                        last_x, last_y, decel_x, decel_y,
-                        last_vx, last_vy, top_vx, top_vy,
-                    ))
+                    print(
+                        "plato feed: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
+                            last_x, last_y, decel_x, decel_y, last_vx, last_vy, top_vx, top_vy,
+                        )
+                    )
 
-                    segments.append((
-                        1.0 * i, 20.0,
-                        dtl, 0, 0,
-                        last_x, last_y,
-                        decel_x, decel_y,
-                        last_vx, last_vy,
-                        top_vx, top_vy,
-                    ))
+                    segments.append(
+                        (
+                            1.0 * i,
+                            20.0,
+                            dtl,
+                            0,
+                            0,
+                            last_x,
+                            last_y,
+                            decel_x,
+                            decel_y,
+                            last_vx,
+                            last_vy,
+                            top_vx,
+                            top_vy,
+                        )
+                    )
 
-                    if 1:
+                    if emu_in_loop:
                         subprofile = self.calculate_single_segment2(*segments[-1])
                         last_x = self.last_x
                         last_y = self.last_y
@@ -576,21 +639,38 @@ class PathPlanner:
                     last_v = hypot(last_vx, last_vy)
 
                 if dt2 > 0:
-                    print("plato decel: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
-                        last_x, last_y, target_x, target_y,
-                        last_vx, last_vy, target_vx, target_vy,
-                    ))
+                    print(
+                        "plato decel: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
+                            last_x,
+                            last_y,
+                            target_x,
+                            target_y,
+                            last_vx,
+                            last_vy,
+                            target_vx,
+                            target_vy,
+                        )
+                    )
 
-                    segments.append((
-                        1.0 * i, 30.0,
-                        dt2, ax2, ay2,
-                        last_x, last_y,
-                        target_x, target_y,
-                        last_vx, last_vy,
-                        target_vx, target_vy,
-                    ))
+                    segments.append(
+                        (
+                            1.0 * i,
+                            30.0,
+                            dt2,
+                            ax2,
+                            ay2,
+                            last_x,
+                            last_y,
+                            target_x,
+                            target_y,
+                            last_vx,
+                            last_vy,
+                            target_vx,
+                            target_vy,
+                        )
+                    )
 
-                    if 1:
+                    if emu_in_loop:
                         subprofile = self.calculate_single_segment2(*segments[-1])
                         last_x = self.last_x
                         last_y = self.last_y
@@ -608,7 +688,7 @@ class PathPlanner:
         df["i"] = segments[:, 0]
         df["st"] = segments[:, 1]
         df["dt"] = segments[:, 2]
-        df["t"] = np.cumsum(df["dt"]).shift(1,fill_value=0.0)
+        df["t"] = np.cumsum(df["dt"]).shift(1, fill_value=0.0)
         df["ax"] = segments[:, 3]
         df["ay"] = segments[:, 4]
         df["x0"] = segments[:, 5]
@@ -622,8 +702,22 @@ class PathPlanner:
 
         return df
 
-
-    def calculate_single_segment2(self, i_in, sn_in, dt, ax_in, ay_in, last_x, last_y, target_x, target_y, last_vx, last_vy, target_vx, target_vy):
+    def calculate_single_segment2(
+        self,
+        i_in,
+        sn_in,
+        dt,
+        ax_in,
+        ay_in,
+        last_x,
+        last_y,
+        target_x,
+        target_y,
+        last_vx,
+        last_vy,
+        target_vx,
+        target_vy,
+    ):
         int_dt = int(ceil(dt * self.acc_step))
         dt = 1.0 / self.acc_step * int_dt
 
@@ -635,10 +729,7 @@ class PathPlanner:
         jy = 0
         test_x, test_y, test_vx, test_vy = self.emu_profile(int_dt, ax, ay, jx, jy)
 
-        if not (
-                (abs(test_x - target_x) < self.max_delta / 2)
-                and (abs(test_vx - target_vx) < 1)
-        ):
+        if not ((abs(test_x - target_x) < self.max_delta / 2) and (abs(test_vx - target_vx) < 1)):
             retest = 1
             jx = 12 * (last_x - target_x) / pow(dt, 3) + 6 * (last_vx + target_vx) / pow(dt, 2)
             ax = (target_vx - last_vx) / dt - jx * dt / 2
@@ -648,10 +739,7 @@ class PathPlanner:
                 jx *= (self.max_xa / max_ax) * 0.7
                 ax = (target_vx - last_vx) / dt - jx * dt / 2
 
-        if not (
-                (abs(test_y - target_y) < self.max_delta / 2)
-                and (abs(test_vy - target_vy) < 1)
-        ):
+        if not ((abs(test_y - target_y) < self.max_delta / 2) and (abs(test_vy - target_vy) < 1)):
             retest = 1
             jy = 12 * (last_y - target_y) / pow(dt, 3) + 6 * (last_vy + target_vy) / pow(dt, 2)
             ay = (target_vy - last_vy) / dt - jy * dt / 2
@@ -661,16 +749,20 @@ class PathPlanner:
                 jy *= (self.max_ya / max_ay) * 0.7
                 ay = (target_vy - last_vy) / dt - jy * dt / 2
 
-
         if retest:
             test_x, test_y, test_vx, test_vy = self.emu_profile(int_dt, ax, ay, jx, jy)
             if not (
-                    (abs(test_x - target_x) < self.max_delta)
-                    and (abs(test_y - target_y) < self.max_delta)
-                    and (abs(test_vx - target_vx) < 2)
-                    and (abs(test_vy - target_vy) < 2)
+                (abs(test_x - target_x) < self.max_delta)
+                and (abs(test_y - target_y) < self.max_delta)
+                and (abs(test_vx - target_vx) < 2)
+                and (abs(test_vy - target_vy) < 2)
             ):
-                print(abs(test_x - target_x), abs(test_y - target_y), abs(test_vx - target_vx), abs(test_vy - target_vy))
+                print(
+                    abs(test_x - target_x),
+                    abs(test_y - target_y),
+                    abs(test_vx - target_vx),
+                    abs(test_vy - target_vy),
+                )
                 raise RuntimeError("Target precision not reached")
 
         int_ax = round(ax * self.k_axy)
@@ -695,12 +787,12 @@ class PathPlanner:
             vym = -pow(ay0, 2) / 2 / jy
 
         try:
-            assert (abs(ax0) < self.max_xa * 1.5)
-            assert (abs(ax1) < self.max_xa * 1.5)
-            assert (abs(vxm) < self.max_xv * 1.5)
-            assert (abs(ay0) < self.max_ya * 1.5)
-            assert (abs(ay1) < self.max_ya * 1.5)
-            assert (abs(vym) < self.max_yv * 1.5)
+            assert abs(ax0) < self.max_xa * 1.5
+            assert abs(ax1) < self.max_xa * 1.5
+            assert abs(vxm) < self.max_xv * 1.5
+            assert abs(ay0) < self.max_ya * 1.5
+            assert abs(ay1) < self.max_ya * 1.5
+            assert abs(vym) < self.max_yv * 1.5
         except AssertionError:
             print("==== Assertion error ====")
             print("dt, int_dt, dx, dy", dt, int_dt, dx, dy)
@@ -711,22 +803,18 @@ class PathPlanner:
         sub_profile = []
         if int_dt > 0:
             segs = [
-                ProfileSegment(
-                    apg=self.apg_x, a=int(int_ax), j=int(int_jx), target_v=int_tvx
-                ),
-                ProfileSegment(
-                    apg=self.apg_y, a=int(int_ay), j=int(int_jy), target_v=int_tvy
-                ),
-                ProfileSegment(
-                    apg=self.apg_z, a=0, j=0
-                ),
+                ProfileSegment(apg=self.apg_x, a=int(int_ax), j=int(int_jx), target_v=int_tvx),
+                ProfileSegment(apg=self.apg_y, a=int(int_ay), j=int(int_jy), target_v=int_tvy),
+                ProfileSegment(apg=self.apg_z, a=0, j=0),
             ]
 
             sub_profile = [[int_dt, segs]]
 
         print(sub_profile)
 
-        emulate(sub_profile, apg_states=self.apg_states, accel_step=self.accel_step, no_tracking=True)
+        emulate(
+            sub_profile, apg_states=self.apg_states, accel_step=self.accel_step, no_tracking=True
+        )
 
         self.last_x = self.apg_states["X"].x / self.k_xxy
         self.last_y = self.apg_states["Y"].x / self.k_xxy
@@ -735,11 +823,28 @@ class PathPlanner:
         self.last_vy = self.apg_states["Y"].v / self.k_vxy
         self.last_ve = self.apg_states["Z"].v / self.k_ve
         self.last_v = hypot(self.last_vx, self.last_vy)
-        print("last_x", self.last_x, "last_y", self.last_y, "last_vx", self.last_vx, "last_vy", self.last_vy)
-        print("d_x", self.last_x - target_x, "d_y", self.last_y - target_y, "d_vx", self.last_vx -target_vx, "d_vy", self.last_vy - target_vy)
+        print(
+            "last_x",
+            self.last_x,
+            "last_y",
+            self.last_y,
+            "last_vx",
+            self.last_vx,
+            "last_vy",
+            self.last_vy,
+        )
+        print(
+            "d_x",
+            self.last_x - target_x,
+            "d_y",
+            self.last_y - target_y,
+            "d_vx",
+            self.last_vx - target_vx,
+            "d_vy",
+            self.last_vy - target_vy,
+        )
 
         return sub_profile
-
 
     def gen_segments(self, path, slowdowns, add_reset=True):
         self.init_coefs()
@@ -761,7 +866,6 @@ class PathPlanner:
         plato["end_vy"] = speeds["out_y"]
         plato["end_v"] = speeds["out"]
 
-
         pr_opt = []
 
         first_seg = path.iloc[0]
@@ -777,29 +881,33 @@ class PathPlanner:
 
         if add_reset or not self.apg_states:
             segs = [
-                ProfileSegment(
-                    apg=self.apg_x, x=self.last_x * self.spm, v=0, a=0
-                ),
-                ProfileSegment(
-                    apg=self.apg_y, x=self.last_y * self.spm, v=0, a=0
-                ),
-                ProfileSegment(
-                    apg=self.apg_z, x=self.last_e * self.spme, v=0, a=0
-                ),
+                ProfileSegment(apg=self.apg_x, x=self.last_x * self.spm, v=0, a=0),
+                ProfileSegment(apg=self.apg_y, x=self.last_y * self.spm, v=0, a=0),
+                ProfileSegment(apg=self.apg_z, x=self.last_e * self.spme, v=0, a=0),
             ]
             sub_profile = [[5, segs]]
 
             if add_reset:
                 pr_opt += sub_profile
 
-            emulate(sub_profile, apg_states=self.apg_states, accel_step=self.accel_step, no_tracking=True)
+            emulate(
+                sub_profile,
+                apg_states=self.apg_states,
+                accel_step=self.accel_step,
+                no_tracking=True,
+            )
         else:
             last_x_n = self.apg_states["X"].x / self.k_xxy
             last_y_n = self.apg_states["Y"].x / self.k_xxy
             last_e_n = self.apg_states["Z"].x / self.k_xe
-            print("Restarting from old state, deltas: {} {} speeds: {} {}".format(
-                self.last_x - last_x_n, self.last_y - last_y_n,
-                self.apg_states["X"].v, self.apg_states["Y"].v))
+            print(
+                "Restarting from old state, deltas: {} {} speeds: {} {}".format(
+                    self.last_x - last_x_n,
+                    self.last_y - last_y_n,
+                    self.apg_states["X"].v,
+                    self.apg_states["Y"].v,
+                )
+            )
             self.last_x = last_x_n
             self.last_y = last_y_n
             self.last_e = last_e_n
@@ -818,17 +926,31 @@ class PathPlanner:
             target_vy = s_plato["start_vy"]
             max_a = s_speeds["max_a"]
 
-            print("corner: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
-                self.last_x, self.last_y, target_x, target_y,
-                self.last_vx, self.last_vy, target_vx, target_vy,
-            ))
+            print(
+                "corner: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
+                    self.last_x,
+                    self.last_y,
+                    target_x,
+                    target_y,
+                    self.last_vx,
+                    self.last_vy,
+                    target_vx,
+                    target_vy,
+                )
+            )
 
             if (self.last_vx * target_vx > 0) and (self.last_vy * target_vy > 0):
                 print("monotonic corner, do it in single step")
 
                 sub_profile = self.calculate_single_segment(
-                    self.last_vx, self.last_vy, self.last_x, self.last_y,
-                    target_vx, target_vy, target_x, target_y
+                    self.last_vx,
+                    self.last_vy,
+                    self.last_x,
+                    self.last_y,
+                    target_vx,
+                    target_vy,
+                    target_x,
+                    target_y,
                 )
 
                 pr_opt += sub_profile
@@ -846,12 +968,12 @@ class PathPlanner:
 
                 split_points = [dt]
 
-                if (self.last_vx * target_vx < 0):
-                    dtx = abs(self.last_vx/ax)
+                if self.last_vx * target_vx < 0:
+                    dtx = abs(self.last_vx / ax)
                     split_points.append(dtx)
 
-                if (self.last_vy * target_vy < 0):
-                    dty = abs(self.last_vy/ay)
+                if self.last_vy * target_vy < 0:
+                    dty = abs(self.last_vy / ay)
                     split_points.append(dty)
 
                 split_points.sort()
@@ -860,18 +982,34 @@ class PathPlanner:
                 st_vx = self.last_vx
                 st_vy = self.last_vy
                 for sn, dts in enumerate(split_points):
-                    sp_x = st_x + st_vx * dts + ax * pow(dts, 2)/2
-                    sp_y = st_y + st_vy * dts + ay * pow(dts, 2)/2
+                    sp_x = st_x + st_vx * dts + ax * pow(dts, 2) / 2
+                    sp_y = st_y + st_vy * dts + ay * pow(dts, 2) / 2
                     sp_vx = st_vx + ax * dts
                     sp_vy = st_vy + ay * dts
-                    print("corner_{} ({} {}): x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
-                        sn, dts, dt,
-                        self.last_x, self.last_y, sp_x, sp_y,
-                        self.last_vx, self.last_vy, sp_vx, sp_vy,
-                    ))
+                    print(
+                        "corner_{} ({} {}): x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
+                            sn,
+                            dts,
+                            dt,
+                            self.last_x,
+                            self.last_y,
+                            sp_x,
+                            sp_y,
+                            self.last_vx,
+                            self.last_vy,
+                            sp_vx,
+                            sp_vy,
+                        )
+                    )
                     sub_profile = self.calculate_single_segment(
-                        self.last_vx, self.last_vy, self.last_x, self.last_y,
-                        sp_vx, sp_vy, sp_x, sp_y
+                        self.last_vx,
+                        self.last_vy,
+                        self.last_x,
+                        self.last_y,
+                        sp_vx,
+                        sp_vy,
+                        sp_x,
+                        sp_y,
                     )
 
                     pr_opt += sub_profile
@@ -886,10 +1024,20 @@ class PathPlanner:
             top_vy = s_plato["top_vy"]
             top_v = s_plato["top_v"]
 
-            print("plato: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {}) -> ({}, {})".format(
-                self.last_x, self.last_y, target_x, target_y,
-                self.last_vx, self.last_vy, top_vx, top_vy, target_vx, target_vy,
-            ))
+            print(
+                "plato: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {}) -> ({}, {})".format(
+                    self.last_x,
+                    self.last_y,
+                    target_x,
+                    target_y,
+                    self.last_vx,
+                    self.last_vy,
+                    top_vx,
+                    top_vy,
+                    target_vx,
+                    target_vy,
+                )
+            )
 
             l = hypot(target_x - self.last_x, target_y - self.last_y)
 
@@ -979,61 +1127,98 @@ class PathPlanner:
             decel_x = s_plato["end_x"] - unit_x * l2
             decel_y = s_plato["end_y"] - unit_y * l2
 
-            print("plato accel: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
-                self.last_x, self.last_y, accel_x, accel_y,
-                self.last_vx, self.last_vy, top_vx, top_vy,
-            ))
+            print(
+                "plato accel: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
+                    self.last_x,
+                    self.last_y,
+                    accel_x,
+                    accel_y,
+                    self.last_vx,
+                    self.last_vy,
+                    top_vx,
+                    top_vy,
+                )
+            )
 
             sub_profile = self.calculate_single_segment(
-                self.last_vx, self.last_vy, self.last_x, self.last_y,
-                top_vx, top_vy, accel_x, accel_y
+                self.last_vx,
+                self.last_vy,
+                self.last_x,
+                self.last_y,
+                top_vx,
+                top_vy,
+                accel_x,
+                accel_y,
             )
 
             print(sub_profile)
             pr_opt += sub_profile
 
-            print("plato feed: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
-                self.last_x, self.last_y, decel_x, decel_y,
-                self.last_vx, self.last_vy, top_vx, top_vy,
-            ))
+            print(
+                "plato feed: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
+                    self.last_x,
+                    self.last_y,
+                    decel_x,
+                    decel_y,
+                    self.last_vx,
+                    self.last_vy,
+                    top_vx,
+                    top_vy,
+                )
+            )
 
             sub_profile = self.calculate_single_segment(
-                self.last_vx, self.last_vy, self.last_x, self.last_y,
-                top_vx, top_vy, decel_x, decel_y
+                self.last_vx,
+                self.last_vy,
+                self.last_x,
+                self.last_y,
+                top_vx,
+                top_vy,
+                decel_x,
+                decel_y,
             )
 
             pr_opt += sub_profile
 
-            print("plato decel: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
-                self.last_x, self.last_y, target_x, target_y,
-                self.last_vx, self.last_vy, target_vx, target_vy,
-            ))
+            print(
+                "plato decel: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
+                    self.last_x,
+                    self.last_y,
+                    target_x,
+                    target_y,
+                    self.last_vx,
+                    self.last_vy,
+                    target_vx,
+                    target_vy,
+                )
+            )
 
             sub_profile = self.calculate_single_segment(
-                self.last_vx, self.last_vy, self.last_x, self.last_y,
-                target_vx, target_vy, target_x, target_y
+                self.last_vx,
+                self.last_vy,
+                self.last_x,
+                self.last_y,
+                target_vx,
+                target_vy,
+                target_x,
+                target_y,
             )
 
             pr_opt += sub_profile
-
 
         segs = [
-            ProfileSegment(
-                apg=self.apg_x, v=0, a=0
-            ),
-            ProfileSegment(
-                apg=self.apg_y, v=0, a=0
-            ),
-            ProfileSegment(
-                apg=self.apg_z, v=0, a=0
-            ),
+            ProfileSegment(apg=self.apg_x, v=0, a=0),
+            ProfileSegment(apg=self.apg_y, v=0, a=0),
+            ProfileSegment(apg=self.apg_z, v=0, a=0),
         ]
         sub_profile = [[5, segs]]
         pr_opt += sub_profile
 
         return pr_opt
 
-    def calculate_single_segment(self, last_vx, last_vy, last_x, last_y, target_vx, target_vy, target_x, target_y):
+    def calculate_single_segment(
+        self, last_vx, last_vy, last_x, last_y, target_vx, target_vy, target_x, target_y
+    ):
         def calc_int_x(t, v=0, a=0, j=0, jj=0):
             ix = (
                 v * 65536 * t
@@ -1044,7 +1229,7 @@ class PathPlanner:
             return ix / self.k_xxy
 
         def calc_int_v(t, v=0, a=0, j=0, jj=0):
-            iv = (v * 65536 + a * t + j * t * (t - 1) / 2 + jj * t * (t - 1) * (t - 2) / 6)
+            iv = v * 65536 + a * t + j * t * (t - 1) / 2 + jj * t * (t - 1) * (t - 2) / 6
             return iv / self.k_vxy / 65536
 
         def calc_int_a(t, v=0, a=0, j=0, jj=0):
@@ -1055,17 +1240,22 @@ class PathPlanner:
         dx = abs(target_x - last_x)
         dy = abs(target_y - last_y)
         l = hypot(dx, dy)
-        v = max(
-            hypot(last_vx, last_vy),
-            hypot(target_vx, target_vy)
-        )
+        v = max(hypot(last_vx, last_vy), hypot(target_vx, target_vy))
 
-        if (dx > self.min_seg/2) and (dx / l > 0.01) and ((abs(target_vx/v) > 0.01) or (abs(last_vx / v) >  0.01)):
+        if (
+            (dx > self.min_seg / 2)
+            and (dx / l > 0.01)
+            and ((abs(target_vx / v) > 0.01) or (abs(last_vx / v) > 0.01))
+        ):
             dtx = 2 * (target_x - last_x) / (target_vx + last_vx)
             print("dtx", dtx)
             dts.append((dx, dtx))
 
-        if (dy > self.min_seg/2) and (dy / l > 0.01) and ((abs(target_vy/v) > 0.01) or (abs(last_vy / v) >  0.01)):
+        if (
+            (dy > self.min_seg / 2)
+            and (dy / l > 0.01)
+            and ((abs(target_vy / v) > 0.01) or (abs(last_vy / v) > 0.01))
+        ):
             dty = 2 * (target_y - last_y) / (target_vy + last_vy)
             print("dty", dty)
             dts.append((dy, dty))
@@ -1096,10 +1286,7 @@ class PathPlanner:
         jy = 0
         test_x, test_y, test_vx, test_vy = self.emu_profile(int_dt, ax, ay, jx, jy)
 
-        if not (
-                (abs(test_x - target_x) < self.max_delta / 2)
-                and (abs(test_vx - target_vx) < 3)
-        ):
+        if not ((abs(test_x - target_x) < self.max_delta / 2) and (abs(test_vx - target_vx) < 3)):
             retest = 1
             jx = 12 * (last_x - target_x) / pow(dt, 3) + 6 * (last_vx + target_vx) / pow(dt, 2)
             ax = (target_vx - last_vx) / dt - jx * dt / 2
@@ -1109,10 +1296,7 @@ class PathPlanner:
                 jx *= (self.max_xa / max_ax) * 0.7
                 ax = (target_vx - last_vx) / dt - jx * dt / 2
 
-        if not (
-                (abs(test_y - target_y) < self.max_delta / 2)
-                and (abs(test_vy - target_vy) < 3)
-        ):
+        if not ((abs(test_y - target_y) < self.max_delta / 2) and (abs(test_vy - target_vy) < 3)):
             retest = 1
             jy = 12 * (last_y - target_y) / pow(dt, 3) + 6 * (last_vy + target_vy) / pow(dt, 2)
             ay = (target_vy - last_vy) / dt - jy * dt / 2
@@ -1122,16 +1306,20 @@ class PathPlanner:
                 jy *= (self.max_ya / max_ay) * 0.7
                 ay = (target_vy - last_vy) / dt - jy * dt / 2
 
-
         if retest:
             test_x, test_y, test_vx, test_vy = self.emu_profile(int_dt, ax, ay, jx, jy)
             if not (
-                    (abs(test_x - target_x) < self.max_delta * 2)
-                    and (abs(test_y - target_y) < self.max_delta * 2)
-                    and (abs(test_vx - target_vx) < 3)
-                    and (abs(test_vy - target_vy) < 3)
+                (abs(test_x - target_x) < self.max_delta * 2)
+                and (abs(test_y - target_y) < self.max_delta * 2)
+                and (abs(test_vx - target_vx) < 3)
+                and (abs(test_vy - target_vy) < 3)
             ):
-                print(abs(test_x - target_x), abs(test_y - target_y), abs(test_vx - target_vx), abs(test_vy - target_vy))
+                print(
+                    abs(test_x - target_x),
+                    abs(test_y - target_y),
+                    abs(test_vx - target_vx),
+                    abs(test_vy - target_vy),
+                )
                 raise RuntimeError("Target precision not reached")
 
         int_ax = round(ax * self.k_axy)
@@ -1156,12 +1344,12 @@ class PathPlanner:
             vym = -pow(ay0, 2) / 2 / jy
 
         try:
-            assert (abs(ax0) < self.max_xa * 1.5)
-            assert (abs(ax1) < self.max_xa * 1.5)
-            assert (abs(vxm) < self.max_xv * 1.5)
-            assert (abs(ay0) < self.max_ya * 1.5)
-            assert (abs(ay1) < self.max_ya * 1.5)
-            assert (abs(vym) < self.max_yv * 1.5)
+            assert abs(ax0) < self.max_xa * 1.5
+            assert abs(ax1) < self.max_xa * 1.5
+            assert abs(vxm) < self.max_xv * 1.5
+            assert abs(ay0) < self.max_ya * 1.5
+            assert abs(ay1) < self.max_ya * 1.5
+            assert abs(vym) < self.max_yv * 1.5
         except AssertionError:
             print("==== Assertion error ====")
             print("dt, int_dt, dx, dy", dt, int_dt, dx, dy)
@@ -1172,22 +1360,18 @@ class PathPlanner:
         sub_profile = []
         if int_dt > 0:
             segs = [
-                ProfileSegment(
-                    apg=self.apg_x, a=int(int_ax), j=int(int_jx), target_v=int_tvx
-                ),
-                ProfileSegment(
-                    apg=self.apg_y, a=int(int_ay), j=int(int_jy), target_v=int_tvy
-                ),
-                ProfileSegment(
-                    apg=self.apg_z, a=0, j=0
-                ),
+                ProfileSegment(apg=self.apg_x, a=int(int_ax), j=int(int_jx), target_v=int_tvx),
+                ProfileSegment(apg=self.apg_y, a=int(int_ay), j=int(int_jy), target_v=int_tvy),
+                ProfileSegment(apg=self.apg_z, a=0, j=0),
             ]
 
             sub_profile = [[int_dt, segs]]
 
         print(sub_profile)
 
-        emulate(sub_profile, apg_states=self.apg_states, accel_step=self.accel_step, no_tracking=True)
+        emulate(
+            sub_profile, apg_states=self.apg_states, accel_step=self.accel_step, no_tracking=True
+        )
 
         self.last_x = self.apg_states["X"].x / self.k_xxy
         self.last_y = self.apg_states["Y"].x / self.k_xxy
@@ -1196,8 +1380,26 @@ class PathPlanner:
         self.last_vy = self.apg_states["Y"].v / self.k_vxy
         self.last_ve = self.apg_states["Z"].v / self.k_ve
         self.last_v = hypot(self.last_vx, self.last_vy)
-        print("last_x", self.last_x, "last_y", self.last_y, "last_vx", self.last_vx, "last_vy", self.last_vy)
-        print("d_x", self.last_x - target_x, "d_y", self.last_y - target_y, "d_vx", self.last_vx -target_vx, "d_vy", self.last_vy - target_vy)
+        print(
+            "last_x",
+            self.last_x,
+            "last_y",
+            self.last_y,
+            "last_vx",
+            self.last_vx,
+            "last_vy",
+            self.last_vy,
+        )
+        print(
+            "d_x",
+            self.last_x - target_x,
+            "d_y",
+            self.last_y - target_y,
+            "d_vx",
+            self.last_vx - target_vx,
+            "d_vy",
+            self.last_vy - target_vy,
+        )
 
         return sub_profile
 
@@ -1211,20 +1413,16 @@ class PathPlanner:
             "Y": self.apg_states["Y"].copy(),
             "Z": self.apg_states["Z"].copy(),
         }
-        test_profile = [[
-            int_dt,
+        test_profile = [
             [
-                ProfileSegment(
-                    apg=self.apg_x, a=int(int_ax), j=int(int_jx)
-                ),
-                ProfileSegment(
-                    apg=self.apg_y, a=int(int_ay), j=int(int_jy)
-                ),
-                ProfileSegment(
-                    apg=self.apg_z, a=0, j=0
-                ),
+                int_dt,
+                [
+                    ProfileSegment(apg=self.apg_x, a=int(int_ax), j=int(int_jx)),
+                    ProfileSegment(apg=self.apg_y, a=int(int_ay), j=int(int_jy)),
+                    ProfileSegment(apg=self.apg_z, a=0, j=0),
+                ],
             ]
-        ]]
+        ]
         print("testing: ", test_profile)
         emulate(test_profile, apg_states=test_states, accel_step=self.accel_step, no_tracking=True)
         test_x = test_states["X"].x / self.k_xxy
@@ -1232,4 +1430,3 @@ class PathPlanner:
         test_vx = test_states["X"].v / self.k_vxy
         test_vy = test_states["Y"].v / self.k_vxy
         return test_x, test_y, test_vx, test_vy
-
