@@ -1,4 +1,5 @@
 import os
+from math import hypot
 from pprint import pprint
 
 import numpy
@@ -68,6 +69,14 @@ SIMPLE_PATH = [
     [7.0, -43.0, 0, -3.0, 7],
 ]
 
+SIMPLE_PATH_SHORT_SEGMENT = [
+    [1.0, -40.0, 0, 0.0, 4],
+    [2.0, -40.0, 50.0, -1.0, 5],
+    [2.0, -41.0, 50.0, -2.0, 6],
+    [2.5, -41.0, 70.0, -3.0, 7],
+    [2.5, -41.0, 0, -3.0, 7],
+]
+
 
 def test_slowdowns():
     expected_unscaled_speeds = [
@@ -131,7 +140,7 @@ def test_corners(comment, gcode_path, max_delta, expected_slowdown):
     validate_cc_solution(cc, path, speeds)
 
 
-def validate_cc_solution(cc, path, speeds, plato=None):
+def validate_cc_solution(cc, path, speeds, check_plato=False):
     path_dict = path.iloc[0].to_dict()
     last_x = path_dict["px"]
     last_y = path_dict["py"]
@@ -160,13 +169,19 @@ def validate_cc_solution(cc, path, speeds, plato=None):
             ],
         )
 
-        if plato is None:
-            last_x = path_dict["x"] - speeds_dict["unit_x"] * cc_dict["l_exit"]
-            last_y = path_dict["y"] - speeds_dict["unit_y"] * cc_dict["l_exit"]
-            last_vx = speeds_dict["exit_x"]
-            last_vy = speeds_dict["exit_y"]
-        else:
-            raise NotImplementedError
+        last_x = path_dict["x"] - speeds_dict["unit_x"] * cc_dict["l_exit"]
+        last_y = path_dict["y"] - speeds_dict["unit_y"] * cc_dict["l_exit"]
+        last_vx = speeds_dict["exit_x"]
+        last_vy = speeds_dict["exit_y"]
+
+        if check_plato:
+            plato_in_speed = hypot(next_vx, next_vy)
+            plato_exit_speed = hypot(last_vx, last_vy)
+            plato_len = hypot(last_x - next_x, last_y - next_y)
+            max_a = speeds_dict["max_a"]
+            plato_dt = abs(plato_in_speed - plato_exit_speed) / max_a
+            plato_acc_len = (plato_in_speed + plato_exit_speed) * plato_dt / 2
+            assert plato_acc_len <= plato_len
 
         next_vx = last_vx + cc_dict["exit_ax"] * cc_dict["exit_dt"]
         next_vy = last_vy + cc_dict["exit_ay"] * cc_dict["exit_dt"]
@@ -207,6 +222,21 @@ def assert_no_nans(df):
     [
         ("simple case with no corner limit", SIMPLE_PATH, 100, []),
         ("simple case with corner limit", SIMPLE_PATH, 0.2, []),
+        ("short segment with corner limit", SIMPLE_PATH_SHORT_SEGMENT, 0.2, []),
+        (
+            "alternating segments",
+            [
+                [0, 0, 0, 0, 1],
+                [1, 0, 100, 0, 2],
+                [2, 0, 50, 0, 3],
+                [3, 0, 150, 0, 4],
+                [4, 0, 10, 0, 5],
+                [5, 0, 100, 0, 6],
+                [5, 0, 0, 0, 6],
+            ],
+            0.2,
+            [],
+        ),
     ],
 )
 def test_reverse_path(comment, gcode_path, max_delta, expected_slowdown):
@@ -233,4 +263,4 @@ def test_reverse_path(comment, gcode_path, max_delta, expected_slowdown):
     print(cc[["error_slowdown", "entry_slowdown", "prev_exit_slowdown"]])
     assert updated == 0
 
-    validate_cc_solution(cc, path, speeds)
+    validate_cc_solution(cc, path, speeds, check_plato=True)
