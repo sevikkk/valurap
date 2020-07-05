@@ -60,14 +60,16 @@ def test_gcode_read(name, expected_path, expected_array, expected_speeds):
     )
 
 
+SIMPLE_PATH = [
+    [1.0, -40.0, 0, 0.0, 4],
+    [4.0, -40.0, 50.0, -1.0, 5],
+    [4.0, -43.0, 50.0, -2.0, 6],
+    [7.0, -43.0, 70.0, -3.0, 7],
+    [7.0, -43.0, 0, -3.0, 7],
+]
+
+
 def test_slowdowns():
-    gcode_path = [
-        [1.0, -40.0, 0, 0.0, 4],
-        [4.0, -40.0, 50.0, -1.0, 5],
-        [4.0, -43.0, 50.0, -2.0, 6],
-        [7.0, -43.0, 70.0, -3.0, 7],
-        [7.0, -43.0, 0, -3.0, 7],
-    ]
     expected_unscaled_speeds = [
         [50.0, 50.0, 50.0, 50.0, 0.0],
         [50.0, 50.0, 50.0, 0.0, -50.0],
@@ -83,7 +85,7 @@ def test_slowdowns():
     ]
 
     planner = PathPlanner()
-    path, slowdowns = planner.make_path(gcode_path, 1.0)
+    path, slowdowns = planner.make_path(SIMPLE_PATH, 1.0)
     speeds = planner.gen_speeds(path, slowdowns)
 
     unscaled_speeds = speeds[["entry", "exit", "plato", "plato_x", "plato_y"]].to_numpy()
@@ -98,15 +100,6 @@ def test_slowdowns():
     scaled_speeds = speeds[["entry", "exit", "plato", "plato_x", "plato_y"]].to_numpy()
     print(scaled_speeds)
     assert_allclose(scaled_speeds, array(expected_scaled_speeds))
-
-
-SIMPLE_PATH = [
-    [1.0, -40.0, 0, 0.0, 4],
-    [4.0, -40.0, 50.0, -1.0, 5],
-    [4.0, -43.0, 50.0, -2.0, 6],
-    [7.0, -43.0, 70.0, -3.0, 7],
-    [7.0, -43.0, 0, -3.0, 7],
-]
 
 
 @pytest.mark.parametrize(
@@ -135,20 +128,10 @@ def test_corners(comment, gcode_path, max_delta, expected_slowdown):
 
     speeds = planner.gen_speeds(path, new_slowdowns)
 
-    print(
-        cc[
-            [
-                "dvx",
-                "dvy",
-                "dt",
-                "mdx",
-                "mdy",
-                "error_slowdown",
-                "entry_slowdown",
-                "prev_exit_slowdown",
-            ]
-        ]
-    )
+    validate_cc_solution(cc, path, speeds)
+
+
+def validate_cc_solution(cc, path, speeds, plato=None):
     path_dict = path.iloc[0].to_dict()
     last_x = path_dict["px"]
     last_y = path_dict["py"]
@@ -177,10 +160,13 @@ def test_corners(comment, gcode_path, max_delta, expected_slowdown):
             ],
         )
 
-        last_x = path_dict["x"] - speeds_dict["unit_x"] * cc_dict["l_exit"]
-        last_y = path_dict["y"] - speeds_dict["unit_y"] * cc_dict["l_exit"]
-        last_vx = speeds_dict["exit_x"]
-        last_vy = speeds_dict["exit_y"]
+        if plato is None:
+            last_x = path_dict["x"] - speeds_dict["unit_x"] * cc_dict["l_exit"]
+            last_y = path_dict["y"] - speeds_dict["unit_y"] * cc_dict["l_exit"]
+            last_vx = speeds_dict["exit_x"]
+            last_vy = speeds_dict["exit_y"]
+        else:
+            raise NotImplementedError
 
         next_vx = last_vx + cc_dict["exit_ax"] * cc_dict["exit_dt"]
         next_vy = last_vy + cc_dict["exit_ay"] * cc_dict["exit_dt"]
@@ -214,3 +200,37 @@ def assert_no_nans(df):
             print(k)
             print(v)
             assert False
+
+
+@pytest.mark.parametrize(
+    "comment, gcode_path, max_delta, expected_slowdown",
+    [
+        ("simple case with no corner limit", SIMPLE_PATH, 100, []),
+        ("simple case with corner limit", SIMPLE_PATH, 0.2, []),
+    ],
+)
+def test_reverse_path(comment, gcode_path, max_delta, expected_slowdown):
+    planner = PathPlanner()
+    planner.max_delta = max_delta
+    path, slowdowns = planner.make_path(gcode_path, 1.0)
+    corner_slowdowns, updated, cc = planner.process_corner_errors(path, slowdowns)
+
+    assert_no_nans(cc)
+    assert_no_nans(corner_slowdowns)
+
+    check_slowdowns, updated, cc = planner.process_corner_errors(path, corner_slowdowns)
+    assert updated == 0
+
+    assert_no_nans(cc)
+    assert_no_nans(check_slowdowns)
+
+    reverse_slowdowns, updated = planner.reverse_pass(path, corner_slowdowns)
+    assert_no_nans(reverse_slowdowns)
+    print(reverse_slowdowns)
+
+    speeds = planner.gen_speeds(path, reverse_slowdowns)
+    _, updated, cc = planner.process_corner_errors(path, reverse_slowdowns)
+    print(cc[["error_slowdown", "entry_slowdown", "prev_exit_slowdown"]])
+    assert updated == 0
+
+    validate_cc_solution(cc, path, speeds)

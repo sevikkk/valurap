@@ -261,12 +261,12 @@ class PathPlanner:
             s_speeds = speeds.iloc[i]
             s_cc = cc.iloc[i]
             max_in_speed = sqrt(pow(next_speed, 2) + 2 * s_cc["l_free"] * 0.9 * s_speeds["max_a"])
-            k = min(1.0, max_in_speed / s_speeds["c_out"])
+            k = min(1.0, max_in_speed / s_speeds["entry"])
             if k < 0.999:
                 new_slowdowns["corner"].iloc[i] = slowdowns["corner"].iloc[i] * k
                 updated += 1
 
-            next_speed = s_speeds["c_in"] * k
+            next_speed = s_speeds["exit"] * k
 
         if updated > 0:
             print("rp updated:", updated)
