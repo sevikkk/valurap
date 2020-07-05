@@ -340,29 +340,87 @@ class PathPlanner:
     def forward_pass(self, path, slowdowns):
         speeds = self.gen_speeds(path, slowdowns)
         _, _, cc = self.process_corner_errors(path, slowdowns)
+
         new_slowdowns = slowdowns.copy()
+
+        s_speeds = speeds.iloc[0]
+        s_cc = cc.iloc[0]
+
+        corrected_entry_speed = s_speeds["entry"]  # preload with unmodified exit values
+        corrected_l_entry = s_cc["l_entry"]
+        last_i = len(path) - 1
+
         updated = 0
-        start_speed = 0
-        for i in range(0, len(path)):
+        for i in range(0, last_i):
             s_speeds = speeds.iloc[i]
             s_cc = cc.iloc[i]
-            if i > 0:
-                p_speeds = speeds.iloc[i - 1]
-                max_out_speed = sqrt(
-                    pow(start_speed, 2) + 2 * s_cc["l_free"] * 0.9 * p_speeds["max_a"]
-                )
-                k = min(1.0, max_out_speed / s_speeds["c_in"])
+            s_path = path.iloc[i]
+            if i < last_i:
+                ns_speeds = speeds.iloc[i + 1]
+                ns_cc = cc.iloc[i + 1]
+                next_entry_speed = ns_speeds["entry"]
+                next_l_entry = ns_cc["l_entry"]
+            else:
+                next_entry_speed = np.nan
+                next_l_entry = np.nan
+
+            exit_speed = s_speeds["exit"]
+            max_a = s_speeds["max_a"]
+            l_exit = s_cc["l_exit"]
+            l_total = s_path["l"]
+            l_free = l_total - l_exit - corrected_l_entry
+            cur_dt = abs((corrected_entry_speed - exit_speed) / max_a)
+            cur_plato_min = (corrected_entry_speed + exit_speed) / 2 * cur_dt
+
+            skip = False
+
+            if cur_plato_min < l_free * 0.99:
+                print("no correction needed", i, cur_plato_min, l_free)
+                skip = True
+            elif exit_speed < corrected_entry_speed:
+                print("decelerating segment, skipping", i, corrected_entry_speed, exit_speed)
+                skip = True
+
+            if skip:
+                corrected_entry_speed = next_entry_speed
+                corrected_l_entry = next_l_entry
+                continue
+
+            l_target = l_total - corrected_l_entry
+
+            # Solved by Maxima:
+            # eq: [
+            #     t = (v_exit * k  - v_enter) / a_max,
+            #     l_plato = t * (v_exit * k + v_enter) / 2,
+            #     l_new = l_orig * k * k,
+            #     l = l_new + l_plato
+            # ];
+            # solve(eq,[t, l_new, l_plato, k]);
+            #
+            # k=sqrt((v_enter^2+2*a_max*l)*v_exit^2+2*a_max*l_orig*v_enter^2+4*a_max^2*l*l_orig)/(v_exit^2+2*a_max*l_orig)
+
+            kk = (
+                (corrected_entry_speed ** 2 + 2 * max_a * l_target) * exit_speed ** 2
+                + 2 * max_a * l_exit * corrected_entry_speed ** 2
+                + 4 * max_a ** 2 * l_target * l_exit
+            )
+            assert kk > 0
+            k = sqrt(kk) / (exit_speed ** 2 + 2 * max_a * l_exit)
+
+            print("Calculated k:", k)
+            k *= 0.98
+
+            if k < 0.999999:
+                updated += 1
             else:
                 k = 1.0
 
-            if k < 0.999:
-                new_slowdowns["corner"].iloc[i] = slowdowns["corner"].iloc[i] * k
-                updated += 1
-
-            start_speed = s_speeds["c_out"] * k
+            corrected_entry_speed = next_entry_speed * k
+            corrected_l_entry = next_l_entry * k * k
+            new_slowdowns["corner"].iloc[i + 1] = slowdowns["corner"].iloc[i + 1] * k
 
         if updated > 0:
-            print("fp updated:", updated)
+            print("rp updated:", updated)
 
         return new_slowdowns, updated
 
