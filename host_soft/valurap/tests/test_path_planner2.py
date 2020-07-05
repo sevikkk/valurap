@@ -218,11 +218,11 @@ def assert_no_nans(df):
 
 
 @pytest.mark.parametrize(
-    "comment, gcode_path, max_delta, expected_slowdown",
+    "comment, gcode_path, max_delta, expected_slowdown, expected_to_fail_on_reverse",
     [
-        ("simple case with no corner limit", SIMPLE_PATH, 100, []),
-        ("simple case with corner limit", SIMPLE_PATH, 0.2, []),
-        ("short segment with corner limit", SIMPLE_PATH_SHORT_SEGMENT, 0.2, []),
+        ("simple case with no corner limit", SIMPLE_PATH, 100, [], False),
+        ("simple case with corner limit", SIMPLE_PATH, 0.2, [], False),
+        ("short segment with corner limit", SIMPLE_PATH_SHORT_SEGMENT, 0.2, [], False),
         (
             "alternating segments",
             [
@@ -236,10 +236,13 @@ def assert_no_nans(df):
             ],
             0.2,
             [],
+            True,
         ),
     ],
 )
-def test_reverse_path(comment, gcode_path, max_delta, expected_slowdown):
+def test_reverse_path(
+    comment, gcode_path, max_delta, expected_slowdown, expected_to_fail_on_reverse
+):
     planner = PathPlanner()
     planner.max_delta = max_delta
     path, slowdowns = planner.make_path(gcode_path, 1.0)
@@ -260,7 +263,22 @@ def test_reverse_path(comment, gcode_path, max_delta, expected_slowdown):
 
     speeds = planner.gen_speeds(path, reverse_slowdowns)
     _, updated, cc = planner.process_corner_errors(path, reverse_slowdowns)
-    print(cc[["error_slowdown", "entry_slowdown", "prev_exit_slowdown"]])
+    # print(cc[["error_slowdown", "entry_slowdown", "prev_exit_slowdown"]])
+    assert updated == 0
+
+    if expected_to_fail_on_reverse:
+        with pytest.raises(AssertionError):
+            validate_cc_solution(cc, path, speeds, check_plato=True)
+    else:
+        validate_cc_solution(cc, path, speeds, check_plato=True)
+
+    forward_slowdowns, updated = planner.forward_pass(path, reverse_slowdowns)
+    assert_no_nans(forward_slowdowns)
+    print(forward_slowdowns)
+
+    speeds = planner.gen_speeds(path, forward_slowdowns)
+    _, updated, cc = planner.process_corner_errors(path, forward_slowdowns)
+    # print(cc[["error_slowdown", "entry_slowdown", "prev_exit_slowdown"]])
     assert updated == 0
 
     validate_cc_solution(cc, path, speeds, check_plato=True)
