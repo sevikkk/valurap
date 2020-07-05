@@ -431,19 +431,19 @@ class PathPlanner:
         _, _, cc = self.process_corner_errors(path, slowdowns)
 
         plato = pd.DataFrame()
-        plato["start_x"] = path["px"] + speeds["unit_x"] * cc["l_out"]
-        plato["start_y"] = path["py"] + speeds["unit_y"] * cc["l_out"]
-        plato["start_vx"] = speeds["c_out_x"]
-        plato["start_vy"] = speeds["c_out_y"]
-        plato["start_v"] = speeds["c_out"]
+        plato["start_x"] = path["px"] + speeds["unit_x"] * cc["l_entry"]
+        plato["start_y"] = path["py"] + speeds["unit_y"] * cc["l_entry"]
+        plato["start_vx"] = speeds["entry_x"]
+        plato["start_vy"] = speeds["entry_y"]
+        plato["start_v"] = speeds["entry"]
         plato["top_vx"] = speeds["plato_x"]
         plato["top_vy"] = speeds["plato_y"]
         plato["top_v"] = speeds["plato"]
-        plato["end_x"] = path["x"] - speeds["unit_x"] * cc["l_in"]
-        plato["end_y"] = path["y"] - speeds["unit_y"] * cc["l_in"]
-        plato["end_vx"] = speeds["out_x"]
-        plato["end_vy"] = speeds["out_y"]
-        plato["end_v"] = speeds["out"]
+        plato["end_x"] = path["x"] - speeds["unit_x"] * cc["l_exit"]
+        plato["end_y"] = path["y"] - speeds["unit_y"] * cc["l_exit"]
+        plato["end_vx"] = speeds["exit_x"]
+        plato["end_vy"] = speeds["exit_y"]
+        plato["end_v"] = speeds["exit"]
 
         emu_in_loop = False
 
