@@ -445,9 +445,10 @@ class PathPlanner:
         plato["end_vy"] = speeds["exit_y"]
         plato["end_v"] = speeds["exit"]
 
-        emu_in_loop = False
+        emu_in_loop = True
 
         segments = []
+        profile = []
 
         first_seg = path.iloc[0]
 
@@ -473,8 +474,10 @@ class PathPlanner:
                 accel_step=self.accel_step,
                 no_tracking=True,
             )
+            profile.extend(sub_profile)
 
-        for i in range(0, len(path)):
+        last_i = len(path) - 1
+        for i in range(0, last_i + 1):
             print("======== {} =========".format(i))
             s_speeds = speeds.iloc[i]
             s_plato = plato.iloc[i]
@@ -549,7 +552,8 @@ class PathPlanner:
                     )
 
                     if emu_in_loop:
-                        subprofile = self.calculate_single_segment2(*segments[-1])
+                        sub_profile = self.calculate_single_segment2(*segments[-1])
+                        profile.extend(sub_profile)
                         last_x = self.last_x
                         last_y = self.last_y
                         last_vx = self.last_vx
@@ -571,6 +575,10 @@ class PathPlanner:
             top_vx = s_plato["top_vx"]
             top_vy = s_plato["top_vy"]
             top_v = s_plato["top_v"]
+
+            if i == last_i:
+                assert target_v == 0
+                break
 
             print(
                 "plato: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {}) -> ({}, {})".format(
@@ -625,11 +633,20 @@ class PathPlanner:
                     print("long plato")
                 else:
                     max_top_v = sqrt(2 * max_a * l + pow(last_v, 2) + pow(target_v, 2)) / sqrt(2)
-                    if (max_top_v < last_v) or (max_top_v < target_v):
+                    if (max_top_v - last_v < -0.1) or (max_top_v - target_v < -0.1):
                         print("extra short plato", top_v, max_top_v, last_v, target_v)
                         raise RuntimeError
                     else:
+                        if (max_top_v < last_v):
+                            print("plato corrected by last_v", max_top_v - last_v)
+                            max_top_v = last_v
+
+                        if (max_top_v < target_v):
+                            print("plato corrected by target_v", max_top_v - target_v)
+                            max_top_v = target_v
+
                         print("short plato", top_v, max_top_v)
+
 
                     k = min(1.0, max_top_v / top_v)
 
@@ -640,8 +657,8 @@ class PathPlanner:
                 dvx1 = top_vx - last_vx
                 dvy1 = top_vy - last_vy
 
-                dtx1 = abs(dvx1 / self.max_xa)
-                dty1 = abs(dvy1 / self.max_ya)
+                dtx1 = abs(dvx1 / self.max_xa) * 0.9 # 10% extra for accelleration to fix errors from previous steps
+                dty1 = abs(dvy1 / self.max_ya) * 0.9
                 dt1 = max(dtx1, dty1)
                 if dt1 > 0:
                     ax1 = dvx1 / dt1
@@ -657,8 +674,8 @@ class PathPlanner:
                 dvx2 = target_vx - top_vx
                 dvy2 = target_vy - top_vy
 
-                dtx2 = abs(dvx2 / self.max_xa)
-                dty2 = abs(dvy2 / self.max_ya)
+                dtx2 = abs(dvx2 / self.max_xa) * 0.9
+                dty2 = abs(dvy2 / self.max_ya) * 0.9
                 dt2 = max(dtx2, dty2)
                 if dt2 > 0:
                     ax2 = dvx2 / dt2
@@ -707,7 +724,8 @@ class PathPlanner:
                     )
 
                     if emu_in_loop:
-                        subprofile = self.calculate_single_segment2(*segments[-1])
+                        sub_profile = self.calculate_single_segment2(*segments[-1])
+                        profile.extend(sub_profile)
                         last_x = self.last_x
                         last_y = self.last_y
                         last_vx = self.last_vx
@@ -748,7 +766,8 @@ class PathPlanner:
                     )
 
                     if emu_in_loop:
-                        subprofile = self.calculate_single_segment2(*segments[-1])
+                        sub_profile = self.calculate_single_segment2(*segments[-1])
+                        profile.extend(sub_profile)
                         last_x = self.last_x
                         last_y = self.last_y
                         last_vx = self.last_vx
@@ -793,7 +812,8 @@ class PathPlanner:
                     )
 
                     if emu_in_loop:
-                        subprofile = self.calculate_single_segment2(*segments[-1])
+                        sub_profile = self.calculate_single_segment2(*segments[-1])
+                        profile.extend(sub_profile)
                         last_x = self.last_x
                         last_y = self.last_y
                         last_vx = self.last_vx
@@ -804,6 +824,21 @@ class PathPlanner:
                         last_vx = target_vx
                         last_vy = target_vy
                     last_v = hypot(last_vx, last_vy)
+
+        if emu_in_loop:
+            segs = [
+                ProfileSegment(apg=self.apg_x, v=0, a=0),
+                ProfileSegment(apg=self.apg_y, v=0, a=0),
+                ProfileSegment(apg=self.apg_z, v=0, a=0),
+            ]
+            sub_profile = [[5, segs]]
+            emulate(
+                sub_profile,
+                apg_states=self.apg_states,
+                accel_step=self.accel_step,
+                no_tracking=True,
+            )
+            profile.extend(sub_profile)
 
         segments = np.array(segments)
         df = pd.DataFrame()
@@ -822,7 +857,7 @@ class PathPlanner:
         df["vx1"] = segments[:, 11]
         df["vy1"] = segments[:, 12]
 
-        return df
+        return df, profile
 
     def calculate_single_segment2(
         self,
