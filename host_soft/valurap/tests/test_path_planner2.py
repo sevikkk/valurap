@@ -12,6 +12,7 @@ from valurap import gcode
 from numpy import array, allclose
 
 FIXTURES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures")
+NBS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "nbs")
 
 
 @pytest.mark.parametrize(
@@ -178,7 +179,7 @@ def validate_cc_solution(cc, path, speeds, check_plato=False):
             plato_in_speed = hypot(next_vx, next_vy)
             plato_exit_speed = hypot(last_vx, last_vy)
             plato_len = hypot(last_x - next_x, last_y - next_y)
-            max_a = speeds_dict["max_a"]
+            max_a = speeds_dict["max_a"] * 1.1
             plato_dt = abs(plato_in_speed - plato_exit_speed) / max_a
             plato_acc_len = (plato_in_speed + plato_exit_speed) * plato_dt / 2
             assert plato_acc_len <= plato_len
@@ -282,3 +283,99 @@ def test_reverse_path(
     assert updated == 0
 
     validate_cc_solution(cc, path, speeds, check_plato=True)
+
+    _segments, profile = planner.gen_segments_float(path, forward_slowdowns)
+    print(profile)
+
+
+@pytest.mark.parametrize(
+    "comment, gcode_folder, gcode_path, max_delta, speed_k, segment_number, expected_len, emu_in_loop",
+    [
+        ("test22", NBS_PATH, "test22.gcode", 0.2, 1.0, 15, 484, True),
+        ("test22", NBS_PATH, "test22.gcode", 0.2, 10.0, 15, 484, False),
+        ("test22", NBS_PATH, "test22.gcode", 0.05, 1.0, 15, 484, True),
+        ("test4", NBS_PATH, "test4.gcode", 0.2, 1.0, 13, 1018, True),
+    ],
+)
+def test_real_files(
+        comment, gcode_folder, gcode_path, max_delta, speed_k, segment_number, expected_len, emu_in_loop
+):
+    lines = gcode.reader(os.path.join(gcode_folder, gcode_path))
+    pg = gcode.path_gen(lines)
+    sg = gcode.gen_segments(pg)
+
+    s_n = 1
+
+    for s in sg:
+        if isinstance(s, gcode.do_move):
+            pass
+        elif isinstance(s, gcode.do_ext):
+            pass
+        elif isinstance(s, gcode.do_home):
+            pass
+        elif isinstance(s, gcode.do_segment):
+            print("segment", s_n, len(s.path))
+            if s_n == segment_number:
+                break
+            s_n += 1
+        else:
+            assert (False)
+
+    assert len(s.path) == expected_len
+
+
+    planner = PathPlanner()
+    planner.max_delta = max_delta
+    planner.emu_in_loop = emu_in_loop
+    path, slowdowns = planner.make_path(s.path, speed_k)
+    corner_slowdowns, updated, cc = planner.process_corner_errors(path, slowdowns)
+
+    assert_no_nans(cc)
+    assert_no_nans(corner_slowdowns)
+
+    check_slowdowns, updated, cc = planner.process_corner_errors(path, corner_slowdowns)
+    assert updated == 0
+
+    assert_no_nans(cc)
+    assert_no_nans(check_slowdowns)
+
+    reverse_slowdowns, updated = planner.reverse_pass(path, corner_slowdowns)
+    assert_no_nans(reverse_slowdowns)
+    print(reverse_slowdowns)
+
+    forward_slowdowns, updated = planner.forward_pass(path, reverse_slowdowns)
+    assert_no_nans(forward_slowdowns)
+    print(forward_slowdowns)
+
+    double_check = True
+
+    if double_check:
+        reverse_slowdowns2, updated = planner.reverse_pass(path, forward_slowdowns)
+        assert_no_nans(reverse_slowdowns2)
+        print("reverse2", updated)
+        assert updated == 0
+
+        forward_slowdowns2, updated = planner.forward_pass(path, reverse_slowdowns2)
+        assert_no_nans(forward_slowdowns2)
+        print("forward2", updated)
+        assert updated == 0
+
+        reverse_slowdowns3, updated = planner.reverse_pass(path, forward_slowdowns2)
+        assert_no_nans(reverse_slowdowns3)
+        print("reverse3", updated)
+        assert updated == 0
+
+        forward_slowdowns3, updated = planner.forward_pass(path, reverse_slowdowns3)
+        assert_no_nans(forward_slowdowns3)
+        print("forward3", updated)
+        assert updated == 0
+
+    speeds = planner.gen_speeds(path, forward_slowdowns)
+    _, updated, cc = planner.process_corner_errors(path, forward_slowdowns)
+    assert updated == 0
+
+    validate_cc_solution(cc, path, speeds, check_plato=True)
+
+    _segments, profile = planner.gen_segments_float(path, forward_slowdowns)
+    print(profile)
+

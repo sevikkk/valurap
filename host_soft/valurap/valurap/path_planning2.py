@@ -25,13 +25,17 @@ class PathPlanner:
 
     min_seg = 0.1
     max_delta = 0.1
-    max_seg = 1000.0
+    max_seg = 30.0
     max_seg_num = 5
     spm = 80
     spme = 837
     spmz = 1600
     acc_step = 10000
     v_step = 50000000
+
+    max_a_extra = 1.2
+    max_a_extra2 = 1.4
+    emu_in_loop = False
 
     def init_coefs(self):
         self.v_mult = self.v_step / self.acc_step
@@ -120,7 +124,7 @@ class PathPlanner:
     def filter_path(self, path):
         new_path = []
         last_x, last_y, last_v, last_e, last_line = path[0]
-        for x, y, v, e, line in path:
+        for s_n, (x, y, v, e, line) in enumerate(path):
 
             dx = x - last_x
             dy = y - last_y
@@ -321,12 +325,15 @@ class PathPlanner:
             k = sqrt(kk) / (entry_speed ** 2 + 2 * max_a * l_entry)
 
             print("Calculated k:", k)
-            k *= 0.98
 
             if k < 0.999999:
                 updated += 1
+                k *= 0.98
             else:
                 k = 1.0
+
+            if entry_speed * k < corrected_exit_speed:
+                k = corrected_exit_speed / entry_speed
 
             corrected_exit_speed = next_exit_speed * k
             corrected_l_exit = next_l_exit * k * k
@@ -408,19 +415,22 @@ class PathPlanner:
             k = sqrt(kk) / (exit_speed ** 2 + 2 * max_a * l_exit)
 
             print("Calculated k:", k)
-            k *= 0.98
 
             if k < 0.999999:
                 updated += 1
+                k *= 0.98
             else:
                 k = 1.0
+
+            if exit_speed * k < corrected_entry_speed:
+                k = corrected_entry_speed / exit_speed
 
             corrected_entry_speed = next_entry_speed * k
             corrected_l_entry = next_l_entry * k * k
             new_slowdowns["corner"].iloc[i + 1] = slowdowns["corner"].iloc[i + 1] * k
 
         if updated > 0:
-            print("rp updated:", updated)
+            print("fp updated:", updated)
 
         return new_slowdowns, updated
 
@@ -445,7 +455,7 @@ class PathPlanner:
         plato["end_vy"] = speeds["exit_y"]
         plato["end_v"] = speeds["exit"]
 
-        emu_in_loop = True
+        emu_in_loop = self.emu_in_loop
 
         segments = []
         profile = []
@@ -596,7 +606,7 @@ class PathPlanner:
             )
 
             l = hypot(target_x - last_x, target_y - last_y)
-            if l > 0:
+            if l > 0.05:
                 dvx1 = top_vx - last_vx
                 dvy1 = top_vy - last_vy
 
@@ -632,21 +642,13 @@ class PathPlanner:
                 if l1 + l2 < l * 0.8:
                     print("long plato")
                 else:
-                    max_top_v = sqrt(2 * max_a * l + pow(last_v, 2) + pow(target_v, 2)) / sqrt(2)
-                    if (max_top_v - last_v < -0.1) or (max_top_v - target_v < -0.1):
-                        print("extra short plato", top_v, max_top_v, last_v, target_v)
-                        raise RuntimeError
-                    else:
-                        if (max_top_v < last_v):
-                            print("plato corrected by last_v", max_top_v - last_v)
-                            max_top_v = last_v
+                    max_a_k = max_a * self.max_a_extra
+                    max_top_v = sqrt(2 * max_a_k * l + pow(last_v, 2) + pow(target_v, 2)) / sqrt(2)
 
-                        if (max_top_v < target_v):
-                            print("plato corrected by target_v", max_top_v - target_v)
-                            max_top_v = target_v
+                    if (max_top_v < last_v) or (max_top_v < target_v):
+                        max_top_v = max(last_v, target_v)
 
-                        print("short plato", top_v, max_top_v)
-
+                    print("short plato", top_v, max_top_v)
 
                     k = min(1.0, max_top_v / top_v)
 
@@ -657,8 +659,8 @@ class PathPlanner:
                 dvx1 = top_vx - last_vx
                 dvy1 = top_vy - last_vy
 
-                dtx1 = abs(dvx1 / self.max_xa) * 0.9 # 10% extra for accelleration to fix errors from previous steps
-                dty1 = abs(dvy1 / self.max_ya) * 0.9
+                dtx1 = abs(dvx1 / self.max_xa) / self.max_a_extra2 # 10% extra for accelleration to fix errors from previous steps
+                dty1 = abs(dvy1 / self.max_ya) / self.max_a_extra2
                 dt1 = max(dtx1, dty1)
                 if dt1 > 0:
                     ax1 = dvx1 / dt1
@@ -674,8 +676,8 @@ class PathPlanner:
                 dvx2 = target_vx - top_vx
                 dvy2 = target_vy - top_vy
 
-                dtx2 = abs(dvx2 / self.max_xa) * 0.9
-                dty2 = abs(dvy2 / self.max_ya) * 0.9
+                dtx2 = abs(dvx2 / self.max_xa) / self.max_a_extra2
+                dty2 = abs(dvy2 / self.max_ya) / self.max_a_extra2
                 dt2 = max(dtx2, dty2)
                 if dt2 > 0:
                     ax2 = dvx2 / dt2
@@ -691,7 +693,7 @@ class PathPlanner:
                 print("l1, l2, l, fl", l1, l2, l, l - l1 - l2)
                 print("dt1, dt2", dt1, dt2)
                 if l - (l1 + l2) < -0.001:
-                    raise RuntimeError("extra extra short plato")
+                    raise RuntimeError("extra extra short plato: l: {} l1: {} l2: {} d: {}".format(l, l1, l2, l - l1 - l2))
 
                 accel_x = s_plato["start_x"] + unit_x * l1
                 accel_y = s_plato["start_y"] + unit_y * l1
@@ -944,15 +946,15 @@ class PathPlanner:
             vym = -pow(ay0, 2) / 2 / jy
 
         try:
-            assert abs(ax0) < self.max_xa * 1.5
-            assert abs(ax1) < self.max_xa * 1.5
+            assert abs(ax0) < self.max_xa * 2.5
+            assert abs(ax1) < self.max_xa * 2.5
             assert abs(vxm) < self.max_xv * 1.5
-            assert abs(ay0) < self.max_ya * 1.5
-            assert abs(ay1) < self.max_ya * 1.5
+            assert abs(ay0) < self.max_ya * 2.5
+            assert abs(ay1) < self.max_ya * 2.5
             assert abs(vym) < self.max_yv * 1.5
         except AssertionError:
             print("==== Assertion error ====")
-            print("dt, int_dt, dx, dy", dt, int_dt, dx, dy)
+            print("dt, int_dt, dx, dy", dt, int_dt, target_x - last_x, target_y - last_y)
             print("ax, jx, ax0, ax1, vxm", ax, jx, ax0, ax1, vxm)
             print("ay, jy, ay0, ay1, vym", ay, jy, ay0, ay1, vym)
             raise
