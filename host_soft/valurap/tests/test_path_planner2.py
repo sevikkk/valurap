@@ -298,6 +298,8 @@ def test_reverse_path(
         ("test4", NBS_PATH, "test4.gcode", 0.2, 1.0, 13, 1018, True),
         ("test4", NBS_PATH, "test4.gcode", 0.05, 1.0, 13, 1018, True),
         ("test4", NBS_PATH, "test4.gcode", 0.1, 10.0, 13, 1018, True),
+        ("test4", NBS_PATH, "test4.gcode", 0.05, 10.0, 23, 1024, True),
+        ("test4", NBS_PATH, "test4.gcode", 0.5, 20.0, 23, 1024, True),
     ],
 )
 def test_real_files(
