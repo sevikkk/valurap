@@ -197,6 +197,7 @@ def validate_cc_solution(cc, path, speeds, check_plato=False):
                 path_dict["x"] + next_cc_dict["mdx"],
                 path_dict["y"] + next_cc_dict["mdy"],
             ],
+            atol=1e-5
         )
 
         last_x = next_x
@@ -292,9 +293,11 @@ def test_reverse_path(
     "comment, gcode_folder, gcode_path, max_delta, speed_k, segment_number, expected_len, emu_in_loop",
     [
         ("test22", NBS_PATH, "test22.gcode", 0.2, 1.0, 15, 484, True),
-        ("test22", NBS_PATH, "test22.gcode", 0.2, 10.0, 15, 484, False),
+        ("test22", NBS_PATH, "test22.gcode", 0.2, 10.0, 15, 484, True), # needs better source filtering
         ("test22", NBS_PATH, "test22.gcode", 0.05, 1.0, 15, 484, True),
         ("test4", NBS_PATH, "test4.gcode", 0.2, 1.0, 13, 1018, True),
+        ("test4", NBS_PATH, "test4.gcode", 0.05, 1.0, 13, 1018, True),
+        ("test4", NBS_PATH, "test4.gcode", 0.1, 10.0, 13, 1018, True),
     ],
 )
 def test_real_files(
