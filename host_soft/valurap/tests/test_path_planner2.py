@@ -332,6 +332,9 @@ def test_real_files(
     planner = PathPlanner()
     planner.max_delta = max_delta
     planner.emu_in_loop = emu_in_loop
+    planner.max_ea *= speed_k
+    planner.delta_e_err *= speed_k
+    planner.delta_ve_err *= speed_k
     path, slowdowns = planner.make_path(s.path, speed_k)
     corner_slowdowns, updated, cc = planner.process_corner_errors(path, slowdowns)
 
