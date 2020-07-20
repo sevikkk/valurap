@@ -1,9 +1,13 @@
+import os
+import pickle
+import time
 from math import sqrt, ceil, pow, hypot
 
 import numpy as np
 import pandas as pd
 from numpy.linalg import norm
 
+from valurap import gcode
 from valurap.asg import ProfileSegment
 from valurap.emulate import emulate
 
@@ -43,6 +47,7 @@ class PathPlanner:
     emu_in_loop = False
     espeed_by_de = False
 
+    delta_err = 1.0
     delta_e_err = 1.0
     delta_ve_err = 1.0
 
@@ -67,6 +72,8 @@ class PathPlanner:
         self.int_max_az = self.max_za * self.k_az * 1.2
         self.accel_step = self.v_step / self.acc_step
         self.emu_t = 0
+        self.last_x = None
+        self.last_y = None
 
     def __init__(self, apgs=None):
         if apgs is None:
@@ -1105,8 +1112,8 @@ class PathPlanner:
 
             test_x, test_y, test_e, test_vx, test_vy, test_ve = self.emu_profile(int_dt, int_ax, int_ay, int_ae, int_jx, int_jy, int_je, int_tvx, int_tvy, int_tve)
             if not (
-                (abs(test_x - target_x) < self.max_delta * 2)
-                and (abs(test_y - target_y) < self.max_delta * 2)
+                (abs(test_x - target_x) < self.max_delta * 2 * self.delta_err)
+                and (abs(test_y - target_y) < self.max_delta * 2 * self.delta_err)
                 and (abs(test_e - target_e) < self.max_delta_e * 10 * self.delta_e_err)
                 and (abs(test_vx - target_vx) < 2)
                 and (abs(test_vy - target_vy) < 2)
@@ -1243,3 +1250,117 @@ class PathPlanner:
         test_vy = test_states["Y"].v / self.k_vxy
         test_ve = test_states["Z"].v / self.k_ve
         return test_x, test_y, test_e, test_vx, test_vy, test_ve
+
+    def ext_to_code(self, e, f, axe="E"):
+        if axe == "E":
+            spm = self.spme
+            max_a = self.max_ea
+        else:
+            spm = self.spmz
+            max_a = self.max_ez
+
+        segs = []
+        abs_e = abs(e)
+        acc_dt = f / max_a
+        full_de = max_a * acc_dt * acc_dt  # / 2 * 2
+        if abs_e > full_de:
+            plato_de = abs_e - full_de
+            plato_dt = plato_de / f
+            plato_v = f
+        else:
+            acc_dt = sqrt(abs_e / max_a)
+            plato_v = max_a * acc_dt
+            plato_dt = 0
+
+        int_acc_dt = int(acc_dt * self.acc_step)
+        int_plato_dt = int(plato_dt * self.acc_step)
+        int_ve = int(plato_v * 2 ** 32 * spm / self.v_step)
+        int_ae = int(int_ve / int_acc_dt) * 65536
+
+        if e < 0:
+            int_ve = -int_ve
+            int_ae = -int_ae
+
+        segs.append([int_acc_dt, [ProfileSegment(apg=self.apg_z, v=0, a=int_ae)]])
+        if int_plato_dt > 0:
+            segs.append([int_plato_dt, [ProfileSegment(apg=self.apg_z, v=int_ve, a=0)]])
+        segs.append([int_acc_dt, [ProfileSegment(apg=self.apg_z, v=int_ve, a=-int_ae)]])
+        segs.append([1, [ProfileSegment(apg=self.apg_z, v=0, a=0)]])
+        return segs
+
+    def segment_to_code(self, seg, speed_k=1.0):
+        t0 = time.time()
+        path, slowdowns = self.make_path(seg, speed_k)
+        slowdowns, updated, cc = self.process_corner_errors(path, slowdowns)
+        slowdowns, updated = self.reverse_pass(path, slowdowns)
+        slowdowns, updated = self.forward_pass(path, slowdowns)
+        t1 = time.time()
+        segments, profile = self.gen_segments_float(path, slowdowns)
+        t2 = time.time()
+        print("Planning time:", t1 - t0)
+        print("Format time:", t2 - t1)
+        return profile
+
+
+    def gen_layers(self, input_fn, output_prefix=None, speed_k=1.0):
+        self.init_coefs()
+        if output_prefix is None:
+            output_prefix = os.path.splitext(input_fn)[0]
+
+        lines = gcode.reader(input_fn)
+        pg = gcode.path_gen(lines)
+        sg = gcode.gen_segments(pg)
+        layer_num = 0
+        layer_data = []
+        current_segment = []
+
+        fn_tpl = "{}_{:05d}.layer"
+        for i, s in enumerate(sg):
+            # print(str(s)[:100])
+            if isinstance(s, gcode.do_move):
+                print(i, s)
+                if "Z" in s.deltas:
+                    if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num):
+                        layer_num += 1
+
+                    layer_data = [
+                        ("start", s.target, s.deltas, (self.last_x, self.last_y))
+                    ]
+                    current_segment = []
+                else:
+                    assert (False)
+            elif isinstance(s, gcode.do_ext):
+                print(i, s)
+                current_segment.extend(self.ext_to_code(s.deltas["E"], s.deltas["F"] / 60.0))
+            elif isinstance(s, gcode.do_home):
+                print(i, s)
+                if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num):
+                    layer_num += 1
+                current_segment = []
+                layer_data = [("do_home", s.cur_pos)]
+            elif isinstance(s, gcode.do_segment):
+                current_segment.extend(self.segment_to_code(s.path, speed_k))
+
+                print("segment", i, len(s.path))
+            else:
+                assert (False)
+
+        self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num)
+
+
+    def save_layer(self, current_segment, fn_tpl, layer_data, output_prefix, layer_num):
+        if current_segment:
+            tupled_segment = []
+            for dt, segs in current_segment:
+                tupled_segment.append((dt, tuple([s.to_tuple() for s in segs])))
+
+            layer_data.append(("segment", {
+                "map": {"X1": "X", "Y": "Y", "E1": "Z"},
+                "acc_step": self.acc_step,
+            }, tupled_segment))
+        if layer_data:
+            with open(fn_tpl.format(output_prefix, layer_num) + ".tmp", "wb") as f:
+                pickle.dump(layer_data, f)
+            os.rename(fn_tpl.format(output_prefix, layer_num) + ".tmp", fn_tpl.format(output_prefix, layer_num))
+            return True
+        return False
