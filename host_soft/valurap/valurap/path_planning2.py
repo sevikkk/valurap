@@ -25,7 +25,7 @@ class PathPlanner:
 
     min_seg = 0.1
     max_delta = 0.1
-    max_delta_e = 0.1
+    max_delta_e = 0.01
     max_seg = 30.0
     max_seg_num = 5
     min_plato_len = 1
@@ -66,6 +66,7 @@ class PathPlanner:
         self.int_max_ae = self.max_ea * self.k_ae * 1.2
         self.int_max_az = self.max_za * self.k_az * 1.2
         self.accel_step = self.v_step / self.acc_step
+        self.emu_t = 0
 
     def __init__(self, apgs=None):
         if apgs is None:
@@ -517,13 +518,14 @@ class PathPlanner:
                 no_tracking=True,
             )
             profile.extend(sub_profile)
+            self.emu_t += 5
 
         last_i = len(path) - 1
         for i in range(0, last_i + 1):
             s_speeds = speeds.iloc[i]
             s_plato = plato.iloc[i]
             s_path = path.iloc[i]
-            print("======== {} L{} =========".format(i, s_path["line"]))
+            print("======== {} L{} T{:.4f} =========".format(i, s_path["line"], self.emu_t / self.acc_step))
 
             unit_x = s_speeds["unit_x"]
             unit_y = s_speeds["unit_y"]
@@ -534,6 +536,7 @@ class PathPlanner:
             target_vx = s_plato["start_vx"]
             target_vy = s_plato["start_vy"]
             max_a = s_speeds["max_a"]
+            print("e: {} -> {} v_to_ve: {}".format(last_e, target_e, s_speeds["v_to_ve"]))
 
             print(
                 "corner: x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
@@ -955,6 +958,7 @@ class PathPlanner:
                 no_tracking=True,
             )
             profile.extend(sub_profile)
+            self.emu_t += 5
 
         segments = np.array(segments)
         df = pd.DataFrame()
@@ -1166,6 +1170,7 @@ class PathPlanner:
             sub_profile, apg_states=self.apg_states, accel_step=self.accel_step, no_tracking=True
         )
 
+        self.emu_t += int_dt
         self.last_x = self.apg_states["X"].x / self.k_xxy
         self.last_y = self.apg_states["Y"].x / self.k_xxy
         self.last_e = self.apg_states["Z"].x / self.k_xe
