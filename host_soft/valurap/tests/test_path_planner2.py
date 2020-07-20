@@ -290,20 +290,20 @@ def test_reverse_path(
 
 
 @pytest.mark.parametrize(
-    "comment, gcode_folder, gcode_path, max_delta, speed_k, segment_number, expected_len, emu_in_loop",
+    "comment, gcode_folder, gcode_path, max_delta, max_delta_e, speed_k, segment_number, expected_len, emu_in_loop",
     [
-        ("test22", NBS_PATH, "test22.gcode", 0.2, 1.0, 15, 484, True),
-        ("test22", NBS_PATH, "test22.gcode", 0.2, 10.0, 15, 484, True), # needs better source filtering
-        ("test22", NBS_PATH, "test22.gcode", 0.05, 1.0, 15, 484, True),
-        ("test4", NBS_PATH, "test4.gcode", 0.2, 1.0, 13, 1018, True),
-        ("test4", NBS_PATH, "test4.gcode", 0.05, 1.0, 13, 1018, True),
-        ("test4", NBS_PATH, "test4.gcode", 0.1, 10.0, 13, 1018, True),
-        ("test4", NBS_PATH, "test4.gcode", 0.05, 10.0, 23, 1024, True),
-        ("test4", NBS_PATH, "test4.gcode", 0.5, 20.0, 23, 1024, True),
+        ("test22", NBS_PATH, "test22.gcode", 0.2, None, 1.0, 15, 484, True),
+        ("test22", NBS_PATH, "test22.gcode", 0.2, None, 10.0, 15, 484, True), # needs better source filtering
+        ("test22", NBS_PATH, "test22.gcode", 0.05, None, 1.0, 15, 484, True),
+        ("test4", NBS_PATH, "test4.gcode", 0.2, None, 1.0, 13, 1018, True),
+        ("test4", NBS_PATH, "test4.gcode", 0.05, 0.4, 1.0, 13, 1018, True),
+        ("test4", NBS_PATH, "test4.gcode", 0.1, None, 10.0, 13, 1018, True),
+        ("test4", NBS_PATH, "test4.gcode", 0.05, None, 10.0, 23, 1024, True),
+        ("test4", NBS_PATH, "test4.gcode", 0.5, None, 20.0, 23, 1024, True),
     ],
 )
 def test_real_files(
-        comment, gcode_folder, gcode_path, max_delta, speed_k, segment_number, expected_len, emu_in_loop
+        comment, gcode_folder, gcode_path, max_delta, max_delta_e, speed_k, segment_number, expected_len, emu_in_loop
 ):
     lines = gcode.reader(os.path.join(gcode_folder, gcode_path))
     pg = gcode.path_gen(lines)
@@ -331,9 +331,11 @@ def test_real_files(
 
     planner = PathPlanner()
     planner.max_delta = max_delta
+    if max_delta_e:
+        planner.max_delta_e = max_delta_e
     planner.emu_in_loop = emu_in_loop
     planner.max_ea *= speed_k
-    planner.delta_e_err *= speed_k
+    planner.delta_e_err *= speed_k * speed_k
     planner.delta_ve_err *= speed_k
     path, slowdowns = planner.make_path(s.path, speed_k)
     corner_slowdowns, updated, cc = planner.process_corner_errors(path, slowdowns)
