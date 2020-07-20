@@ -464,7 +464,7 @@ class PathPlanner:
 
         return new_slowdowns, updated
 
-    def gen_segments_float(self, path, slowdowns):
+    def gen_segments_float(self, path, slowdowns, do_reset=True):
         self.init_coefs()
 
         speeds = self.gen_speeds(path, slowdowns)
@@ -495,21 +495,23 @@ class PathPlanner:
 
         first_seg = path.iloc[0]
 
-        last_x = first_seg["px"]
-        last_y = first_seg["py"]
         last_vx = 0
         last_vy = 0
         last_v = 0.0
-        last_e = first_seg["pe"]
-        next_e = last_e
         last_ve = 0.0
 
+        last_x = first_seg["px"]
+        last_y = first_seg["py"]
+        last_e = first_seg["pe"]
+
         if emu_in_loop:
-            segs = [
-                ProfileSegment(apg=self.apg_x, x=last_x * self.spm, v=0, a=0),
-                ProfileSegment(apg=self.apg_y, x=last_y * self.spm, v=0, a=0),
-                ProfileSegment(apg=self.apg_z, x=last_e * self.spme, v=0, a=0),
-            ]
+            segs = []
+            if do_reset:
+                segs.extend([
+                    ProfileSegment(apg=self.apg_x, x=last_x * self.spm, v=0, a=0),
+                    ProfileSegment(apg=self.apg_y, x=last_y * self.spm, v=0, a=0),
+                ])
+            segs.append(ProfileSegment(apg=self.apg_z, x=last_e * self.spme, v=0, a=0))
             sub_profile = [[5, segs]]
             emulate(
                 sub_profile,
@@ -519,6 +521,13 @@ class PathPlanner:
             )
             profile.extend(sub_profile)
             self.emu_t += 5
+
+            last_x_n = self.apg_states["X"].x / self.k_xxy
+            last_y_n = self.apg_states["Y"].x / self.k_xxy
+            print("Restarting, deltas:", last_x - last_x_n, last_y - last_y_n)
+            print("            Speeds:", self.apg_states["X"].v, self.apg_states["Y"].v)
+            last_x = last_x_n
+            last_y = last_y_n
 
         last_i = len(path) - 1
         for i in range(0, last_i + 1):
