@@ -6,6 +6,7 @@ planner.max_seg = 10.0
 planner.min_seg = 0.2
 planner.emu_in_loop = True
 planner.delta_e_err = 10
+planner.delta_ve_err = 10
 planner.delta_err = 3
 
 planner.gen_layers(sys.argv[1])
