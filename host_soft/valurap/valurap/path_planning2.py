@@ -71,9 +71,6 @@ class PathPlanner:
         self.int_max_ae = self.max_ea * self.k_ae * 1.2
         self.int_max_az = self.max_za * self.k_az * 1.2
         self.accel_step = self.v_step / self.acc_step
-        self.emu_t = 0
-        self.last_x = None
-        self.last_y = None
 
     def __init__(self, apgs=None):
         if apgs is None:
@@ -84,6 +81,9 @@ class PathPlanner:
             apgs.setdefault(l, FakeApg(l))
 
         self.apg_states = {}
+        self.emu_t = 0
+        self.last_x = None
+        self.last_y = None
         self.init_coefs()
 
     @property
@@ -1295,7 +1295,8 @@ class PathPlanner:
         slowdowns, updated = self.reverse_pass(path, slowdowns)
         slowdowns, updated = self.forward_pass(path, slowdowns)
         t1 = time.time()
-        segments, profile = self.gen_segments_float(path, slowdowns)
+        do_reset = self.emu_t == 0
+        segments, profile = self.gen_segments_float(path, slowdowns, do_reset=do_reset)
         t2 = time.time()
         print("Planning time:", t1 - t0)
         print("Format time:", t2 - t1)
@@ -1359,6 +1360,7 @@ class PathPlanner:
                 "acc_step": self.acc_step,
             }, tupled_segment))
         if layer_data:
+            layer_data.append(("end_state", self.last_x, self.last_y))
             with open(fn_tpl.format(output_prefix, layer_num) + ".tmp", "wb") as f:
                 pickle.dump(layer_data, f)
             os.rename(fn_tpl.format(output_prefix, layer_num) + ".tmp", fn_tpl.format(output_prefix, layer_num))
