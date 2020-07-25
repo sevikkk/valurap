@@ -1,7 +1,7 @@
 import os
 import pickle
 import time
-from math import sqrt, ceil, pow, hypot
+from math import sqrt, ceil, pow, hypot, copysign
 
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ class FakeApg:
 class PathPlanner:
     max_xa = 1000
     max_ya = 1000
-    max_ea = 5000
+    max_ea = 100
     max_za = 100
 
     max_xv = 1000
@@ -1027,6 +1027,8 @@ class PathPlanner:
         ax = (target_vx - last_vx) / dt
         ay = (target_vy - last_vy) / dt
         ae = (target_ve - last_ve) / dt
+        if abs(ae) > self.max_ea:
+            ae = copysign(self.max_ea, ae)
         jx = 0
         jy = 0
         je = 0
@@ -1042,6 +1044,7 @@ class PathPlanner:
         int_jx = 0
         int_jy = 0
         int_je = 0
+        print("ae:", ae)
 
         test_x, test_y, test_e, test_vx, test_vy, test_ve = self.emu_profile(int_dt, int_ax, int_ay, int_ae, int_jx, int_jy, int_je, int_tvx, int_tvy, int_tve)
 
@@ -1077,6 +1080,10 @@ class PathPlanner:
                 print("CAP FOR MAX_EA", max_ae, self.max_ea)
                 je *= (self.max_ea / max_ae) * 0.7
                 ae = (target_ve - last_ve) / dt - je * dt / 2
+                if abs(ae) > self.max_ea:
+                    print("EXTRA CAP FOR MAX_EA", max_ae, self.max_ea)
+                    ae = copysign(self.max_ea, (target_ve - last_ve))
+                    je = 0
 
         if retest:
             int_last_vx = self.apg_states["X"].v
@@ -1231,6 +1238,7 @@ class PathPlanner:
             "Y": self.apg_states["Y"].copy(),
             "Z": self.apg_states["Z"].copy(),
         }
+
         test_profile = [
             [
                 int_dt,
@@ -1242,6 +1250,10 @@ class PathPlanner:
             ]
         ]
         print("testing: ", test_profile)
+
+        if int_ae < - 2**32 or int_ae > 2**32 - 1:
+            raise RuntimeError("INT_AE is too big: {}".format(int_ae))
+
         emulate(test_profile, apg_states=test_states, accel_step=self.accel_step, no_tracking=True)
         test_x = test_states["X"].x / self.k_xxy
         test_y = test_states["Y"].x / self.k_xxy
