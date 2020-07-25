@@ -1288,7 +1288,10 @@ class PathPlanner:
         segs.append([1, [ProfileSegment(apg=self.apg_z, v=0, a=0)]])
         return segs
 
-    def segment_to_code(self, seg, speed_k=1.0):
+    def segment_to_code(self, seg, speed_k=1.0, restart=False):
+        if restart:
+            return []
+
         t0 = time.time()
         path, slowdowns = self.make_path(seg, speed_k)
         slowdowns, updated, cc = self.process_corner_errors(path, slowdowns)
@@ -1314,6 +1317,7 @@ class PathPlanner:
         layer_num = 0
         layer_data = []
         current_segment = []
+        restart = False
 
         fn_tpl = "{}_{:05d}.layer"
         for i, s in enumerate(sg):
@@ -1321,11 +1325,13 @@ class PathPlanner:
             if isinstance(s, gcode.do_move):
                 print(i, s)
                 if "Z" in s.deltas:
-                    if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num):
+                    if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart):
                         layer_num += 1
 
+                    restart = self.check_layer(fn_tpl, output_prefix, layer_num)
+
                     layer_data = [
-                        ("start", s.target, s.deltas, (self.last_x, self.last_y))
+                        ("start", s.target, s.deltas, (self.last_x, self.last_y, self.emu_t))
                     ]
                     current_segment = []
                 else:
@@ -1335,21 +1341,25 @@ class PathPlanner:
                 current_segment.extend(self.ext_to_code(s.deltas["E"], s.deltas["F"] / 60.0))
             elif isinstance(s, gcode.do_home):
                 print(i, s)
-                if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num):
+                if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart):
                     layer_num += 1
+                restart = self.check_layer(fn_tpl, output_prefix, layer_num)
                 current_segment = []
                 layer_data = [("do_home", s.cur_pos)]
             elif isinstance(s, gcode.do_segment):
-                current_segment.extend(self.segment_to_code(s.path, speed_k))
+                current_segment.extend(self.segment_to_code(s.path, speed_k, restart))
 
                 print("segment", i, len(s.path))
             else:
                 assert (False)
 
-        self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num)
+        self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart)
 
 
-    def save_layer(self, current_segment, fn_tpl, layer_data, output_prefix, layer_num):
+    def save_layer(self, current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart):
+        if restart:
+            return True
+
         if current_segment:
             tupled_segment = []
             for dt, segs in current_segment:
@@ -1360,9 +1370,60 @@ class PathPlanner:
                 "acc_step": self.acc_step,
             }, tupled_segment))
         if layer_data:
-            layer_data.append(("end_state", self.last_x, self.last_y))
+            layer_data.append(("end_state", (self.last_x, self.last_y, self.emu_t)))
             with open(fn_tpl.format(output_prefix, layer_num) + ".tmp", "wb") as f:
                 pickle.dump(layer_data, f)
             os.rename(fn_tpl.format(output_prefix, layer_num) + ".tmp", fn_tpl.format(output_prefix, layer_num))
             return True
         return False
+
+    def check_layer(self, fn_tpl, output_prefix, layer_num):
+        fn = fn_tpl.format(output_prefix, layer_num)
+        if not os.path.exists(fn):
+            return False
+
+        try:
+            with open(fn_tpl.format(output_prefix, layer_num), "rb") as f:
+                layer_data = pickle.load(f)
+                print("first cmd:", layer_data[0])
+                print("last_cmd", layer_data[-1])
+        except Exception as e:
+            import traceback
+            import sys
+            print("old layer load error:")
+            traceback.print_exc(file=sys.stdout)
+            return False
+
+        if layer_data[0][0] != "start" or len(layer_data[0]) < 4:
+            print("start record do not have apg_state")
+            return False
+
+        if layer_data[-1][0] != "end_state":
+            print("end_state record missing")
+            return False
+
+        last_x, last_y, emu_t = layer_data[0][3]
+        n_last_x, n_last_y, n_emu_t = layer_data[-1][1]
+
+        if self.last_x is not None:
+            print("reusing old layer", layer_num, self.last_x - last_x, self.last_y - last_y, self.emu_t - emu_t)
+        else:
+            print("reusing old first layer", layer_num)
+
+        segs = [
+            ProfileSegment(apg=self.apg_x, x=n_last_x * self.spm, v=0, a=0),
+            ProfileSegment(apg=self.apg_y, x=n_last_y * self.spm, v=0, a=0),
+        ]
+        sub_profile = [[5, segs]]
+        emulate(
+            sub_profile,
+            apg_states=self.apg_states,
+            accel_step=self.accel_step,
+            no_tracking=True,
+        )
+        self.last_x = self.apg_states["X"].x / self.k_xxy
+        self.last_y = self.apg_states["Y"].x / self.k_xxy
+        self.emu_t = n_emu_t
+
+        return True
+
