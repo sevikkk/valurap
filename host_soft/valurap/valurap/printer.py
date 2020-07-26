@@ -169,12 +169,12 @@ class Valurap(object):
                 break
             time.sleep(0.1)
 
-    def exec_long_code(self, code, splits=1000, verbose=False):
+    def exec_long_code(self, code, splits=500, first_split=7000, low_buf=4000, verbose=False):
         addr = 0
         s3g = self.s3g
         s3g.S3G_OUTPUT(s3g.OUT_LEDS, 0x55)
-        current_code = code[:splits]
-        code = code[splits:]
+        current_code = code[:first_split]
+        code = code[first_split:]
         #s3g.S3G_WRITE_BUFFER(addr, *current_code)
         s3g.S3G_WRITE_BUFFER(addr, *(current_code + [s3g.BUF_STB(s3g.STB_BE_ABORT), s3g.BUF_DONE()]))
         if verbose:
@@ -200,12 +200,17 @@ class Valurap(object):
                     if free_buf != last_free_buf:
                         print("too small free_buf: {}".format(free_buf))
                         last_free_buf = free_buf
-                    time.sleep(0.1)
+                    time.sleep(0.001)
                 else:
                     print("free_buf: {}".format(free_buf))
+                    if free_buf > low_buf:
+                        cur_split = splits
+                    else:
+                        cur_split = free_buf - 200
+
                     last_free_buf = None
-                    current_code = code[:splits]
-                    code = code[splits:]
+                    current_code = code[:cur_split]
+                    code = code[cur_split:]
                     s3g.S3G_WRITE_BUFFER(addr, *(current_code + [s3g.BUF_STB(s3g.STB_BE_ABORT), s3g.BUF_DONE()]))
                     if verbose:
                         print("sent {} commands to addr {}, left {}".format(len(current_code), addr, len(code)))
@@ -236,9 +241,10 @@ class Valurap(object):
         for sl in self.get_state():
             lines.append("{:2s}{:9.1f} {:8d}".format(sl["name"], sl["x"], sl["v"]))
 
-        with self.oled.draw() as draw:
-            draw.rectangle(self.oled.bounding_box, outline="white", fill="black")
-            draw.multiline_text((5, 3), "\n".join(lines), fill="white")
+        if 0:
+            with self.oled.draw() as draw:
+                draw.rectangle(self.oled.bounding_box, outline="white", fill="black")
+                draw.multiline_text((5, 3), "\n".join(lines), fill="white")
         return busy, pc
 
     def update_axes_config(self):

@@ -9,7 +9,8 @@ from valurap.packet import encode_payload, decode_packet
 
 class S3GPortBase(object):
     default_port = '/dev/ttyS1'
-    default_baudrate = 115200
+    #default_baudrate = 115200
+    default_baudrate = 500000
 
     def __init__(self, port=None, baudrate=None):
         self.port = self.open_port(port, baudrate)
@@ -21,7 +22,7 @@ class S3GPortBase(object):
             port = self.default_port
         if baudrate is None:
             baudrate = self.default_baudrate
-        return serial.Serial(port, baudrate=baudrate, timeout=0.1)
+        return serial.Serial(port, baudrate=baudrate, timeout=0.01)
 
     def unexpected_packet(self, packet):
         print("Unexpected packet: {}".format(repr(packet)))
@@ -42,6 +43,7 @@ class S3GPortBase(object):
                 retries -= 1
                 if not retries:
                     raise
+                print("timeout, retrying")
             else:
                 break
 
@@ -55,7 +57,7 @@ class S3GPortBase(object):
             if time.time() - start_time > timeout:
                 raise TimeoutError
 
-            reply = self.port.read()
+            reply = self.port.read(1)
             self.data += reply
             try:
                 packet, rest = decode_packet(self.data)
