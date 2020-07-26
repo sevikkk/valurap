@@ -20,7 +20,7 @@ class FakeApg:
 class PathPlanner:
     max_xa = 1000
     max_ya = 1000
-    max_ea = 100
+    max_ea = 1000
     max_za = 100
 
     max_xv = 1000
@@ -48,6 +48,7 @@ class PathPlanner:
     espeed_by_de = False
 
     delta_err = 1.0
+    delta_v_err = 1.0
     delta_e_err = 1.0
     delta_ve_err = 1.0
 
@@ -1020,6 +1021,9 @@ class PathPlanner:
         target_ve
     ):
         int_dt = int(ceil(dt * self.acc_step))
+        if int_dt < 3:
+            return []
+
         dt = 1.0 / self.acc_step * int_dt
 
         retest = 0
@@ -1122,8 +1126,8 @@ class PathPlanner:
                 (abs(test_x - target_x) < self.max_delta * 2 * self.delta_err)
                 and (abs(test_y - target_y) < self.max_delta * 2 * self.delta_err)
                 and (abs(test_e - target_e) < self.max_delta_e * 10 * self.delta_e_err)
-                and (abs(test_vx - target_vx) < 2)
-                and (abs(test_vy - target_vy) < 2)
+                and (abs(test_vx - target_vx) < 2 * self.delta_v_err)
+                and (abs(test_vy - target_vy) < 2 * self.delta_v_err)
                 and (abs(test_ve - target_ve) < 2 * self.delta_ve_err)
             ):
                 raise RuntimeError("Target precision not reached dx: {} dy: {} de: {} dvx: {} dvy: {} dve: {}".format(
