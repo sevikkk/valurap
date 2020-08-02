@@ -21,7 +21,8 @@ apgs = {
 
 codes = []
 
-base = "tg_body_1.5/tg_body"
+#base = "tg_body_1.5/tg_body"
+base = "box20"
 def load_layer(layer):
     with open("{}_{:05d}.layer".format(base, layer), "rb") as f:
         return pickle.load(f)
@@ -52,15 +53,15 @@ prn.update_axes_config()
 start = None
 apg_map = None
 
-for layer in range(1, 3):
+for layer in range(1, 7):
     p = load_layer(layer)
 
     if len(p) == 2 and p[0][0] == "do_home":
         break
         
     print(len(p))
-    for pp in p:
-        print(pp[0])
+    for cmd in p:
+        print(cmd[0])
         
     assert len(p) == 3
     assert p[0][0] == "start"
