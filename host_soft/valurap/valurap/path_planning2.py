@@ -71,7 +71,7 @@ class PathPlanner:
         self.int_max_ay = self.max_ya * self.k_axy * 1.2
         self.int_max_ae = self.max_ea * self.k_ae * 1.2
         self.int_max_az = self.max_za * self.k_az * 1.2
-        self.accel_step = self.v_step / self.acc_step
+        self.accel_step = int(self.v_step / self.acc_step)
 
     def __init__(self, apgs=None):
         if apgs is None:
@@ -1273,7 +1273,7 @@ class PathPlanner:
             max_a = self.max_ea
         else:
             spm = self.spmz
-            max_a = self.max_ez
+            max_a = self.max_za
 
         segs = []
         abs_e = abs(e)
