@@ -6,6 +6,7 @@ import pickle
 
 import random
 import time
+from functools import partial
 from math import sqrt
 
 import struct
@@ -122,6 +123,8 @@ class Valurap(object):
             "Z": self.apg_z,
         }
         self.abort = False
+        self.hw_state = None
+        self.long_code = None
 
     def setup(self):
         self.spi.setup_tmc2130()
@@ -163,18 +166,34 @@ class Valurap(object):
         s3g.S3G_STB(s3g.STB_ENDSTOPS_UNLOCK)
         s3g.S3G_STB(s3g.STB_BE_START)
         while wait:
-            busy, pc = self.check_be_busy()
+            busy, pc, last_state = self.check_be_busy()
+            self.hw_state = {
+                "apg_states": last_state,
+                "pc": pc,
+                'free_buf': None,
+                'code_len': 0,
+                'busy': busy
+            }
 
             if not busy:
                 break
             time.sleep(0.1)
 
     def exec_long_code(self, code, splits=500, first_split=7000, low_buf=4000, verbose=False):
+        self.long_code = code
+        def pop(n):
+            if hasattr(code, "popleft"):
+                p = code.popleft
+            else:
+                p = partial(code.pop, 0)
+
+            n = min(n, len(code))
+            return [p() for i in range(n)]
+
         addr = 0
         s3g = self.s3g
         s3g.S3G_OUTPUT(s3g.OUT_LEDS, 0x55)
-        current_code = code[:first_split]
-        code = code[first_split:]
+        current_code = pop(first_split)
         #s3g.S3G_WRITE_BUFFER(addr, *current_code)
         s3g.S3G_WRITE_BUFFER(addr, *(current_code + [s3g.BUF_STB(s3g.STB_BE_ABORT), s3g.BUF_DONE()]))
         if verbose:
@@ -185,12 +204,20 @@ class Valurap(object):
         addr += len(current_code)
         last_free_buf = None
         while True:
-            busy, pc = self.check_be_busy(addr, len(code), verbose)
+            busy, pc, last_state = self.check_be_busy(addr, len(code), verbose)
+            self.hw_state = {
+                "apg_states": last_state,
+                "pc": pc,
+                'free_buf': last_free_buf,
+                'code_len': len(code),
+                'busy': busy
+            }
             if not busy:
                 break
 
             if len(code) == 0:
                 time.sleep(0.1)
+                last_free_buf = None
             else:
                 free_buf = (pc - addr) % 8192
                 if free_buf < 0:
@@ -209,14 +236,14 @@ class Valurap(object):
                         cur_split = free_buf - 200
 
                     last_free_buf = None
-                    current_code = code[:cur_split]
-                    code = code[cur_split:]
+                    current_code = pop(cur_split)
                     s3g.S3G_WRITE_BUFFER(addr, *(current_code + [s3g.BUF_STB(s3g.STB_BE_ABORT), s3g.BUF_DONE()]))
                     if verbose:
                         print("sent {} commands to addr {}, left {}".format(len(current_code), addr, len(code)))
                     addr += len(current_code)
                     addr = addr % 8192
 
+        self.long_code = None
         if code:
             raise RuntimeError("Not all code sent, most probably system staled and got exec buffer underflow")
 
@@ -238,14 +265,16 @@ class Valurap(object):
         else:
             lines.append("Idle")
 
-        for sl in self.get_state():
+        last_state = self.get_state()
+        for sl in last_state:
             lines.append("{:2s}{:9.1f} {:8d}".format(sl["name"], sl["x"], sl["v"]))
 
         if 0:
             with self.oled.draw() as draw:
                 draw.rectangle(self.oled.bounding_box, outline="white", fill="black")
                 draw.multiline_text((5, 3), "\n".join(lines), fill="white")
-        return busy, pc
+
+        return busy, pc, last_state
 
     def update_axes_config(self):
         s3g = self.s3g
@@ -349,7 +378,7 @@ class Valurap(object):
 
         self.exec_code(path_code, wait=False)
         while True:
-            busy, pc = self.check_be_busy()
+            busy, pc, last_state = self.check_be_busy()
             if not busy:
                 break
 
