@@ -1,0 +1,99 @@
+=========== Custom FFF printer ===========
+   general
+     id Custom FFF printer
+     name Custom FFF printer
+     version 4
+   metadata
+     group_id 9e8ac431-269c-41fb-836f-cbf8574d42b9
+     setting_version 11
+     type machine
+   containers:
+     0 Custom FFF printer_user ('user', 'Custom FFF printer_user.inst.cfg')
+        adhesion_type: 'skirt'
+        draft_shield_enabled: 'True'
+        ooze_shield_enabled: 'True'
+        prime_tower_brim_enable: 'False'
+        prime_tower_enable: 'True'
+        prime_tower_position_x: '120'
+        prime_tower_position_y: '100'
+        retraction_combing: 'all'
+        support_enable: 'True'
+     6 Custom FFF printer_settings ('definition_changes', 'Custom FFF printer_settings.inst.cfg')
+        machine_center_is_zero: 'True'
+        machine_depth: '300'
+        machine_extruder_count: '1'
+        machine_heated_bed: 'True'
+        machine_height: '400'
+        machine_start_gcode:
+          | G28 ;Home
+          | G92 E0
+          | G1 F200 E3
+          | G92 E0
+        machine_width: '320'
+  extruders:
+    0: --------- Extruder 1 ('extruders', 'custom_extruder_1 #2.extruder.cfg') ------- 
+        general
+          id: custom_extruder_1 #2
+          name: Extruder 1
+          version: 4
+        metadata
+          enabled: True
+          machine: Custom FFF printer
+          position: 0
+          setting_version: 11
+          type: extruder_train
+        containers:
+          0 custom_extruder_1 #2_user ('user', 'custom_extruder_1 #2_user.inst.cfg')
+             clean_between_layers: 'True'
+             infill_pattern: 'zigzag'
+             infill_randomize_start_location: 'True'
+             infill_sparse_density: '7'
+             infill_wall_line_count: '1'
+             prime_tower_min_volume: '1'
+             prime_tower_wipe_enabled: 'False'
+             retract_at_layer_change: 'True'
+             retraction_amount: '1'
+             retraction_speed: '10'
+             speed_print: '100'
+             speed_travel: '150'
+             support_use_towers: 'False'
+             switch_extruder_retraction_amount: '5'
+             travel_avoid_supports: 'True'
+             wipe_brush_pos_x: '-170'
+             wipe_move_distance: '15'
+             wipe_repeat_count: '3'
+             wipe_retraction_enable: 'False'
+             z_seam_type: 'random'
+          6 custom_extruder_1 #2_settings ('definition_changes', 'custom_extruder_1 #2_settings.inst.cfg')
+             material_diameter: '1.75'
+=========== Custom FFF printer #2 ===========
+   general
+     id Custom FFF printer #2
+     name Custom FFF printer #2
+     version 4
+   metadata
+     group_id 3304d7be-4387-4436-b254-41188bad6fcd
+     setting_version 11
+     type machine
+   containers:
+     0 Custom FFF printer #2_user ('user', 'Custom FFF printer #2_user.inst.cfg')
+        -- empty --
+     6 Custom FFF printer #2_settings ('definition_changes', 'Custom FFF printer #2_settings.inst.cfg')
+        -- empty --
+  extruders:
+    0: --------- Extruder 1 ('extruders', 'custom_extruder_1 #3.extruder.cfg') ------- 
+        general
+          id: custom_extruder_1 #3
+          name: Extruder 1
+          version: 4
+        metadata
+          enabled: True
+          machine: Custom FFF printer #2
+          position: 0
+          setting_version: 11
+          type: extruder_train
+        containers:
+          0 custom_extruder_1 #3_user ('user', 'custom_extruder_1 #3_user.inst.cfg')
+             -- empty --
+          6 custom_extruder_1 #3_settings ('definition_changes', 'custom_extruder_1 #3_settings.inst.cfg')
+             -- empty --
