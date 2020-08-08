@@ -157,6 +157,11 @@ try:
     prn.home()
     prn.setup()
 except:
+    print(prn.last_send_times)
+    print(prn.last_status_times)
     prn.setup()
+    raise
     
 
+print(prn.last_send_times)
+print(prn.last_status_times)
