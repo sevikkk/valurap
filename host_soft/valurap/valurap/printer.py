@@ -125,6 +125,8 @@ class Valurap(object):
         self.abort = False
         self.hw_state = None
         self.long_code = None
+        self.last_status_times = []
+        self.last_send_times = []
 
     def setup(self):
         self.spi.setup_tmc2130()
@@ -167,6 +169,9 @@ class Valurap(object):
         s3g.S3G_STB(s3g.STB_BE_START)
         while wait:
             busy, pc, last_state = self.check_be_busy()
+            if last_state is None:
+                last_state = self.hw_state.get("apg_states")
+
             self.hw_state = {
                 "apg_states": last_state,
                 "pc": pc,
@@ -205,6 +210,8 @@ class Valurap(object):
         last_free_buf = None
         while True:
             busy, pc, last_state = self.check_be_busy(addr, len(code), verbose)
+            if last_state is None:
+                last_state = self.hw_state.get("apg_states")
             self.hw_state = {
                 "apg_states": last_state,
                 "pc": pc,
@@ -235,6 +242,7 @@ class Valurap(object):
                     else:
                         cur_split = free_buf - 200
 
+                    t0 = time.time()
                     last_free_buf = None
                     current_code = pop(cur_split)
                     s3g.S3G_WRITE_BUFFER(addr, *(current_code + [s3g.BUF_STB(s3g.STB_BE_ABORT), s3g.BUF_DONE()]))
@@ -242,12 +250,16 @@ class Valurap(object):
                         print("sent {} commands to addr {}, left {}".format(len(current_code), addr, len(code)))
                     addr += len(current_code)
                     addr = addr % 8192
+                    t1 = time.time()
+                    self.last_send_times.append((t0, t1 - t0, cur_split))
+                    self.last_send_times = self.last_send_times[-100:]
 
         self.long_code = None
         if code:
             raise RuntimeError("Not all code sent, most probably system staled and got exec buffer underflow")
 
     def check_be_busy(self, cur_addr=-1, cur_len=-1, verbose=False):
+        t0 = time.time()
         if self.abort:
             raise ExecutionAborted()
 
@@ -257,22 +269,34 @@ class Valurap(object):
         waiting = (status & 0x40000000) >> 30
         error = (status & 0x00FF0000) >> 16
         pc = status & 0x0000FFFF
+
+        free_buf = (pc - cur_addr) % 8192
+        if free_buf < 0:
+            free_buf += 8192
+
         if verbose:
-            print("Busy: {} Wait: {} Error: {} PC: {} Cur addr: {} Cur len: {}".format(busy, waiting, error, pc, cur_addr, cur_len))
+            print("Busy: {} Wait: {} Error: {} PC: {} Cur addr: {} Cur len: {} Free buf: {}".format(busy, waiting, error, pc, cur_addr, cur_len, free_buf))
+
         lines = []
         if busy:
-            lines.append("B {} P {} A {} L {}".format(busy, pc, cur_addr, cur_len))
+            lines.append("B {} F {} L {}".format(busy, free_buf, cur_len))
         else:
             lines.append("Idle")
 
-        last_state = self.get_state()
-        for sl in last_state:
-            lines.append("{:2s}{:9.1f} {:8d}".format(sl["name"], sl["x"], sl["v"]))
+        if not busy or (free_buf <  1000) or (cur_len <= 0):
+            last_state = self.get_state()
+            for sl in last_state:
+                lines.append("{:2s}{:9.1f} {:8d}".format(sl["name"], sl["x"], sl["v"]))
 
-        if 0:
             with self.oled.draw() as draw:
                 draw.rectangle(self.oled.bounding_box, outline="white", fill="black")
                 draw.multiline_text((5, 3), "\n".join(lines), fill="white")
+        else:
+            last_state = None
+
+        t1 = time.time()
+        self.last_status_times.append((t0, t1 - t0, bool(last_state)))
+        self.last_status_times = self.last_status_times[-100:]
 
         return busy, pc, last_state
 
