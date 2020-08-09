@@ -127,6 +127,7 @@ class Valurap(object):
         self.long_code = None
         self.last_status_times = []
         self.last_send_times = []
+        self.abs_safe = False
 
     def setup(self):
         self.spi.setup_tmc2130()
@@ -251,7 +252,7 @@ class Valurap(object):
                     addr += len(current_code)
                     addr = addr % 8192
                     t1 = time.time()
-                    self.last_send_times.append((t0, t1 - t0, cur_split))
+                    self.last_send_times.append((t0, t1 - t0, {"cur_split": cur_split}))
                     self.last_send_times = self.last_send_times[-100:]
 
         self.long_code = None
@@ -295,7 +296,7 @@ class Valurap(object):
             last_state = None
 
         t1 = time.time()
-        self.last_status_times.append((t0, t1 - t0, bool(last_state)))
+        self.last_status_times.append((t0, t1 - t0, {"get_state": bool(last_state), "free_buf": free_buf, "cur_len": cur_len}))
         self.last_status_times = self.last_status_times[-100:]
 
         return busy, pc, last_state
