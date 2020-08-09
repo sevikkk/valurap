@@ -49,6 +49,19 @@ def valurap_processing_loop():
                 break
             elif q[0] == "home":
                 prn.home()
+                prn.abs_safe = True
+            elif q[0] == "move":
+                deltas = q[1]
+                prn.move(**deltas)
+            elif q[0] == "moveto":
+                pos = q[1]
+                if prn.abs_safe:
+                    prn.moveto(**pos)
+            elif q[0] == "enable":
+                axes = q[1]
+                for k,v in axes.items():
+                    prn.axes[k].enabled = v
+                prn.update_axes_config()
     except CancelledError:
         print("Cancelled")
     except ExecutionAborted:
@@ -95,6 +108,7 @@ async def background_task():
 
         await sio.sleep(0.2)
 
+    print("exiting background task")
     prns[0].abort = True
     await prn_queue.put(["abort"])
     #await prn_loop
@@ -157,11 +171,53 @@ async def favicon(request):
     with open(UI_ROOT + "/favicon.ico", "rb") as f:
         return web.Response(body=f.read(), content_type="image/vnd.microsoft.icon")
 
+async def api(request):
+    q = request.query
+    print("api: {}".format(dict(request.query)))
+    cmd = q["cmd"]
+    result = {"ok": 1}
+    status = 200
+    if cmd == "home":
+        await prn_queue.put(["home"])
+    elif cmd == "abort":
+        prns[0].abort = True
+        await prn_queue.put(["abort"])
+    elif cmd == "move" or cmd == "moveto":
+        deltas = {}
+        for axe in prns[0].axes.keys():
+            if axe in q:
+                deltas[axe] = float(q[axe])
+
+        if cmd == "moveto":
+            if prns[0].abs_safe:
+                await prn_queue.put(["moveto", deltas])
+            else:
+                result = {"ok": 0, "err": "printer absolute position is uncertain"}
+                status = 400
+        else:
+            await prn_queue.put(["move", deltas])
+    elif cmd == "enable":
+        states = {"E1": False, "E2": False}
+        axes = q["axes"].split(",")
+        for axe in axes:
+            if axe not in states.keys():
+                result = {"ok": 0, "err": "Only extruder axes can be modified"}
+                states = {}
+                break
+            states[axe] = 1
+        if states:
+            await prn_queue.put(["enable", states])
+    else:
+        result = {"ok": 0, "err": "unknown command"}
+        status = 400
+
+    return web.json_response(data=result, status=status)
 
 app.router.add_get("/", index)
 app.router.add_get("/favicon.ico", favicon)
 app.router.add_static("/js", UI_ROOT + "/js")
 app.router.add_static("/css", UI_ROOT + "/css")
+app.router.add_get("/api", api)
 
 
 with aiomonitor.start_monitor(
