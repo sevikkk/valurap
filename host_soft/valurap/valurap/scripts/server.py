@@ -1,4 +1,7 @@
 import asyncio
+import pickle
+import time
+from collections import deque
 from concurrent.futures._base import CancelledError
 
 import aiomonitor
@@ -6,7 +9,12 @@ from aiohttp import web
 import socketio
 import os.path
 
+from .. import asg
 from ..printer import Valurap, ExecutionAborted, OLED
+
+import logging
+
+logging.basicConfig(level="INFO")
 
 UI_ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), "../web/valurap-ui/dist/"))
 
@@ -20,7 +28,7 @@ stopping = False
 
 loop = asyncio.get_event_loop()
 sio = socketio.AsyncServer(async_mode="aiohttp")
-app = web.Application()
+app = web.Application(client_max_size=100000000)
 sio.attach(app)
 
 oled = OLED()
@@ -44,7 +52,7 @@ def valurap_processing_loop():
                         break
                 break
 
-            print("Got item:", q)
+            print("Got item:", q[0], )
             if q[0] == "exit":
                 break
             elif q[0] == "home":
@@ -62,6 +70,11 @@ def valurap_processing_loop():
                 for k,v in axes.items():
                     prn.axes[k].enabled = v
                 prn.update_axes_config()
+            elif q[0] == "exec_code":
+                code = q[1]
+                prn.exec_long_code(code, splits=1000, verbose=True)
+            else:
+                print("Unknown command", q[0])
     except CancelledError:
         print("Cancelled")
     except ExecutionAborted:
@@ -71,6 +84,61 @@ def valurap_processing_loop():
         prn.setup()
         prns[0] = prn
 
+def load_layer(layer):
+    try:
+        p = pickle.loads(layer)
+    except:
+        return 400, {"ok": 0, "err": "unpickle failed"}
+
+    prn = prns[0]
+
+    ok = 0
+    for pp in p:
+        if pp[0] == "segment":
+            ok = 1
+            break
+    if not ok:
+        return 400, {"ok": 0, "err": "no segment chunk found"}
+
+    cmd, meta, segments = pp
+    codes = []
+    codes.append(prn.asg.gen_map_code(meta["map"]))
+    pr_opt = []
+
+    apgs = {
+        "X": prn.apg_x,
+        "Y": prn.apg_y,
+        "Z": prn.apg_z,
+    }
+
+    for dt, segs in segments:
+        pr_opt.append([
+            dt, [asg.ProfileSegment.from_tuple(s, apgs) for s in segs]
+        ])
+
+    path_code = prn.asg.gen_path_code(pr_opt,
+                                      accel_step=50000000/meta["acc_step"],
+                                      real_apgs=apgs)
+    print(len(path_code))
+    codes.append(path_code)
+
+    if prn.long_code and len(prn.long_code) > 100:
+        for code in codes:
+            prn.long_code.extend(code[:-1])
+    else:
+        full_code = deque()
+        for code in codes:
+            full_code.extend(code[:-1])
+        fut = asyncio.run_coroutine_threadsafe(prn_queue.put(["exec_code", full_code]), loop)
+        fut.result()
+        while True:
+            if prn.long_code and len(prn.long_code) > 0:
+                break
+            else:
+                print("waiting for print start")
+                time.sleep(0.01)
+
+    return 200, {"ok": 1}
 
 async def stop_valurap(app):
     global stopping
@@ -207,6 +275,11 @@ async def api(request):
             states[axe] = 1
         if states:
             await prn_queue.put(["enable", states])
+    elif cmd == "exec_code":
+        data = await request.post()
+        layer = data["code"].file.read()
+        print("code len: {} {}".format(len(layer), type(layer)))
+        status, result = await loop.run_in_executor(None, load_layer, layer)
     else:
         result = {"ok": 0, "err": "unknown command"}
         status = 400
@@ -218,6 +291,7 @@ app.router.add_get("/favicon.ico", favicon)
 app.router.add_static("/js", UI_ROOT + "/js")
 app.router.add_static("/css", UI_ROOT + "/css")
 app.router.add_get("/api", api)
+app.router.add_post("/api", api)
 
 
 with aiomonitor.start_monitor(
