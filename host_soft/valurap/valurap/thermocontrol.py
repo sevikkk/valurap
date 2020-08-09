@@ -6,6 +6,7 @@ from .s3g import S3GPortBase
 
 class ThermoC(S3GPortBase):
     default_port = '/dev/ttyS2'
+    default_baudrate = 115200
 
     def S3G_PING(self, value=0, cmd_id=None):
         """
