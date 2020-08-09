@@ -1,0 +1,16 @@
+[Unit]
+Description=ValurapServer
+After=network.target auditd.service
+
+[Service]
+User=seva
+ExecStart=/home/seva/.virtualenvs/valurap3/bin/python -m valurap.scripts.server
+Restart=on-failure
+RestartPreventExitStatus=255
+Type=simple
+WorkingDirectory=/home/seva/src/sevasoft/valurap/host_soft/valurap
+Environment="PYTHONUNBUFFERED=1"
+
+
+[Install]
+WantedBy=multi-user.target
