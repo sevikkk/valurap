@@ -302,7 +302,8 @@ class AxeE1(Axe):
 
     abort_a = 20000
     home_a = 5000
-    home_v = 200000
+    max_v = 20000 * 22
+    home_v = max_v
 
 
 class AxeE2(Axe):
@@ -330,6 +331,9 @@ class AxeE2(Axe):
     abort_a = 20000
     home_a = 5000
     home_v = 200000
+
+    max_v = 20000 * 3
+    home_v = max_v
 
 class AxeE3(Axe_MC2):
     name = "E3"
