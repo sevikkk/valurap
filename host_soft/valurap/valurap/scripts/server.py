@@ -41,8 +41,10 @@ def valurap_processing_loop():
         prn.setup()
         while True:
             print("Waiting for command...")
+            prn.idle = True
             fut = asyncio.run_coroutine_threadsafe(prn_queue.get(), loop)
             q = fut.result()
+            prn.idle = False
             if prn.abort:
                 while True:
                     try:
@@ -280,6 +282,12 @@ async def api(request):
         layer = data["code"].file.read()
         print("code len: {} {}".format(len(layer), type(layer)))
         status, result = await loop.run_in_executor(None, load_layer, layer)
+    elif cmd == "query":
+        result = {
+            "idle": prns[0].idle,
+            "state": prns[0].hw_state,
+            "abs_safe": prns[0].abs_safe
+        }
     else:
         result = {"ok": 0, "err": "unknown command"}
         status = 400

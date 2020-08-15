@@ -128,6 +128,7 @@ class Valurap(object):
         self.last_status_times = []
         self.last_send_times = []
         self.abs_safe = False
+        self.idle = False
 
     def setup(self):
         self.spi.setup_tmc2130()
