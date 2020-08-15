@@ -11,6 +11,7 @@ setup(
     install_requires = [
         'aiohttp==3.5.4',
         'aiomonitor==0.4.3',
+        'requests'
     ],
     extras_require = {
         "hw": [
