@@ -60,19 +60,26 @@ def valurap_processing_loop():
             elif q[0] == "home":
                 prn.home()
                 prn.abs_safe = True
+                prn.update_axes_positions()
             elif q[0] == "move":
                 deltas = q[1]
                 prn.move(**deltas)
+                prn.update_axes_positions()
             elif q[0] == "moveto":
                 pos = q[1]
                 if prn.abs_safe:
                     prn.moveto(**pos)
+                    prn.update_axes_positions()
+                else:
+                    print("Moveto in not abs_safe state, aborting")
+                    prn.abort()
             elif q[0] == "enable":
                 axes = q[1]
                 for k,v in axes.items():
                     prn.axes[k].enabled = v
                 prn.update_axes_config()
             elif q[0] == "exec_code":
+                prn.abs_safe = False
                 code = q[1]
                 prn.exec_long_code(code, splits=1000, verbose=True)
             else:
@@ -94,35 +101,37 @@ def load_layer(layer):
 
     prn = prns[0]
 
+    codes = []
     ok = 0
     for pp in p:
-        if pp[0] == "segment":
-            ok = 1
-            break
+        if pp[0] != "segment":
+            continue
+
+        ok = 1
+
+        cmd, meta, segments = pp
+        codes.append(prn.asg.gen_map_code(meta["map"]))
+        pr_opt = []
+
+        apgs = {
+            "X": prn.apg_x,
+            "Y": prn.apg_y,
+            "Z": prn.apg_z,
+        }
+
+        for dt, segs in segments:
+            pr_opt.append([
+                dt, [asg.ProfileSegment.from_tuple(s, apgs) for s in segs]
+            ])
+
+        path_code = prn.asg.gen_path_code(pr_opt,
+                                          accel_step=50000000/meta["acc_step"],
+                                          real_apgs=apgs)
+        print(len(path_code))
+        codes.append(path_code)
+
     if not ok:
         return 400, {"ok": 0, "err": "no segment chunk found"}
-
-    cmd, meta, segments = pp
-    codes = []
-    codes.append(prn.asg.gen_map_code(meta["map"]))
-    pr_opt = []
-
-    apgs = {
-        "X": prn.apg_x,
-        "Y": prn.apg_y,
-        "Z": prn.apg_z,
-    }
-
-    for dt, segs in segments:
-        pr_opt.append([
-            dt, [asg.ProfileSegment.from_tuple(s, apgs) for s in segs]
-        ])
-
-    path_code = prn.asg.gen_path_code(pr_opt,
-                                      accel_step=50000000/meta["acc_step"],
-                                      real_apgs=apgs)
-    print(len(path_code))
-    codes.append(path_code)
 
     if prn.long_code and len(prn.long_code) > 100:
         for code in codes:
@@ -133,10 +142,16 @@ def load_layer(layer):
             full_code.extend(code[:-1])
         fut = asyncio.run_coroutine_threadsafe(prn_queue.put(["exec_code", full_code]), loop)
         fut.result()
+        attempts = 10000
         while True:
             if prn.long_code and len(prn.long_code) > 0:
                 break
             else:
+                attempts -= 1
+                if attempts < 0:
+                    print("waiting for print start failed")
+                    return 400, {"ok": 0, "err": "waiting for print start timed out"}
+
                 print("waiting for print start")
                 time.sleep(0.01)
 

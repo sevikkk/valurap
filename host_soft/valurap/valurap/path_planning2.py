@@ -1334,20 +1334,27 @@ class PathPlanner:
         layer_data = []
         current_segment = []
         restart = False
+        current_extruder = "E1"
+        extruder_changed = False
 
         fn_tpl = "{}_{:05d}.layer"
         for i, s in enumerate(sg):
             # print(str(s)[:100])
             if isinstance(s, gcode.do_move):
                 print(i, s)
-                if "Z" in s.deltas:
-                    if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart):
+                if "Z" in s.deltas or extruder_changed:
+
+                    if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart, current_extruder):
                         layer_num += 1
+
+                    if extruder_changed:
+                        current_extruder = extruder_changed
+                        extruder_changed = False
 
                     restart = self.check_layer(fn_tpl, output_prefix, layer_num)
 
                     layer_data = [
-                        ("start", s.target, s.deltas, (self.last_x, self.last_y, self.emu_t))
+                        ("start", s.target, s.deltas, (self.last_x, self.last_y, self.emu_t), current_extruder)
                     ]
                     current_segment = []
                 else:
@@ -1355,13 +1362,18 @@ class PathPlanner:
             elif isinstance(s, gcode.do_ext):
                 print(i, s)
                 current_segment.extend(self.ext_to_code(s.deltas["E"], s.deltas["F"] / 60.0))
-            elif isinstance(s, gcode.do_home):
+            elif isinstance(s, gcode.do_home) or isinstance(s, gcode.do_extruder):
                 print(i, s)
-                if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart):
+                if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart, current_extruder):
                     layer_num += 1
-                restart = self.check_layer(fn_tpl, output_prefix, layer_num)
+                restart = False
                 current_segment = []
-                layer_data = [("do_home", s.cur_pos)]
+                if isinstance(s, gcode.do_extruder):
+                    extruder_changed = "E{}".format(s.ext + 1)
+                    layer_data = [("extruder_switch", s.ext)]
+                else:
+                    layer_data = [("do_home", s.cur_pos)]
+
             elif isinstance(s, gcode.do_segment):
                 current_segment.extend(self.segment_to_code(s.path, speed_k, restart))
 
@@ -1369,10 +1381,10 @@ class PathPlanner:
             else:
                 assert (False)
 
-        self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart)
+        self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart, current_extruder)
 
 
-    def save_layer(self, current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart):
+    def save_layer(self, current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart, current_extruder):
         if restart:
             return True
 
@@ -1382,8 +1394,9 @@ class PathPlanner:
                 tupled_segment.append((dt, tuple([s.to_tuple() for s in segs])))
 
             layer_data.append(("segment", {
-                "map": {"X1": "X", "Y": "Y", "E1": "Z"},
+                "map": {"X1": "X", "Y": "Y", current_extruder: "Z"},
                 "acc_step": self.acc_step,
+                "extruder": current_extruder
             }, tupled_segment))
         if layer_data:
             layer_data.append(("end_state", (self.last_x, self.last_y, self.emu_t)))

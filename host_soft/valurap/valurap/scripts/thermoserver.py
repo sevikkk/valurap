@@ -36,6 +36,14 @@ async def api(request):
 
         tc.S3G_SET_FAN_VALUE(ch, val)
         reply = {"ok": 1}
+    elif cmd == "spp":
+        ch = int(request.query.get("ch"))
+        k_p = int(request.query.get("p"))
+        k_i = int(request.query.get("i"))
+        assert ch >= 1 and ch <= 3
+
+        tc.S3G_SET_PID_PARAMS(ch, k_p, k_i)
+        reply = {"ok": 1}
     else:
         reply = {"error": "unqnown command"}
 

@@ -1,3 +1,4 @@
+import pickle
 import time
 from urllib.parse import urlencode
 
@@ -34,6 +35,14 @@ class Client:
     def moveto(self, **args):
         self._do_api_request('moveto', args)
 
+    def enable(self, **args):
+        self._do_api_request('enable', args)
+
+    def exec_code(self, segments):
+        data = pickle.dumps(segments)
+        r = requests.post(self.motion_base + "?cmd=exec_code", files={"code": data})
+        return r
+
     def abort(self):
         self._do_api_request('abort')
 
@@ -48,6 +57,7 @@ class Client:
                 break
             if timeout and time.time() - t0 > timeout:
                 raise TimeoutError()
+            time.sleep(0.1)
 
         return r
 
@@ -59,6 +69,9 @@ class Client:
 
     def spt(self, ch, val):
         return self._do_api_request('spt', {"ch":  ch, "val": val}, thermo=True)
+
+    def spp(self, ch, p, i):
+        return self._do_api_request('spp', {"ch":  ch, "p": p, "i": i}, thermo=True)
 
 
 

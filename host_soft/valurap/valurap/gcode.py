@@ -2,6 +2,7 @@ from collections import namedtuple
 
 
 do_home = namedtuple("do_home", "cur_pos")
+do_extruder = namedtuple("do_extruder", "ext")
 do_path = namedtuple("do_path", "mode path")
 
 do_segment = namedtuple("do_segment", "path")
@@ -132,6 +133,18 @@ def path_gen(lines):
                 print("{}: Unknown G{} command".format(line_number, code))
                 break
 
+        if l[0] == "T":
+            parts = l.split()
+            code = int(parts[0][1:])
+            if code in (0,1):
+                print("Extruder switch to", code)
+                if path and current_mode:
+                    yield do_path(current_mode, path)
+                current_mode = None
+                path = []
+                yield do_extruder(code)
+                continue
+
         print("{}: Unknown command: {}".format(line_number, l))
         break
 
@@ -223,6 +236,12 @@ def gen_segments(pg, split_len=None):
                         yield do_segment(path)
 
                         path = [[x, y, 0, ext, path[-1][4]]]
+        elif isinstance(gc_path, do_extruder):
+            print("do_extruder")
+            yield do_extruder(gc_path.ext)
+        else:
+            print("unexpected event", gc_path)
+            raise RuntimeError
 
     if len(path) > 1:
         path.append([x, y, 0, ext, path[-1][4]])
