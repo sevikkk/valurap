@@ -8,8 +8,8 @@ class Client:
     thermo_base = 'http://orange:5000/api'
     motion_base = 'http://orange2:5000/api'
 
-    def __init__(self):
-        pass
+    def __init__(self, emu=False):
+        self.emu = emu
 
 
     def _do_api_request(self, cmd, args=None, thermo=False):
@@ -21,6 +21,11 @@ class Client:
         qs = {"cmd": cmd}
         qs.update(args or {})
         url = base + "?" + urlencode(qs)
+
+        if self.emu:
+            print("url:", url)
+            return {}
+
         r = requests.get(url)
         r.raise_for_status()
         return r.json()
@@ -39,6 +44,16 @@ class Client:
         self._do_api_request('enable', args)
 
     def exec_code(self, segments):
+        if self.emu:
+            print("send segments", len(segments))
+            for s in segments:
+                print("    ", s[0])
+                if s[0] == "segment":
+                    print("       ", s[1], len(s[2]))
+                    for ss in s[2][:15]:
+                        print("            ", ss)
+            return
+
         data = pickle.dumps(segments)
         r = requests.post(self.motion_base + "?cmd=exec_code", files={"code": data})
         return r
@@ -50,6 +65,9 @@ class Client:
         return self._do_api_request('query')
 
     def wait_idle(self, timeout=None):
+        if self.emu:
+            return {}
+
         t0 = time.time()
         while True:
             r = self._do_api_request('query')
