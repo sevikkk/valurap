@@ -1268,8 +1268,11 @@ class PathPlanner:
         return test_x, test_y, test_e, test_vx, test_vy, test_ve
 
     def ext_to_code(self, e, f, axe="E"):
-        if axe == "E":
-            spm = self.spme
+        if axe in ("E", 'E1'):
+            spm = 837
+            max_a = self.max_ea
+        elif axe in ('E2'):
+            spm = 837/2
             max_a = self.max_ea
         else:
             spm = self.spmz
@@ -1304,7 +1307,7 @@ class PathPlanner:
         segs.append([1, [ProfileSegment(apg=self.apg_z, v=0, a=0)]])
         return segs
 
-    def segment_to_code(self, seg, speed_k=1.0, restart=False):
+    def segment_to_code(self, seg, speed_k=1.0, restart=False, extruder="E1"):
         if restart:
             return []
 
@@ -1314,6 +1317,11 @@ class PathPlanner:
         slowdowns, updated = self.reverse_pass(path, slowdowns)
         slowdowns, updated = self.forward_pass(path, slowdowns)
         t1 = time.time()
+        if extruder == "E1":
+            self.spme = 837
+        else:
+            self.spme = 837/2
+
         do_reset = self.emu_t == 0
         segments, profile = self.gen_segments_float(path, slowdowns, do_reset=do_reset)
         t2 = time.time()
@@ -1375,7 +1383,7 @@ class PathPlanner:
                     layer_data = [("do_home", s.cur_pos)]
 
             elif isinstance(s, gcode.do_segment):
-                current_segment.extend(self.segment_to_code(s.path, speed_k, restart))
+                current_segment.extend(self.segment_to_code(s.path, speed_k, restart, current_extruder))
 
                 print("segment", i, len(s.path))
             else:
@@ -1394,7 +1402,7 @@ class PathPlanner:
                 tupled_segment.append((dt, tuple([s.to_tuple() for s in segs])))
 
             layer_data.append(("segment", {
-                "map": {"X1": "X", "Y": "Y", current_extruder: "Z"},
+                "map": {current_extruder.replace("E", "X"): "X", "Y": "Y", current_extruder: "Z"},
                 "acc_step": self.acc_step,
                 "extruder": current_extruder
             }, tupled_segment))
