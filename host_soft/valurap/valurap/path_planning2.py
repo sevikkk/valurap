@@ -1268,12 +1268,21 @@ class PathPlanner:
         return test_x, test_y, test_e, test_vx, test_vy, test_ve
 
     def ext_to_code(self, e, f, axe="E"):
+        apg = self.apg_z
         if axe in ("E", 'E1'):
             spm = 837
             max_a = self.max_ea
         elif axe in ('E2'):
             spm = 837/2
             max_a = self.max_ea
+        elif axe in ('X1', "X2"):
+            apg = self.apg_x
+            spm = self.spm
+            max_a = self.max_xa
+        elif axe in ('Y'):
+            apg = self.apg_y
+            spm = self.spm
+            max_a = self.max_ya
         else:
             spm = self.spmz
             max_a = self.max_za
@@ -1300,11 +1309,11 @@ class PathPlanner:
             int_ve = -int_ve
             int_ae = -int_ae
 
-        segs.append([int_acc_dt, [ProfileSegment(apg=self.apg_z, v=0, a=int_ae)]])
+        segs.append([int_acc_dt, [ProfileSegment(apg=apg, v=0, a=int_ae)]])
         if int_plato_dt > 0:
-            segs.append([int_plato_dt, [ProfileSegment(apg=self.apg_z, v=int_ve, a=0)]])
-        segs.append([int_acc_dt, [ProfileSegment(apg=self.apg_z, v=int_ve, a=-int_ae)]])
-        segs.append([1, [ProfileSegment(apg=self.apg_z, v=0, a=0)]])
+            segs.append([int_plato_dt, [ProfileSegment(apg=apg, v=int_ve, a=0)]])
+        segs.append([int_acc_dt, [ProfileSegment(apg=apg, v=int_ve, a=-int_ae)]])
+        segs.append([1, [ProfileSegment(apg=apg, v=0, a=0)]])
         return segs
 
     def segment_to_code(self, seg, speed_k=1.0, restart=False, extruder="E1"):
@@ -1322,7 +1331,7 @@ class PathPlanner:
         else:
             self.spme = 837/2
 
-        do_reset = self.emu_t == 0
+        do_reset = self.last_x is None
         segments, profile = self.gen_segments_float(path, slowdowns, do_reset=do_reset)
         t2 = time.time()
         print("Planning time:", t1 - t0)
@@ -1381,6 +1390,9 @@ class PathPlanner:
                     layer_data = [("extruder_switch", s.ext)]
                 else:
                     layer_data = [("do_home", s.cur_pos)]
+
+                self.last_x = None
+                self.last_y = None
 
             elif isinstance(s, gcode.do_segment):
                 current_segment.extend(self.segment_to_code(s.path, speed_k, restart, current_extruder))
