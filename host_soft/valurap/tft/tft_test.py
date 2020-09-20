@@ -25,6 +25,7 @@ import time
 import spidev
 dev = spidev.SpiDev()
 dev.open(1,0)
+dev.max_speed_hz=10000000
 
 GPIO.setboard(GPIO.ZERO)
 GPIO.setmode(GPIO.BOARD)
