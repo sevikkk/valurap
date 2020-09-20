@@ -38,3 +38,22 @@ install cv2 into virtualenv
 sudo apt-get install python3-opencv
 cp /usr/lib/python3/dist-packages/cv2.cpython-37m-arm-linux-gnueabihf.so ~/.virtualenvs/valurap3/lib/python3.7/site-packages/
 ```
+
+Enable NFS mount:
+```
+sudo apt-get update
+sudo apt-get upgrade
+sudo apt-get install nfs-common
+```
+add to automount entry fstab:
+```
+192.168.1.137:/Users/seva/src/sevasoft /home/seva/src/sevasoft nfs noauto,x-systemd.automount,soft,intr,x-systemd.idle-timeout=30 0 0
+```
+
+Virtualenv:
+
+```
+sudo apt-get install virtualenvwrapper python3-dev libffi-dev
+mkvirtualenv --python=/usr/bin/python3.7 valurap3
+pip install 'spidev==3.2' 'pyserial==3.4' 'pyserial-asyncio==0.4' ipython jupyter 'smbus2==0.2.3' 'luma.oled==3.1.0' OrangePi.GPIO
+```
