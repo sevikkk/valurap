@@ -1,3 +1,5 @@
+import time
+
 class ProfileSegment(object):
     def __init__(self, apg, x=None, v=None, a=0, j=0, jj=0, target_v=None):
         self.apg = apg
@@ -149,9 +151,16 @@ class Asg(object):
             s3g.BUF_OUTPUT(s3g.OUT_LEDS, 0x1),
         ]
 
+        t0 = time.time()
+        t1 = t0
         prev_regs = {}
 
         for dt, segments in steps:
+            if time.time() - t1 > 0.01:
+                print("gen_code sleep")
+                time.sleep(0.001)
+                t1 = time.time()
+
             regs = {}
             control = [
                 s3g.OUT_ASG_CONTROL_SET_STEPS_LIMIT,
@@ -230,6 +239,7 @@ class Asg(object):
             s3g.BUF_DONE()
         ]
 
+        print("Gen time: ", time.time() - t0)
         return code
 
     def gen_set_apg_positions(self, **kw):
