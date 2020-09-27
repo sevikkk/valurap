@@ -34,7 +34,7 @@ class PathPlanner:
     max_seg_num = 5
     min_plato_len = 1
     skip_plato_len = 0.01
-    assert skip_plato_len * 3 < min_seg
+    assert min_seg > skip_plato_len * 3
     j_by_speed = False
     spm = 80
     spme = 837
@@ -101,6 +101,8 @@ class PathPlanner:
 
     def make_path(self, gcode_path, speed_k=1.0):
         filtered_path = self.filter_path(gcode_path)
+        if filtered_path is None:
+            return None, None
         path = self.path_from_gcode(filtered_path, speed_k)
         path = self.generate_computed_fields(path)
         slowdowns = self.generate_initial_slowdowns(path)
@@ -140,35 +142,88 @@ class PathPlanner:
         return path
 
     def filter_path(self, path):
-        new_path = []
+        print("input path:", path)
         last_x, last_y, last_v, last_e, last_line = path[0]
-        last_sn = len(path) - 1
-        for s_n, (x, y, v, e, line) in enumerate(path):
+        total_l = 0
+        total_dt = 0
+        new_path = [path[0]]
+        t_l = 0
 
-            dx = x - last_x
-            dy = y - last_y
-            de = e - last_e
+        sn = len(path)
+        for i in range(1, sn - 1):
+            (px, py, pv, pe, pline) = path[i - 1]
+            (x, y, v, e, line) = path[i]
+            (nx, ny, nv, ne, nline) = path[i + 1]
+
+            dx = x - px
+            dy = y - py
             l = hypot(dx, dy)
 
-            if l > self.max_seg:
-                splits = min(self.max_seg_num, ceil(l / self.max_seg))
+            if v > 0:
+                dt = l / v
+            else:
+                dt = 0
+
+            total_l += l
+            total_dt += dt
+
+            t_dx = x - last_x
+            t_dy = y - last_y
+            t_de = e - last_e
+            t_l = hypot(t_dx, t_dy)
+
+            if t_l < self.min_seg:
+                continue
+
+            ndx = nx - x
+            ndy = ny - y
+            nl = hypot(ndx, ndy)
+
+            if (i !=  sn - 2) and nl < self.min_seg:
+                continue
+
+            t_v = total_l / total_dt
+
+            if t_l > self.max_seg:
+                splits = min(self.max_seg_num, ceil(t_l / self.max_seg))
                 for i in range(1, splits):
                     new_path.append(
                         (
-                            last_x + dx * i / splits,
-                            last_y + dy * i / splits,
-                            v,
-                            last_e + de * i / splits,
+                            last_x + t_dx * i / splits,
+                            last_y + t_dy * i / splits,
+                            t_v,
+                            last_e + t_de * i / splits,
                             line,
                         )
                     )
-            elif s_n > 0 and s_n < last_sn and l < self.min_seg:
-                continue
 
-            new_path.append((x, y, v, e, line))
+            new_path.append((x, y, t_v, e, line))
             last_x, last_y, last_v, last_e, last_line = new_path[-1]
+            total_l = 0
+            total_dt = 0
 
-        return new_path
+        if total_l == 0:
+            new_path.append((last_x, last_y, 0, last_e, last_line))
+            print("new path:", new_path)
+            return new_path
+
+        if len(new_path) > 1:
+            print("last sub-segment final len is to small:", t_l, total_l)
+            assert t_l < self.min_seg
+            assert total_l < self.min_seg * 10
+
+            prev_last_seg = new_path[-1]
+            new_path = new_path[:-1]
+
+            new_path.append((last_x, last_y, prev_last_seg[2], last_e, last_line))
+            new_path.append((last_x, last_y, 0, last_e, last_line))
+            print("new path:", new_path)
+            return new_path
+
+        assert t_l < self.min_seg
+        assert total_l < self.min_seg * 10
+        print("segment len to small:", t_l, total_l, new_path)
+        return None
 
     def path_from_gcode(self, gcode_path, speed_k):
         seg = np.array(gcode_path)
@@ -395,8 +450,17 @@ class PathPlanner:
             if i < last_i:
                 ns_speeds = speeds.iloc[i + 1]
                 ns_cc = cc.iloc[i + 1]
+                ns_path = path.iloc[i + 1]
                 next_entry_speed = ns_speeds["entry"]
                 next_l_entry = ns_cc["l_entry"]
+                next_l_total = ns_path["l"]
+                if next_l_total < next_l_entry:
+                    print("next_l_total: ", next_l_total, next_l_entry, i, ns_path.line)
+                    print(path[["line", "px", "py", "x", "y", "v", "de", "l"]])
+                    print(slowdowns)
+                    print(speeds[["path", "entry", "exit", "plato", "p_exit"]])
+                    print(cc[["dvx", "dvy", "entry_dt", "exit_dt", "l_entry", "l_exit", "l_free", "entry_slowdown", "prev_exit_slowdown"]])
+                assert next_l_total >= next_l_entry
             else:
                 next_entry_speed = np.nan
                 next_l_entry = np.nan
@@ -605,13 +669,22 @@ class PathPlanner:
                 st_vy = last_vy
                 st_ve = last_ve
                 pdt = 0.0
+                last_sn = len(split_points) - 1
                 for sn, dts in enumerate(split_points):
-                    sp_x = st_x + st_vx * dts + ax * pow(dts, 2) / 2
-                    sp_y = st_y + st_vy * dts + ay * pow(dts, 2) / 2
-                    sp_e = st_e + st_ve * dts + ae * pow(dts, 2) / 2
-                    sp_vx = st_vx + ax * dts
-                    sp_vy = st_vy + ay * dts
-                    sp_ve = st_ve + ae * dts
+                    if sn == last_sn:
+                        sp_x = target_x
+                        sp_y = target_y
+                        sp_e = target_e
+                        sp_vx = target_vx
+                        sp_vy = target_vy
+                        sp_ve = target_ve
+                    else:
+                        sp_x = st_x + st_vx * dts + ax * pow(dts, 2) / 2
+                        sp_y = st_y + st_vy * dts + ay * pow(dts, 2) / 2
+                        sp_e = st_e + st_ve * dts + ae * pow(dts, 2) / 2
+                        sp_vx = st_vx + ax * dts
+                        sp_vy = st_vy + ay * dts
+                        sp_ve = st_ve + ae * dts
                     print(
                         "corner_{} ({} {}): x: ({}, {}) -> ({}, {}) v: ({}, {}) -> ({}, {})".format(
                             sn, dts, dt, last_x, last_y, sp_x, sp_y, last_vx, last_vy, sp_vx, sp_vy,
@@ -793,7 +866,10 @@ class PathPlanner:
                 accel_y = s_plato["start_y"] + unit_y * l1
                 accel_e = s_plato["start_e"] + unit_e * l1
                 if self.espeed_by_de:
-                    accel_ve = (accel_e - last_e) * 2 / dt1 - last_ve
+                    if dt1 > 0:
+                        accel_ve = (accel_e - last_e) * 2 / dt1 - last_ve
+                    else:
+                        accel_ve = last_ve
                 else:
                     accel_ve = s_plato["top_v"] * s_speeds["v_to_ve"]
 
@@ -851,7 +927,10 @@ class PathPlanner:
                 decel_y = s_plato["end_y"] - unit_y * l2
                 decel_e = s_plato["end_e"] - unit_e * l2
                 if self.espeed_by_de:
-                    decel_ve = (decel_e - last_e) * 2 / dtl - last_ve
+                    if dtl > 0:
+                        decel_ve = (decel_e - last_e) * 2 / dtl - last_ve
+                    else:
+                        decel_ve = last_ve
                 else:
                     decel_ve = s_plato["top_v"] * s_speeds["v_to_ve"]
 
@@ -1122,21 +1201,23 @@ class PathPlanner:
                 int_je = int_je2
 
             test_x, test_y, test_e, test_vx, test_vy, test_ve = self.emu_profile(int_dt, int_ax, int_ay, int_ae, int_jx, int_jy, int_je, int_tvx, int_tvy, int_tve)
-            if not (
-                (abs(test_x - target_x) < self.max_delta * 2 * self.delta_err)
-                and (abs(test_y - target_y) < self.max_delta * 2 * self.delta_err)
-                and (abs(test_e - target_e) < self.max_delta_e * 10 * self.delta_e_err)
-                and (abs(test_vx - target_vx) < 2 * self.delta_v_err)
-                and (abs(test_vy - target_vy) < 2 * self.delta_v_err)
-                and (abs(test_ve - target_ve) < 2 * self.delta_ve_err)
-            ):
-                raise RuntimeError("Target precision not reached dx: {} dy: {} de: {} dvx: {} dvy: {} dve: {}".format(
+            tests = (
+                (abs(test_x - target_x) < self.max_delta * 2 * self.delta_err),
+                (abs(test_y - target_y) < self.max_delta * 2 * self.delta_err),
+                (abs(test_e - target_e) < self.max_delta_e * 10 * self.delta_e_err),
+                (abs(test_vx - target_vx) < 2 * self.delta_v_err),
+                (abs(test_vy - target_vy) < 2 * self.delta_v_err),
+                (abs(test_ve - target_ve) < 2 * self.delta_ve_err)
+            )
+            if not all(tests):
+                raise RuntimeError("Target precision not reached dx: {} dy: {} de: {} dvx: {} dvy: {} dve: {} tests: {}".format(
                     abs(test_x - target_x),
                     abs(test_y - target_y),
                     abs(test_e - target_e),
                     abs(test_vx - target_vx),
                     abs(test_vy - target_vy),
-                    abs(test_ve - target_ve)
+                    abs(test_ve - target_ve),
+                    tests
                 ))
 
         print("int_v:", int_last_vx, int_tvx, int_last_vy, int_tvy, int_last_ve, int_tve)
@@ -1322,6 +1403,8 @@ class PathPlanner:
 
         t0 = time.time()
         path, slowdowns = self.make_path(seg, speed_k)
+        if path is None:
+            return []
         slowdowns, updated, cc = self.process_corner_errors(path, slowdowns)
         slowdowns, updated = self.reverse_pass(path, slowdowns)
         slowdowns, updated = self.forward_pass(path, slowdowns)
@@ -1365,7 +1448,6 @@ class PathPlanner:
                         layer_num += 1
 
                     if extruder_changed:
-                        current_extruder = extruder_changed
                         extruder_changed = False
 
                     restart = self.check_layer(fn_tpl, output_prefix, layer_num)
@@ -1386,7 +1468,8 @@ class PathPlanner:
                 restart = False
                 current_segment = []
                 if isinstance(s, gcode.do_extruder):
-                    extruder_changed = "E{}".format(s.ext + 1)
+                    current_extruder = "E{}".format(s.ext + 1)
+                    extruder_changed = True
                     layer_data = [("extruder_switch", s.ext)]
                 else:
                     layer_data = [("do_home", s.cur_pos)]
