@@ -45,12 +45,13 @@ class Client:
 
     def exec_code(self, segments):
         if self.emu:
-            print("send segments", len(segments))
+            data = pickle.dumps(segments)
+            print("send segments", len(segments), len(data))
             for s in segments:
                 print("    ", s[0])
                 if s[0] == "segment":
                     print("       ", s[1], len(s[2]))
-                    for ss in s[2][:15]:
+                    for ss in s[2][:5]:
                         print("            ", ss)
             return
 
