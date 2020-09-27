@@ -95,7 +95,9 @@ def valurap_processing_loop():
 
 def load_layer(layer):
     try:
+        print("pickle load start")
         p = pickle.loads(layer)
+        print("pickle load done")
     except:
         return 400, {"ok": 0, "err": "unpickle failed"}
 
@@ -110,7 +112,10 @@ def load_layer(layer):
         ok = 1
 
         cmd, meta, segments = pp
-        codes.append(prn.asg.gen_map_code(meta["map"]))
+        if "map" in meta:
+            if meta["map"]:
+                codes.append(prn.asg.gen_map_code(meta["map"]))
+
         pr_opt = []
 
         apgs = {
@@ -119,29 +124,45 @@ def load_layer(layer):
             "Z": prn.apg_z,
         }
 
+        print("load segments")
+        i = 0
         for dt, segs in segments:
             pr_opt.append([
                 dt, [asg.ProfileSegment.from_tuple(s, apgs) for s in segs]
             ])
+            i += 1
+            if i > 100:
+                time.sleep(0.001)
+                i = 0
 
+        print("gen code")
         path_code = prn.asg.gen_path_code(pr_opt,
                                           accel_step=50000000/meta["acc_step"],
                                           real_apgs=apgs)
         print(len(path_code))
         codes.append(path_code)
+        time.sleep(0.001)
 
+    print("load done")
     if not ok:
         return 400, {"ok": 0, "err": "no segment chunk found"}
 
     if prn.long_code and len(prn.long_code) > 100:
+        print("longcode append")
+        full_code = []
         for code in codes:
-            prn.long_code.extend(code[:-1])
+            full_code.extend(code[:-1])
+        prn.long_code.extend(full_code)
+        print("longcode append done")
     else:
+        print("formaat command")
         full_code = deque()
         for code in codes:
             full_code.extend(code[:-1])
+        print("queue put")
         fut = asyncio.run_coroutine_threadsafe(prn_queue.put(["exec_code", full_code]), loop)
         fut.result()
+        print("queue put done")
         attempts = 10000
         while True:
             if prn.long_code and len(prn.long_code) > 0:
@@ -155,6 +176,7 @@ def load_layer(layer):
                 print("waiting for print start")
                 time.sleep(0.01)
 
+    print("all done")
     return 200, {"ok": 1}
 
 async def stop_valurap(app):
