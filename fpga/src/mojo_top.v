@@ -72,14 +72,14 @@ module mojo_top #(
     output mot_12_dir,
     output mot_12_enable,
 
-    output ext1_1,
-    output ext1_2,
-    output ext1_3,
-    output ext1_4,
-    output ext1_5,
-    output ext1_6,
-    output ext1_7,
-    output ext1_8,
+    input endstop_x1,  // ext1_3
+    input endstop_x2,  // ext1_5
+    input endstop_y1,  // ext1_4
+    input endstop_y2,  // ext1_6
+    input endstop_z1,  // ext1_1
+    input endstop_z2,  // ext1_2
+    input endstop_z3,  // ext1_7
+    input endstop_z4,  // ext1_8
 
     output ext2_1,
     output ext2_2,
@@ -90,24 +90,15 @@ module mojo_top #(
     output ext2_7,
     output ext2_8,
 
-    //output ext3_1,
-    //output ext3_2,
-    //output ext3_3,
-    //output ext3_4,
-    //output ext3_5,
-    //output ext3_6,
-    //output ext3_7,
-    //output ext3_8,
+    output stm_rx,   // ext3_2
+    input stm_tx,    // ext3_4
+    output stm_int,  // ext3_6
+    input stm_alive, // ext3_8
 
-    output stm_rx,   // 3_2
-    input stm_tx,    // 3_4
-    output stm_int,  // 3_6
-    input stm_alive, // 3_8
-
-    output stm_miso, // 3_1
-    input stm_mosi,  // 3_3
-    input stm_sck,   // 3_5
-    input stm_ss     // 3_7
+    output stm_miso, // ext3_1
+    input stm_mosi,  // ext3_3
+    input stm_sck,   // ext3_5
+    input stm_ss     // ext3_7
     );
 
 wire rst = ~rst_n; // make reset active high
@@ -190,15 +181,6 @@ assign mot_12_step = 1'b0;
 assign mot_12_dir = 1'b0;
 assign mot_12_enable = 1'b1;
 
-assign ext1_1 = blink_cnt[20];
-assign ext1_2 = blink_cnt[19];
-assign ext1_3 = blink_cnt[18];
-assign ext1_4 = blink_cnt[17];
-assign ext1_5 = blink_cnt[16];
-assign ext1_6 = blink_cnt[15];
-assign ext1_7 = blink_cnt[14];
-assign ext1_8 = blink_cnt[13];
-
 assign ext2_1 = blink_cnt[17];
 assign ext2_2 = blink_cnt[16];
 assign ext2_3 = blink_cnt[15];
@@ -207,14 +189,5 @@ assign ext2_5 = blink_cnt[13];
 assign ext2_6 = blink_cnt[12];
 assign ext2_7 = blink_cnt[11];
 assign ext2_8 = blink_cnt[10];
-
-// assign ext3_1 = blink_cnt[14];
-// assign ext3_2 = blink_cnt[13];
-// assign ext3_3 = blink_cnt[12];
-// assign ext3_4 = blink_cnt[11];
-// assign ext3_5 = blink_cnt[10];
-// assign ext3_6 = blink_cnt[9];
-// assign ext3_7 = blink_cnt[8];
-// assign ext3_8 = blink_cnt[7];
 
 endmodule
