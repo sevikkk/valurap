@@ -12,7 +12,7 @@ planner.skip_plato_len = 0.05
 speed_k = 1.0
 planner.max_xa = 3000
 planner.max_ya = 3000
-planner.espeed_by_de = True
+#planner.espeed_by_de = True
 
 if 0:
     speed_k = 1.5
