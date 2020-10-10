@@ -40,7 +40,7 @@ def main():
             ok = 1
 
         if ok:
-            if 0:
+            if 1:
                 print(plain_fn)
                 for s in sorted(cf.sections()):
                     print("  ", s)
@@ -56,7 +56,7 @@ def main():
             elif ft == 'extruder_train':
                 mach = cf["metadata"]["machine"]
                 extruders.setdefault(mach, {})[cf["metadata"]["position"]] = plain_fn
-            elif ft in ["definition_changes", "user"]:
+            elif ft in ["definition_changes", "user", "quality_changes"]:
                 settings[cf["general"]["name"]] = plain_fn
             else:
                 raise RuntimeError("Unexpected file type: {}".format(ft))
