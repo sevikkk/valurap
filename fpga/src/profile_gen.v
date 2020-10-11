@@ -4,25 +4,25 @@ module profile_gen(
     input acc_step,
     output reg busy,
 
-    output reg [63:0] speed_0,
-    output reg [63:0] speed_1,
-    output reg [63:0] speed_2,
-    output reg [63:0] speed_3,
-    output reg [63:0] speed_4,
-    output reg [63:0] speed_5,
-    output reg [63:0] speed_6,
-    output reg [63:0] speed_7,
+    output reg signed [63:0] speed_0,
+    output reg signed [63:0] speed_1,
+    output reg signed [63:0] speed_2,
+    output reg signed [63:0] speed_3,
+    output reg signed [63:0] speed_4,
+    output reg signed [63:0] speed_5,
+    output reg signed [63:0] speed_6,
+    output reg signed [63:0] speed_7,
 
     input [7:0]  param_addr,
     input [31:0] param_in,
-    output [63:0] param_out,
+    output signed [63:0] param_out,
     input param_write_hi,
     input param_write_lo
 );
     reg reg_write;
     reg [7:0] reg_addr;
-    reg [63:0] reg_in;
-    wire [63:0] reg_out;
+    reg signed [63:0] reg_in;
+    wire signed [63:0] reg_out;
 
     reg [31:0] mem0 [0:255];
     reg [31:0] mem1 [0:255];
@@ -76,8 +76,8 @@ module profile_gen(
     reg target_v_set;
     reg next_target_v_set;
 
-    wire [63:0] args_sum;
-    wire [63:0] args_sum_2;
+    wire signed [63:0] args_sum;
+    wire signed [63:0] args_sum_2;
 
     assign args_sum = arg0 + arg1;
     assign args_sum_2 = {args_sum[63], args_sum[63:1]};
@@ -88,6 +88,7 @@ module profile_gen(
         S_NEXT = 2,
         S_READ_STATUS = 3,
         S_READ_STATUS2 = 4,
+        S_SAVE_V = 5,
 
         R_STATUS = 0,
         R_V_EFF = 1,
@@ -232,14 +233,57 @@ module profile_gen(
                 end
                 // ram: Write V_OUT -> V_IN   ram_out: ---     arg0:  A     arg1: R_V_OUT       sum: A + V_OUT
                 20: begin
-                    next_arg0 <= args_sum;
-                    next_reg_num <= R_V_OUT;
-                    next_reg_in <= args_sum;
+                    if (target_v_set) begin
+                        next_reg_num <= R_TARGET_V;
+                        next_state <= state + 1;
+                    end
+                    else begin
+                        next_arg0 <= args_sum;
+                        next_reg_num <= R_V_OUT;
+                        next_reg_in <= args_sum;
+                        next_reg_write <= 1;
+                        next_state <= S_SAVE_V;
+                    end
+                end
+                21: begin
+                    next_state <= state + 1;
+                end
+                22: begin
+                   if (((arg1 <= reg_out) && (reg_out <= args_sum)) || ((args_sum <= reg_out) && (reg_out <= arg1))) begin
+                       next_arg0 <= reg_out;
+                       next_reg_num <= R_A;
+                       next_reg_in <= 0;
+                       next_reg_write <= 1;
+                       next_state <= state + 1;
+                   end
+                   else begin
+                       next_arg0 <= args_sum;
+                       next_reg_num <= R_V_OUT;
+                       next_reg_in <= args_sum;
+                       next_reg_write <= 1;
+                       next_state <= S_SAVE_V;
+                   end
+                end
+                23: begin
+                    next_reg_num <= R_J;
+                    next_reg_in <= 0;
                     next_reg_write <= 1;
                     next_state <= state + 1;
                 end
+                24: begin
+                    next_reg_num <= R_JJ;
+                    next_reg_in <= 0;
+                    next_reg_write <= 1;
+                    next_state <= state + 1;
+                end
+                25: begin
+                    next_reg_num <= R_V_OUT;
+                    next_reg_in <= arg0;
+                    next_reg_write <= 1;
+                    next_state <= S_SAVE_V;
+                end
                 // ram: Write A + V_OUT -> V_OUT  ram_out: ---     arg0:  R_V_OUT + A     arg1: R_V_OUT       sum: A + V_OUT*2
-                21: begin
+                S_SAVE_V: begin
                     next_reg_num <= R_V_EFF;
                     next_reg_in <= args_sum_2; // R_V_OUT + A
                     next_reg_write <= 1;

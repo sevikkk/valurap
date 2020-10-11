@@ -175,29 +175,47 @@ initial
 
                     25: begin
                         param_addr = 0;
-                        param_in = 1;
+                        param_in = 3;
                         write_hi = 0;
                         write_lo = 1;
                     end
                     26: begin
                         param_addr = 3;
-                        param_in = 3;
+                        param_in = -300;
                         write_hi = 0;
                         write_lo = 1;
                     end
                     27: begin
-                        param_addr = 4;
-                        param_in = 4;
-                        write_hi = 0;
-                        write_lo = 1;
+                        param_addr = 3;
+                        param_in = -1;
+                        write_hi = 1;
+                        write_lo = 0;
                     end
                     28: begin
-                        param_addr = 5;
-                        param_in = 5;
+                        param_addr = 4;
+                        param_in = 70;
                         write_hi = 0;
                         write_lo = 1;
                     end
                     29: begin
+                        param_addr = 5;
+                        param_in = 0;
+                        write_hi = 0;
+                        write_lo = 1;
+                    end
+                    30: begin
+                        param_addr = 6;
+                        param_in = 0;
+                        write_hi = 0;
+                        write_lo = 1;
+                    end
+                    31: begin
+                        param_addr = 7;
+                        param_in = 40;
+                        write_hi = 0;
+                        write_lo = 1;
+                    end
+                    32: begin
                         param_addr = 0;
                         param_in = 0;
                         write_hi = 0;
@@ -219,6 +237,48 @@ initial
                         acc_step = 1;
                     end
                     301: begin
+                        acc_step = 0;
+                    end
+                    400: begin
+                        acc_step = 1;
+                    end
+                    401: begin
+                        acc_step = 0;
+                    end
+                    500: begin
+                        acc_step = 1;
+                    end
+                    501: begin
+                        acc_step = 0;
+                    end
+                    600: begin
+                        acc_step = 1;
+                    end
+                    601: begin
+                        acc_step = 0;
+                    end
+                    700: begin
+                        acc_step = 1;
+                    end
+                    701: begin
+                        acc_step = 0;
+                    end
+                    800: begin
+                        acc_step = 1;
+                    end
+                    801: begin
+                        acc_step = 0;
+                    end
+                    900: begin
+                        acc_step = 1;
+                    end
+                    901: begin
+                        acc_step = 0;
+                    end
+                    1000: begin
+                        acc_step = 1;
+                    end
+                    1001: begin
                         acc_step = 0;
                     end
                     1500:
