@@ -15,8 +15,7 @@ reg [63:0] cycle;
 
 reg assertions_failed = 0;
 
-mojo_top #(
-    ) dut (
+mojo_top dut (
            .clk(clk),
            .rst_n(rst_n),
            .cclk(cclk),
