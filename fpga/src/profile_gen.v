@@ -17,7 +17,8 @@ module profile_gen(
     input [31:0] param_in,
     output signed [63:0] param_out,
     input param_write_hi,
-    input param_write_lo
+    input param_write_lo,
+    input [7:0] abort
 );
 
     reg reg_write;
@@ -50,12 +51,26 @@ module profile_gen(
         addrB <= reg_addr;
     end
 
+    reg [7:0] pending_aborts;
+    reg [7:0] done_aborts;
+    reg [7:0] next_done_aborts;
+
+    always @(posedge clk) begin
+        if (rst)
+            pending_aborts <= 0;
+        else
+            pending_aborts <= (pending_aborts | abort) & !done_aborts;
+    end
+
     reg [5:0] state;
     reg [5:0] next_state;
     reg [2:0] channel;
     reg [2:0] next_channel;
     reg [4:0] reg_num;
     reg [4:0] next_reg_num;
+
+    reg [7:0] next_abort_in_progress;
+    reg [7:0] abort_in_progress;
 
     reg signed [63:0] arg0;
     reg signed [63:0] next_arg0;
@@ -84,6 +99,7 @@ module profile_gen(
         S_READ_STATUS = 3,
         S_READ_STATUS2 = 4,
         S_SAVE_V = 5,
+        S_START_ABORT = 6,
 
         R_STATUS = 0,
         R_V_EFF = 1,
@@ -92,7 +108,8 @@ module profile_gen(
         R_A = 4,
         R_J = 5,
         R_JJ = 6,
-        R_TARGET_V = 7;
+        R_TARGET_V = 7,
+        R_ABORT_A = 8;
 
     always @(*) begin
         next_state <= state;
@@ -101,12 +118,14 @@ module profile_gen(
         next_arg1 <= arg1;
         next_busy <= busy;
         next_target_v_set <= target_v_set;
+        next_abort_in_progress <= abort_in_progress;
 
         next_reg_num <= 0;
         next_reg_in <= 0;
         next_reg_write <= 0;
         next_speed_value <= 0;
         next_speed_stb <= 0;
+        next_done_aborts <= 0;
 
         if (rst) begin
             next_state <= S_INIT;
@@ -115,6 +134,7 @@ module profile_gen(
             next_arg1 <= 0;
             next_busy <= 0;
             next_target_v_set <= 0;
+            next_abort_in_progress <= 0;
         end
         else begin
             case (state)
@@ -144,12 +164,18 @@ module profile_gen(
                             next_state <= S_READ_STATUS;
                         end
                     end
+                    else if (pending_aborts[channel] && !abort_in_progress[channel]) begin
+                        next_reg_num <= R_STATUS;
+                        next_reg_in <= reg_out | 32'b10; // TARGET_V
+                        next_reg_write <= 1;
+                        next_abort_in_progress[channel] <= 1;
+                        next_state <= S_START_ABORT;
+                    end
                     else begin
                         next_target_v_set <= reg_out[1];
                         next_reg_num <= R_JJ;
                         next_state <= S_START;
                     end
-
                 end
                 // ram: read R_JJ   ram_out: ---      arg0: ---     arg1: ---    sum: ---
                 S_START: begin  //  Read J
@@ -234,6 +260,9 @@ module profile_gen(
                        next_reg_num <= R_A;
                        next_reg_in <= 0;
                        next_reg_write <= 1;
+                       if (abort_in_progress[channel] && (arg1 == reg_out))
+                           next_abort_in_progress[channel] <= 0;
+                           next_done_aborts[channel] <= 1;
                        next_state <= state + 1;
                    end
                    else begin
@@ -287,6 +316,47 @@ module profile_gen(
                         next_state <= S_READ_STATUS;
                     end
                 end
+                S_START_ABORT: begin
+                    next_reg_num <= R_ABORT_A;
+                    next_state <= 40;
+                end
+                40: begin
+                    next_reg_num <= R_JJ;
+                    next_reg_in <= 0;
+                    next_reg_write <= 1;
+                    next_state <= state + 1;
+                end
+                41: begin
+                    next_arg0 <= reg_out;
+                    next_reg_num <= R_V_OUT;
+                    next_state <= state + 1;
+                end
+                42: begin
+                    next_reg_num <= R_J;
+                    next_reg_in <= 0;
+                    next_reg_write <= 1;
+                    next_state <= state + 1;
+                end
+                43: begin
+                    if (arg0 == 0)
+                        next_arg0 <= -reg_out;
+                    else if (reg_out > 0)
+                        next_arg0 <= -arg0;
+                    next_reg_num <= R_TARGET_V;
+                    next_reg_in <= 0;
+                    next_reg_write <= 1;
+                    next_state <= state + 1;
+                end
+                44: begin
+                    next_reg_num <= R_A;
+                    next_reg_in <= arg0;
+                    next_reg_write <= 1;
+                    next_state <= state + 1;
+                end
+                45: begin
+                    next_reg_num <= R_STATUS;
+                    next_state <= S_READ_STATUS;
+                end
             endcase
         end
     end
@@ -298,6 +368,8 @@ module profile_gen(
         arg1 <= next_arg1;
         busy <= next_busy;
         target_v_set <= next_target_v_set;
+        done_aborts <= next_done_aborts;
+        abort_in_progress <= next_abort_in_progress;
 
         reg_num <= next_reg_num;
         reg_in <= next_reg_in;
@@ -328,5 +400,6 @@ module profile_gen(
                 7: speed_7 <= next_speed_value;
             endcase
     end
+
 
 endmodule

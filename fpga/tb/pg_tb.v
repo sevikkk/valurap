@@ -8,6 +8,7 @@ reg clk;
 reg rst;
 reg acc_step;
 reg [7:0] param_addr;
+reg [7:0] abort;
 reg [31:0] param_in;
 reg write_hi;
 reg write_lo;
@@ -23,7 +24,8 @@ profile_gen dut (
            .param_addr(param_addr),
            .param_in(param_in),
            .param_write_hi(write_hi),
-           .param_write_lo(write_lo)
+           .param_write_lo(write_lo),
+           .abort(abort)
        );
 
 integer idx;
@@ -45,6 +47,7 @@ initial
         param_in = 0;
         write_hi = 0;
         write_lo = 0;
+        abort = 0;
         #10;
         clk = 1;
         #10;
@@ -216,6 +219,18 @@ initial
                         write_lo = 1;
                     end
                     32: begin
+                        param_addr = 8;
+                        param_in = 0;
+                        write_hi = 1;
+                        write_lo = 1;
+                    end
+                    33: begin
+                        param_addr = 8;
+                        param_in = 10;
+                        write_hi = 0;
+                        write_lo = 1;
+                    end
+                    34: begin
                         param_addr = 0;
                         param_in = 0;
                         write_hi = 0;
@@ -238,6 +253,12 @@ initial
                     end
                     301: begin
                         acc_step = 0;
+                    end
+                    313: begin
+                        abort = 1;
+                    end
+                    314: begin
+                        abort = 0;
                     end
                     400: begin
                         acc_step = 1;
@@ -263,6 +284,12 @@ initial
                     701: begin
                         acc_step = 0;
                     end
+                    750: begin
+                        abort = 1;
+                    end
+                    751: begin
+                        abort = 0;
+                    end
                     800: begin
                         acc_step = 1;
                     end
@@ -281,7 +308,55 @@ initial
                     1001: begin
                         acc_step = 0;
                     end
-                    1500:
+                    1100: begin
+                        acc_step = 1;
+                    end
+                    1101: begin
+                        acc_step = 0;
+                    end
+                    1200: begin
+                        acc_step = 1;
+                    end
+                    1201: begin
+                        acc_step = 0;
+                    end
+                    1300: begin
+                        acc_step = 1;
+                    end
+                    1301: begin
+                        acc_step = 0;
+                    end
+                    1400: begin
+                        acc_step = 1;
+                    end
+                    1401: begin
+                        acc_step = 0;
+                    end
+                    1500: begin
+                        acc_step = 1;
+                    end
+                    1501: begin
+                        acc_step = 0;
+                    end
+                    1600: begin
+                        acc_step = 1;
+                    end
+                    1601: begin
+                        acc_step = 0;
+                    end
+                    1700: begin
+                        acc_step = 1;
+                    end
+                    1701: begin
+                        acc_step = 0;
+                    end
+                    1800: begin
+                        acc_step = 1;
+                    end
+                    1801: begin
+                        acc_step = 0;
+                    end
+                    2000:
                         begin
                             $display("Done");
                             $finish();
