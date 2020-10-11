@@ -33,7 +33,7 @@ initial
         $dumpfile("test.vcd");
         $dumpvars;
 
-        for (idx = 0; idx < 7; idx = idx + 1) begin
+        for (idx = 0; idx < 9; idx = idx + 1) begin
             $dumpvars(0,dut.mem0[idx]);
             $dumpvars(0,dut.mem1[idx]);
         end
@@ -119,24 +119,85 @@ initial
                         write_lo = 1;
                     end
                     16: begin
+                        param_addr = 6;
+                        param_in = 0;
+                        write_hi = 1;
+                        write_lo = 1;
+                    end
+                    17: begin
+                        param_addr = 7;
+                        param_in = 0;
+                        write_hi = 1;
+                        write_lo = 1;
+                    end
+                    18: begin
+                        param_addr = 8'h20;
+                        param_in = 0;
+                        write_hi = 1;
+                        write_lo = 1;
+                    end
+                    19: begin
+                        param_addr = 8'h40;
+                        param_in = 0;
+                        write_hi = 1;
+                        write_lo = 1;
+                    end
+                    20: begin
+                        param_addr = 8'h60;
+                        param_in = 0;
+                        write_hi = 1;
+                        write_lo = 1;
+                    end
+                    21: begin
+                        param_addr = 8'h80;
+                        param_in = 0;
+                        write_hi = 1;
+                        write_lo = 1;
+                    end
+                    22: begin
+                        param_addr = 8'hA0;
+                        param_in = 0;
+                        write_hi = 1;
+                        write_lo = 1;
+                    end
+                    23: begin
+                        param_addr = 8'hC0;
+                        param_in = 0;
+                        write_hi = 1;
+                        write_lo = 1;
+                    end
+                    24: begin
+                        param_addr = 8'hE0;
+                        param_in = 0;
+                        write_hi = 1;
+                        write_lo = 1;
+                    end
+
+                    25: begin
+                        param_addr = 0;
+                        param_in = 1;
+                        write_hi = 0;
+                        write_lo = 1;
+                    end
+                    26: begin
                         param_addr = 3;
                         param_in = 3;
                         write_hi = 0;
                         write_lo = 1;
                     end
-                    17: begin
+                    27: begin
                         param_addr = 4;
                         param_in = 4;
                         write_hi = 0;
                         write_lo = 1;
                     end
-                    18: begin
+                    28: begin
                         param_addr = 5;
                         param_in = 5;
                         write_hi = 0;
                         write_lo = 1;
                     end
-                    19: begin
+                    29: begin
                         param_addr = 0;
                         param_in = 0;
                         write_hi = 0;
@@ -157,7 +218,7 @@ initial
                     300: begin
                         acc_step = 1;
                     end
-                    3t add 01: begin
+                    301: begin
                         acc_step = 0;
                     end
                     1500:

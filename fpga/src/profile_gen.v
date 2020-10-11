@@ -73,6 +73,8 @@ module profile_gen(
     reg [63:0] next_reg_in;
     reg next_reg_write;
     reg next_busy;
+    reg target_v_set;
+    reg next_target_v_set;
 
     wire [63:0] args_sum;
     wire [63:0] args_sum_2;
@@ -84,13 +86,17 @@ module profile_gen(
         S_INIT = 0,
         S_START = 1,
         S_NEXT = 2,
+        S_READ_STATUS = 3,
+        S_READ_STATUS2 = 4,
 
-        R_V_EFF = 0,
-        R_V_IN = 1,
-        R_V_OUT = 2,
-        R_A = 3,
-        R_J = 4,
-        R_JJ = 5;
+        R_STATUS = 0,
+        R_V_EFF = 1,
+        R_V_IN = 2,
+        R_V_OUT = 3,
+        R_A = 4,
+        R_J = 5,
+        R_JJ = 6,
+        R_TARGET_V = 7;
 
     always @(*) begin
         next_state <= state;
@@ -98,6 +104,7 @@ module profile_gen(
         next_arg0 <= arg0;
         next_arg1 <= arg1;
         next_busy <= busy;
+        next_target_v_set <= target_v_set;
 
         next_speed_0 <= speed_0;
         next_speed_1 <= speed_1;
@@ -126,16 +133,42 @@ module profile_gen(
             next_speed_6 <= 0;
             next_speed_7 <= 0;
             next_busy <= 0;
+            next_target_v_set <= 0;
         end
         else begin
             case (state)
                 S_INIT: begin
                    if (acc_step) begin
                        next_channel <= 0;
-                       next_reg_num <= R_JJ;  // Read JJ
-                       next_state <= S_START;
+                       next_reg_num <= R_STATUS;  // Read JJ
+                       next_state <= S_READ_STATUS;
                        next_busy <= 1;
                    end
+                end
+                // ram: read R_STATUS   ram_out: ---      arg0: ---     arg1: ---    sum: ---
+                S_READ_STATUS: begin
+                    next_state <= S_READ_STATUS2;
+                end
+                // ram: ---    ram_out: R_STATUS     arg0: ---     arg1: ---    sum: ---
+                S_READ_STATUS2: begin
+                    if (!reg_out[0]) begin
+                        // Not enabled, skipping
+                        if (channel == 7) begin
+                            next_state <= S_INIT;
+                            next_busy <= 0;
+                        end
+                        else begin
+                            next_channel <= channel + 1;
+                            next_reg_num <= R_STATUS;
+                            next_state <= S_READ_STATUS;
+                        end
+                    end
+                    else begin
+                        next_target_v_set <= reg_out[1];
+                        next_reg_num <= R_JJ;
+                        next_state <= S_START;
+                    end
+
                 end
                 // ram: read R_JJ   ram_out: ---      arg0: ---     arg1: ---    sum: ---
                 S_START: begin  //  Read J
@@ -234,8 +267,8 @@ module profile_gen(
                     end
                     else begin
                         next_channel <= channel + 1;
-                        next_reg_num <= R_JJ;
-                        next_state <= S_START;
+                        next_reg_num <= R_STATUS;
+                        next_state <= S_READ_STATUS;
                     end
                 end
             endcase
@@ -248,6 +281,7 @@ module profile_gen(
         arg0 <= next_arg0;
         arg1 <= next_arg1;
         busy <= next_busy;
+        target_v_set <= next_target_v_set;
 
         speed_0 <= next_speed_0;
         speed_1 <= next_speed_1;
