@@ -19,6 +19,7 @@ module profile_gen(
     input param_write_hi,
     input param_write_lo
 );
+
     reg reg_write;
     reg [7:0] reg_addr;
     reg signed [63:0] reg_in;
@@ -61,14 +62,8 @@ module profile_gen(
     reg signed [63:0] arg1;
     reg signed [63:0] next_arg1;
 
-    reg [63:0] next_speed_0;
-    reg [63:0] next_speed_1;
-    reg [63:0] next_speed_2;
-    reg [63:0] next_speed_3;
-    reg [63:0] next_speed_4;
-    reg [63:0] next_speed_5;
-    reg [63:0] next_speed_6;
-    reg [63:0] next_speed_7;
+    reg [63:0] next_speed_value;
+    reg next_speed_stb;
 
     reg [63:0] next_reg_in;
     reg next_reg_write;
@@ -107,32 +102,17 @@ module profile_gen(
         next_busy <= busy;
         next_target_v_set <= target_v_set;
 
-        next_speed_0 <= speed_0;
-        next_speed_1 <= speed_1;
-        next_speed_2 <= speed_2;
-        next_speed_3 <= speed_3;
-        next_speed_4 <= speed_4;
-        next_speed_5 <= speed_5;
-        next_speed_6 <= speed_6;
-        next_speed_7 <= speed_7;
-
         next_reg_num <= 0;
         next_reg_in <= 0;
         next_reg_write <= 0;
+        next_speed_value <= 0;
+        next_speed_stb <= 0;
 
         if (rst) begin
             next_state <= S_INIT;
             next_channel <= 0;
             next_arg0 <= 0;
             next_arg1 <= 0;
-            next_speed_0 <= 0;
-            next_speed_1 <= 0;
-            next_speed_2 <= 0;
-            next_speed_3 <= 0;
-            next_speed_4 <= 0;
-            next_speed_5 <= 0;
-            next_speed_6 <= 0;
-            next_speed_7 <= 0;
             next_busy <= 0;
             next_target_v_set <= 0;
         end
@@ -288,16 +268,8 @@ module profile_gen(
                     next_reg_in <= args_sum_2; // R_V_OUT + A
                     next_reg_write <= 1;
                     next_state <= S_NEXT;
-                    case (channel)
-                        0: next_speed_0 <= args_sum_2;
-                        1: next_speed_1 <= args_sum_2;
-                        2: next_speed_2 <= args_sum_2;
-                        3: next_speed_3 <= args_sum_2;
-                        4: next_speed_4 <= args_sum_2;
-                        5: next_speed_5 <= args_sum_2;
-                        6: next_speed_6 <= args_sum_2;
-                        7: next_speed_7 <= args_sum_2;
-                    endcase
+                    next_speed_value <= args_sum_2;
+                    next_speed_stb <= 1;
                 end
                 // ram: write R_V_OUT + A -> R_V_OUT     sum: R_V_OUT*2 + A   arg0: R_V_OUT + A     arg1: R_V_OUT(last)
 
@@ -327,19 +299,34 @@ module profile_gen(
         busy <= next_busy;
         target_v_set <= next_target_v_set;
 
-        speed_0 <= next_speed_0;
-        speed_1 <= next_speed_1;
-        speed_2 <= next_speed_2;
-        speed_3 <= next_speed_3;
-        speed_4 <= next_speed_4;
-        speed_5 <= next_speed_5;
-        speed_6 <= next_speed_6;
-        speed_7 <= next_speed_7;
-
         reg_num <= next_reg_num;
         reg_in <= next_reg_in;
         reg_write <= next_reg_write;
         reg_addr <= {next_channel, next_reg_num};
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            speed_0 <= 0;
+            speed_1 <= 0;
+            speed_2 <= 0;
+            speed_3 <= 0;
+            speed_4 <= 0;
+            speed_5 <= 0;
+            speed_6 <= 0;
+            speed_7 <= 0;
+        end
+        else if (next_speed_stb)
+            case (next_channel)
+                0: speed_0 <= next_speed_value;
+                1: speed_1 <= next_speed_value;
+                2: speed_2 <= next_speed_value;
+                3: speed_3 <= next_speed_value;
+                4: speed_4 <= next_speed_value;
+                5: speed_5 <= next_speed_value;
+                6: speed_6 <= next_speed_value;
+                7: speed_7 <= next_speed_value;
+            endcase
     end
 
 endmodule
