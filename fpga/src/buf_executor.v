@@ -15,11 +15,11 @@ module buf_executor (
            input [31:0] ext_pending_ints,
            output reg [31:0] ext_clear_ints,    /* combinatorial */
 
-           // Parameters interface
-           output reg [7:0] param_addr,             /* combinatorial */
-           output reg [31:0] param_write_data,      /* combinatorial */
-           output reg param_write_hi,               /* combinatorial */
-           output reg param_write_lo,               /* combinatorial */
+           // Profile Generator parameters interface
+           output reg [7:0] param_addr,
+           output reg [31:0] param_write_data,
+           output reg param_write_hi,
+           output reg param_write_lo,
            input [63:0] param_read_data,
 
            // Input FIFO interface
@@ -58,14 +58,19 @@ reg next_bad_code;
 reg next_waiting_for_data;
 reg next_waiting_for_int;
 
-reg next_fifo_expected_global_count;
-reg next_fifo_expected_local_count;
+reg [31:0] next_fifo_expected_global_count;
+reg [31:0] next_fifo_expected_local_count;
 
 reg [3:0] state;
 reg [3:0] next_state;
 
 reg [39:0] command;
 reg [39:0] next_command;
+
+reg [7:0] next_param_addr;
+reg [31:0] next_param_write_data;
+reg next_param_write_hi;
+reg next_param_write_lo;
 
 localparam S_INIT = 0,
     S_WAIT_DONE = 1,
@@ -101,10 +106,10 @@ always @(*)
         ext_out_stbs <= 0;
         ext_clear_ints <= 0;
 
-        param_addr <= 0;
-        param_write_data <= 0;
-        param_write_hi <= 0;
-        param_write_lo <= 0;
+        next_param_addr <= param_addr;
+        next_param_write_data <= 0;
+        next_param_write_hi <= 0;
+        next_param_write_lo <= 0;
 
         if (rst || abort) begin
             next_busy <= 0;
@@ -118,6 +123,7 @@ always @(*)
             next_fifo_expected_global_count <= 0;
             next_fifo_expected_local_count <= 0;
             next_command <= 0;
+            next_param_addr <= 0;
             next_state <= S_INIT;
 
             if (abort) begin
@@ -244,6 +250,48 @@ always @(*)
                                             ext_clear_ints <= command[31:0];
                                             next_state <= S_FETCH;
                                         end
+                                    5: // WAIT_FIFO wait until fifo has at least specified amount of data
+                                        begin
+                                            if (command[31]) begin
+                                                next_fifo_expected_global_count <= {1'b0, command[30:0]};
+                                            end
+                                            else begin
+                                                next_fifo_expected_local_count <= {1'b0, command[30:0]};
+                                            end
+                                            next_waiting_for_data <= 1;
+                                            next_state <= S_WAIT_FOR_DATA;
+                                        end
+
+                                    6: // PARAM_ADDR set address for param writes
+                                        begin
+                                            next_param_addr <= command[7:0];
+                                            next_state <= S_FETCH;
+                                        end
+                                    7: // PARAM_WRITE_HI write to high 32 bits of param
+                                        begin
+                                            next_param_write_data <= command[31:0];
+                                            next_param_write_hi <= 1;
+                                            next_state <= S_FETCH;
+                                        end
+                                    8,9,10,11,12,13,14: // PARAM_WRITE_LO_* write to low 32 bits of param with addr preincrement
+                                        // 8 - PARAM_WRITE_LO - no increment
+                                        // 9 - PARAM_WRITE_LO_1 - +1
+                                        // ...
+                                        // 14 - PARAM_WRITE_LO_1 - +6
+                                        begin
+                                            next_param_write_data <= command[31:0];
+                                            next_param_write_lo <= 1;
+                                            next_param_addr <= param_addr + command[34:32];
+                                            next_state <= S_FETCH;
+                                        end
+                                    15: // PARAM_WRITE_LO_NC write to low 32 bits of param with addr preincrement to next channel status
+                                        // ADDR = ( ADDR + 0x20 ) & 0xE0
+                                        begin
+                                            next_param_write_data <= command[31:0];
+                                            next_param_write_lo <= 1;
+                                            next_param_addr <= (param_addr + 8'h20) & 8'hE0;
+                                            next_state <= S_FETCH;
+                                        end
                                     63: // DONE
                                         begin
                                             next_done <= 1;
@@ -283,6 +331,10 @@ always @(posedge clk)
         waiting_for_int <= next_waiting_for_int;
         fifo_expected_global_count <= next_fifo_expected_global_count;
         fifo_expected_local_count <= next_fifo_expected_local_count;
+        param_addr <= next_param_addr;
+        param_write_data <= next_param_write_data;
+        param_write_hi <= next_param_write_hi;
+        param_write_lo <= next_param_write_lo;
     end
 
 endmodule
