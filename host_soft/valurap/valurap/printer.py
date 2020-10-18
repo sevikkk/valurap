@@ -247,7 +247,9 @@ class Valurap(object):
                     t0 = time.time()
                     last_free_buf = None
                     current_code = pop(cur_split)
-                    s3g.S3G_WRITE_BUFFER(addr, *(current_code + [s3g.BUF_STB(s3g.STB_BE_ABORT), s3g.BUF_DONE()]))
+                    to_send = current_code + [s3g.BUF_STB(s3g.STB_BE_ABORT), s3g.BUF_DONE()]
+                    s3g.S3G_WRITE_BUFFER(addr + 2, *to_send[2:])
+                    s3g.S3G_WRITE_BUFFER(addr, *to_send[:2])
                     if verbose:
                         print("sent {} commands to addr {}, left {}".format(len(current_code), addr, len(code)))
                     addr += len(current_code)
@@ -256,9 +258,10 @@ class Valurap(object):
                     self.last_send_times.append((t0, t1 - t0, {"cur_split": cur_split}))
                     self.last_send_times = self.last_send_times[-100:]
 
-        self.long_code = None
         if code:
             raise RuntimeError("Not all code sent, most probably system staled and got exec buffer underflow")
+
+        self.long_code = None
 
     def check_be_busy(self, cur_addr=-1, cur_len=-1, verbose=False):
         t0 = time.time()
