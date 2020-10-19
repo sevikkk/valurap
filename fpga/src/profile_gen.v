@@ -3,6 +3,7 @@ module profile_gen(
     input rst,
     input acc_step,
     output reg busy,
+    output reg done,
 
     output reg signed [63:0] speed_0,
     output reg signed [63:0] speed_1,
@@ -83,6 +84,7 @@ module profile_gen(
     reg [63:0] next_reg_in;
     reg next_reg_write;
     reg next_busy;
+    reg next_done;
     reg target_v_set;
     reg next_target_v_set;
 
@@ -126,6 +128,7 @@ module profile_gen(
         next_speed_value <= 0;
         next_speed_stb <= 0;
         next_done_aborts <= 0;
+        next_done <= 0;
 
         if (rst) begin
             next_state <= S_INIT;
@@ -157,6 +160,7 @@ module profile_gen(
                         if (channel == 7) begin
                             next_state <= S_INIT;
                             next_busy <= 0;
+                            next_done <= 1;
                         end
                         else begin
                             next_channel <= channel + 1;
@@ -309,6 +313,7 @@ module profile_gen(
                     if (channel == 7) begin
                         next_state <= S_INIT;
                         next_busy <= 0;
+                        next_done <= 1;
                     end
                     else begin
                         next_channel <= channel + 1;
@@ -367,6 +372,7 @@ module profile_gen(
         arg0 <= next_arg0;
         arg1 <= next_arg1;
         busy <= next_busy;
+        done <= next_done;
         target_v_set <= next_target_v_set;
         done_aborts <= next_done_aborts;
         abort_in_progress <= next_abort_in_progress;
