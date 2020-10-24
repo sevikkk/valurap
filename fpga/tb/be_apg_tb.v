@@ -7,229 +7,229 @@
 
 module be_apg_tb;
 
-reg clk;
-reg reset;
-reg [39:0] fifo_write_data;
-reg fifo_write;
+    reg clk;
+    reg reset;
+    reg [39:0] fifo_write_data;
+    reg fifo_write;
 
-reg be_start;
-reg be_abort;
+    reg be_start;
+    reg be_abort;
 
-reg acc_step;
-reg [7:0] apg_abort;
+    reg acc_step;
+    reg [7:0] apg_abort;
 
-wire [7:0] param_addr;
-wire [31:0] param_in;
-wire param_write_hi;
-wire param_write_lo;
+    wire [7:0] param_addr;
+    wire [31:0] param_in;
+    wire param_write_hi;
+    wire param_write_lo;
 
-reg [63:0] cycle;
+    reg [63:0] cycle;
 
-reg assertions_failed = 0;
+    reg assertions_failed = 0;
 
-wire [31:0] fifo_data_count;
-wire [39:0] fifo_read_data;
-wire fifo_read;
-wire fifo_empty;
+    wire [31:0] fifo_data_count;
+    wire [39:0] fifo_read_data;
+    wire fifo_read;
+    wire fifo_empty;
 
-reg [31:0] pending_ints;
+    reg [31:0] pending_ints;
 
-assign fifo_data_count[31:5] = 0;
+    assign fifo_data_count[31:5] = 0;
 
-fifo #(.ADDRESS_WIDTH(4), .DATA_WIDTH(40)) fifo (
-           .clk(clk),
-           .reset(reset),
-           .write_data(fifo_write_data),
-           .read(fifo_read),
-           .write(fifo_write),
-           .empty(fifo_empty),
-           .read_data(fifo_read_data),
-           .data_count(fifo_data_count[4:0])
-       );
+    fifo#(.ADDRESS_WIDTH(4), .DATA_WIDTH(40)) fifo(
+        .clk(clk),
+        .reset(reset),
+        .write_data(fifo_write_data),
+        .read(fifo_read),
+        .write(fifo_write),
+        .empty(fifo_empty),
+        .read_data(fifo_read_data),
+        .data_count(fifo_data_count[4:0])
+    );
 
-buf_executor buf_exec(
-       .clk(clk),
-       .rst(reset),
-    .ext_out_reg_busy(1'b0),
-    .ext_pending_ints(pending_ints),
-    .fifo_empty(fifo_empty),
-    .fifo_data(fifo_read_data),
-    .fifo_read(fifo_read),
-    .fifo_global_count(fifo_data_count),
-    .fifo_local_count(fifo_data_count),
-    .start(be_start),
-    .abort(be_abort),
-    .param_addr(param_addr),
-    .param_write_data(param_in),
-    .param_write_hi(param_write_hi),
-    .param_write_lo(param_write_lo)
-);
+    buf_executor buf_exec(
+        .clk(clk),
+        .rst(reset),
+        .ext_out_reg_busy(1'b0),
+        .ext_pending_ints(pending_ints),
+        .fifo_empty(fifo_empty),
+        .fifo_data(fifo_read_data),
+        .fifo_read(fifo_read),
+        .fifo_global_count(fifo_data_count),
+        .fifo_local_count(fifo_data_count),
+        .start(be_start),
+        .abort(be_abort),
+        .param_addr(param_addr),
+        .param_write_data(param_in),
+        .param_write_hi(param_write_hi),
+        .param_write_lo(param_write_lo)
+    );
 
-profile_gen apg (
-           .clk(clk),
-           .rst(reset),
-           .acc_step(acc_step),
-           .param_addr(param_addr),
-           .param_in(param_in),
-           .param_write_hi(param_write_hi),
-           .param_write_lo(param_write_lo),
-           .abort(apg_abort)
-       );
+    profile_gen apg(
+        .clk(clk),
+        .rst(reset),
+        .acc_step(acc_step),
+        .param_addr(param_addr),
+        .param_in(param_in),
+        .param_write_hi(param_write_hi),
+        .param_write_lo(param_write_lo),
+        .abort(apg_abort)
+    );
 
-integer idx;
+    integer idx;
 
-initial
-    begin
-        $dumpfile("test.vcd");
-        $dumpvars;
+    initial
+        begin
+            $dumpfile("test.vcd");
+            $dumpvars;
 
-        for (idx = 0; idx < 32; idx = idx + 1) begin
-            if (idx < 16)
-                $dumpvars(0,fifo.ram.ram[idx]);
-            $dumpvars(0,apg.mem0[idx]);
-            $dumpvars(0,apg.mem1[idx]);
-        end
+            for (idx = 0; idx < 32; idx = idx+1) begin
+                if (idx < 16)
+                    $dumpvars(0, fifo.ram.ram[idx]);
+                $dumpvars(0, apg.mem0[idx]);
+                $dumpvars(0, apg.mem1[idx]);
+            end
 
-        reset = 1;
-        clk = 0;
-        fifo_write_data = 0;
-        fifo_write = 0;
-        pending_ints = 0;
-        acc_step = 0;
-        apg_abort = 0;
-        #10;
-        clk = 1;
-        #10;
-        clk = 0;
-        #10;
-        clk = 1;
-        #10;
-        clk = 0;
-        #6;
-        reset = 0;
-        #4;
-        clk = 1;
-        #10;
-        clk = 0;
-        #10;
-        clk = 1;
-        #10;
-        clk = 0;
-        #10;
-        clk = 1;
-        #10;
-        clk = 0;
-        #10;
-        clk = 1;
-        #10;
-        clk = 0;
-        #10;
-        clk = 1;
-        #10;
-        clk = 0;
-        #10;
-        cycle = 0;
-        forever
-            begin
-                clk = 1;
-                fifo_write = 0;
-                be_start = 0;
-                be_abort = 0;
-                #6;
-                case (cycle)
-                    13: begin
-                        fifo_write_data = 40'h8000000000;
-                        fifo_write = 1;
-                    end
-                    14: begin
-                        fifo_write_data = 40'hBF00000000;
-                        fifo_write = 1;
-                    end
-                    50: be_start = 1;
-                    100: be_start = 1;
-                    113: begin
-                        fifo_write_data = 40'h8000000000;
-                        fifo_write = 1;
-                    end
-                    200: begin
-                        fifo_write_data = 40'h8000000000;
-                        fifo_write = 1;
-                    end
-                    201: begin
-                        fifo_write_data = 40'h4000000000;
-                        fifo_write = 1;
-                    end
-                    202: begin
-                        fifo_write_data = 40'h8300000001;
-                        fifo_write = 1;
-                    end
-                    203: begin
-                        fifo_write_data = 40'hBF00000000;
-                        fifo_write = 1;
-                    end
-                    250: be_start = 1;
-                    300: pending_ints = 1;
-                    320: pending_ints = 0;
-
-                    400: be_start = 1;
-                    405: begin
-                        fifo_write_data = 40'h8500000008;
-                        fifo_write = 1;
-                    end
-                    406: begin
-                        fifo_write_data = 40'h8600000010;
-                        fifo_write = 1;
-                    end
-                    407: begin
-                        fifo_write_data = 40'h8808070605;
-                        fifo_write = 1;
-                    end
-                    408: begin
-                        fifo_write_data = 40'h8704030201;
-                        fifo_write = 1;
-                    end
-                    409: begin
-                        fifo_write_data = 40'h8918171615;
-                        fifo_write = 1;
-                    end
-                    410: begin
-                        fifo_write_data = 40'h8714131211;
-                        fifo_write = 1;
-                    end
-                    411: begin
-                        fifo_write_data = 40'h8a38373635;
-                        fifo_write = 1;
-                    end
-                    412: begin
-                        fifo_write_data = 40'h8734333231;
-                        fifo_write = 1;
-                    end
-                    413: begin
-                        fifo_write_data = 40'h8f88878685;
-                        fifo_write = 1;
-                    end
-                    414: begin
-                        fifo_write_data = 40'h8784838281;
-                        fifo_write = 1;
-                    end
-                    415: begin
-                        fifo_write_data = 40'hBF00000000;
-                        fifo_write = 1;
-                    end
-                    2000:
-                        begin
-                            $display("Done");
-                            $finish();
+            reset = 1;
+            clk = 0;
+            fifo_write_data = 0;
+            fifo_write = 0;
+            pending_ints = 0;
+            acc_step = 0;
+            apg_abort = 0;
+            #10;
+            clk = 1;
+            #10;
+            clk = 0;
+            #10;
+            clk = 1;
+            #10;
+            clk = 0;
+            #6;
+            reset = 0;
+            #4;
+            clk = 1;
+            #10;
+            clk = 0;
+            #10;
+            clk = 1;
+            #10;
+            clk = 0;
+            #10;
+            clk = 1;
+            #10;
+            clk = 0;
+            #10;
+            clk = 1;
+            #10;
+            clk = 0;
+            #10;
+            clk = 1;
+            #10;
+            clk = 0;
+            #10;
+            cycle = 0;
+            forever
+                begin
+                    clk = 1;
+                    fifo_write = 0;
+                    be_start = 0;
+                    be_abort = 0;
+                    #6;
+                    case (cycle)
+                        13: begin
+                            fifo_write_data = 40'h8000000000;
+                            fifo_write = 1;
                         end
+                        14: begin
+                            fifo_write_data = 40'hBF00000000;
+                            fifo_write = 1;
+                        end
+                        50: be_start = 1;
+                        100: be_start = 1;
+                        113: begin
+                            fifo_write_data = 40'h8000000000;
+                            fifo_write = 1;
+                        end
+                        200: begin
+                            fifo_write_data = 40'h8000000000;
+                            fifo_write = 1;
+                        end
+                        201: begin
+                            fifo_write_data = 40'h4000000000;
+                            fifo_write = 1;
+                        end
+                        202: begin
+                            fifo_write_data = 40'h8300000001;
+                            fifo_write = 1;
+                        end
+                        203: begin
+                            fifo_write_data = 40'hBF00000000;
+                            fifo_write = 1;
+                        end
+                        250: be_start = 1;
+                        300: pending_ints = 1;
+                        320: pending_ints = 0;
+
+                        400: be_start = 1;
+                        405: begin
+                            fifo_write_data = 40'h8500000008;
+                            fifo_write = 1;
+                        end
+                        406: begin
+                            fifo_write_data = 40'h8600000010;
+                            fifo_write = 1;
+                        end
+                        407: begin
+                            fifo_write_data = 40'h8808070605;
+                            fifo_write = 1;
+                        end
+                        408: begin
+                            fifo_write_data = 40'h8704030201;
+                            fifo_write = 1;
+                        end
+                        409: begin
+                            fifo_write_data = 40'h8918171615;
+                            fifo_write = 1;
+                        end
+                        410: begin
+                            fifo_write_data = 40'h8714131211;
+                            fifo_write = 1;
+                        end
+                        411: begin
+                            fifo_write_data = 40'h8a38373635;
+                            fifo_write = 1;
+                        end
+                        412: begin
+                            fifo_write_data = 40'h8734333231;
+                            fifo_write = 1;
+                        end
+                        413: begin
+                            fifo_write_data = 40'h8f88878685;
+                            fifo_write = 1;
+                        end
+                        414: begin
+                            fifo_write_data = 40'h8784838281;
+                            fifo_write = 1;
+                        end
+                        415: begin
+                            fifo_write_data = 40'hBF00000000;
+                            fifo_write = 1;
+                        end
+                        2000:
+                            begin
+                                $display("Done");
+                                $finish();
+                            end
                     endcase
 
-                #4;
-                clk = 0;
-                #10;
-                cycle = cycle + 1;
-                // $display(cycle);
-            end
-    end
+                    #4;
+                    clk = 0;
+                    #10;
+                    cycle = cycle+1;
+                    // $display(cycle);
+                end
+        end
 
 endmodule
 

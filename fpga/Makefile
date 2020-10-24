@@ -22,6 +22,22 @@ PARFLAGS	= -ol high
 
 SRC = \
 	src/cclk_detector.v \
+	src/dds_uart_clock.v \
+	src/uart_transceiver.v \
+	src/crc8.v \
+	src/s3g_rx.v \
+	src/s3g_tx.v \
+	src/s3g_executor.v \
+	src/acc_step_gen.v \
+	src/buf_executor.v \
+	src/debounce.v \
+	src/dp_ram.v \
+	src/endstop_mux.v \
+	src/fifo.v \
+	src/motor_mux.v \
+	src/motor_step_gen.v \
+	src/profile_gen.v \
+	src/speed_integrator.v \
 	src/$(TOP).v
 
 all:		bits

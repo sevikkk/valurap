@@ -14,7 +14,7 @@ module profile_gen(
     output reg signed [63:0] speed_6,
     output reg signed [63:0] speed_7,
 
-    input [7:0]  param_addr,
+    input [7:0] param_addr,
     input [31:0] param_in,
     output signed [63:0] param_out,
     input param_write_hi,
@@ -37,7 +37,7 @@ module profile_gen(
     assign reg_out[31:0] = mem0[addrB];
     assign reg_out[63:32] = mem1[addrB];
 
-    always @( posedge clk) begin
+    always @(posedge clk) begin
         if (param_write_lo)
             mem0[param_addr] <= param_in;
 
@@ -91,27 +91,27 @@ module profile_gen(
     wire signed [63:0] args_sum;
     wire signed [63:0] args_sum_2;
 
-    assign args_sum = arg0 + arg1;
+    assign args_sum = arg0+arg1;
     assign args_sum_2 = {args_sum[63], args_sum[63:1]};
 
     localparam
-        S_INIT = 0,
-        S_START = 1,
-        S_NEXT = 2,
-        S_READ_STATUS = 3,
-        S_READ_STATUS2 = 4,
-        S_SAVE_V = 5,
-        S_START_ABORT = 6,
+        S_INIT=0,
+        S_START=1,
+        S_NEXT=2,
+        S_READ_STATUS=3,
+        S_READ_STATUS2=4,
+        S_SAVE_V=5,
+        S_START_ABORT=6,
 
-        R_STATUS = 0,
-        R_V_EFF = 1,
-        R_V_IN = 2,
-        R_V_OUT = 3,
-        R_A = 4,
-        R_J = 5,
-        R_JJ = 6,
-        R_TARGET_V = 7,
-        R_ABORT_A = 8;
+        R_STATUS=0,
+        R_V_EFF=1,
+        R_V_IN=2,
+        R_V_OUT=3,
+        R_A=4,
+        R_J=5,
+        R_JJ=6,
+        R_TARGET_V=7,
+        R_ABORT_A=8;
 
     always @(*) begin
         next_state <= state;
@@ -142,12 +142,12 @@ module profile_gen(
         else begin
             case (state)
                 S_INIT: begin
-                   if (acc_step) begin
-                       next_channel <= 0;
-                       next_reg_num <= R_STATUS;  // Read JJ
-                       next_state <= S_READ_STATUS;
-                       next_busy <= 1;
-                   end
+                    if (acc_step) begin
+                        next_channel <= 0;
+                        next_reg_num <= R_STATUS;  // Read JJ
+                        next_state <= S_READ_STATUS;
+                        next_busy <= 1;
+                    end
                 end
                 // ram: read R_STATUS   ram_out: ---      arg0: ---     arg1: ---    sum: ---
                 S_READ_STATUS: begin
@@ -163,7 +163,7 @@ module profile_gen(
                             next_done <= 1;
                         end
                         else begin
-                            next_channel <= channel + 1;
+                            next_channel <= channel+1;
                             next_reg_num <= R_STATUS;
                             next_state <= S_READ_STATUS;
                         end
@@ -189,49 +189,49 @@ module profile_gen(
                 // ram: read R_J    ram_out: R_JJ     arg0: ---     arg1: ---    sum: ---
                 10: begin
                     next_arg0 <= reg_out;  // R_JJ
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 // ram: ---         ram_out: R_J      arg0: JJ      arg1: ---    sum: ---
                 11: begin
                     next_arg1 <= reg_out;  // R_J
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 // ram: ---        ram out: ---       arg0: JJ     arg1: J       sum: JJ + J
                 12: begin
                     next_reg_num <= R_J;
                     next_reg_in <= args_sum; // J + JJ
                     next_reg_write <= 1;
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 // ram: J + JJ -> J   ram_out: ---    arg0: JJ     arg1: J       sum: JJ + J
                 13: begin  //  Read A
                     next_reg_num <= R_A;
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 // ram: read R_A    ram_out: ---     arg0:  JJ     arg1: J       sum:JJ + J
                 14: begin  //  NOP
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 // ram: ---    ram_out: R_A      arg0:  JJ     arg1: J       sum: A + J
                 15: begin  //  Use A
                     next_arg0 <= reg_out;  // R_A
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 // ram: ---    ram_out: ---     arg0:  A     arg1: J       sum: A + J
                 16: begin
                     next_reg_num <= R_A;
                     next_reg_in <= args_sum; // A + J
                     next_reg_write <= 1;
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 // ram: J + A -> A   ram_out: ---    arg0: A     arg1: J       sum: A + J
                 17: begin  //  Read V_OUT
                     next_reg_num <= R_V_OUT;
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 // ram: read R_V_OUT   ram_out: ---     arg0:  A    arg1: J       sum: A + J
                 18: begin  //  NOP
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 // ram: ---    ram_out: R_V_OUT    arg0:  A     arg1: J       sum: A + J
                 19: begin
@@ -239,13 +239,13 @@ module profile_gen(
                     next_reg_num <= R_V_IN;
                     next_reg_in <= reg_out;
                     next_reg_write <= 1;
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 // ram: Write V_OUT -> V_IN   ram_out: ---     arg0:  A     arg1: R_V_OUT       sum: A + V_OUT
                 20: begin
                     if (target_v_set) begin
                         next_reg_num <= R_TARGET_V;
-                        next_state <= state + 1;
+                        next_state <= state+1;
                     end
                     else begin
                         next_arg0 <= args_sum;
@@ -256,38 +256,38 @@ module profile_gen(
                     end
                 end
                 21: begin
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 22: begin
-                   if (((arg1 <= reg_out) && (reg_out <= args_sum)) || ((args_sum <= reg_out) && (reg_out <= arg1))) begin
-                       next_arg0 <= reg_out;
-                       next_reg_num <= R_A;
-                       next_reg_in <= 0;
-                       next_reg_write <= 1;
-                       if (abort_in_progress[channel] && (arg1 == reg_out))
-                           next_abort_in_progress[channel] <= 0;
-                           next_done_aborts[channel] <= 1;
-                       next_state <= state + 1;
-                   end
-                   else begin
-                       next_arg0 <= args_sum;
-                       next_reg_num <= R_V_OUT;
-                       next_reg_in <= args_sum;
-                       next_reg_write <= 1;
-                       next_state <= S_SAVE_V;
-                   end
+                    if (((arg1 <= reg_out) && (reg_out <= args_sum)) || ((args_sum <= reg_out) && (reg_out <= arg1))) begin
+                        next_arg0 <= reg_out;
+                        next_reg_num <= R_A;
+                        next_reg_in <= 0;
+                        next_reg_write <= 1;
+                        if (abort_in_progress[channel] && (arg1 == reg_out))
+                            next_abort_in_progress[channel] <= 0;
+                        next_done_aborts[channel] <= 1;
+                        next_state <= state+1;
+                    end
+                    else begin
+                        next_arg0 <= args_sum;
+                        next_reg_num <= R_V_OUT;
+                        next_reg_in <= args_sum;
+                        next_reg_write <= 1;
+                        next_state <= S_SAVE_V;
+                    end
                 end
                 23: begin
                     next_reg_num <= R_J;
                     next_reg_in <= 0;
                     next_reg_write <= 1;
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 24: begin
                     next_reg_num <= R_JJ;
                     next_reg_in <= 0;
                     next_reg_write <= 1;
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 25: begin
                     next_reg_num <= R_V_OUT;
@@ -316,7 +316,7 @@ module profile_gen(
                         next_done <= 1;
                     end
                     else begin
-                        next_channel <= channel + 1;
+                        next_channel <= channel+1;
                         next_reg_num <= R_STATUS;
                         next_state <= S_READ_STATUS;
                     end
@@ -329,18 +329,18 @@ module profile_gen(
                     next_reg_num <= R_JJ;
                     next_reg_in <= 0;
                     next_reg_write <= 1;
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 41: begin
                     next_arg0 <= reg_out;
                     next_reg_num <= R_V_OUT;
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 42: begin
                     next_reg_num <= R_J;
                     next_reg_in <= 0;
                     next_reg_write <= 1;
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 43: begin
                     if (arg0 == 0)
@@ -350,13 +350,13 @@ module profile_gen(
                     next_reg_num <= R_TARGET_V;
                     next_reg_in <= 0;
                     next_reg_write <= 1;
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 44: begin
                     next_reg_num <= R_A;
                     next_reg_in <= arg0;
                     next_reg_write <= 1;
-                    next_state <= state + 1;
+                    next_state <= state+1;
                 end
                 45: begin
                     next_reg_num <= R_STATUS;

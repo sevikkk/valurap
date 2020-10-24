@@ -1,5 +1,6 @@
-module mojo_top #(
-    parameter CLK_RATE = 50000000
+module mojo_top#(
+    parameter CLK_RATE=50000000,
+    parameter EXT_BAUD_RATE=500000
 )(
     // 50MHz clock input
     input clk,
@@ -8,7 +9,7 @@ module mojo_top #(
     // cclk input from AVR, high when AVR is ready
     input cclk,
     // Outputs to the 8 onboard LEDs
-    output[7:0]led,
+    output [7:0] led,
     // AVR SPI connections
     output spi_miso,
     input spi_ss,
@@ -99,95 +100,312 @@ module mojo_top #(
     input stm_mosi,  // ext3_3
     input stm_sck,   // ext3_5
     input stm_ss     // ext3_7
-    );
-
-wire rst = ~rst_n; // make reset active high
-
-// these signals should be high-z when not used
-assign spi_miso = 1'bz;
-assign avr_rx = 1'bz;
-assign spi_channel = 4'bzzzz;
-
-wire ready;
-wire n_rdy = !ready;
-
-cclk_detector #(.CLK_RATE(CLK_RATE)) cclk_detector (
-    .clk(clk),
-    .rst(rst),
-    .cclk(cclk),
-    .ready(ready)
 );
 
-reg [23:0] blink_cnt = 0;
+    wire rst = ~rst_n; // make reset active high
 
-always @(posedge clk)
-    blink_cnt <= blink_cnt + 1;
+// these signals should be high-z when not used
+    assign spi_miso = 1'bz;
+    assign avr_rx = 1'bz;
+    assign spi_channel = 4'bzzzz;
 
-assign led[7:0] = blink_cnt[23:16];
+    wire ready;
+    wire n_rdy = !ready;
 
-assign avr_rx = 1'b1;
+    cclk_detector#(.CLK_RATE(CLK_RATE)) cclk_detector(
+        .clk(clk),
+        .rst(rst),
+        .cclk(cclk),
+        .ready(ready)
+    );
 
-assign ext_rx = stm_tx;
-assign stm_rx = ext_tx;
+    reg [23:0] blink_cnt = 0;
 
-assign stm_int = 1'b0;
-assign stm_miso = 1'b0;
+    always @(posedge clk)
+        blink_cnt <= blink_cnt+1;
 
-assign mot_1_step = 1'b0;
-assign mot_1_dir = 1'b0;
-assign mot_1_enable = 1'b1;
+    assign led[7:0] = blink_cnt[23:16];
 
-assign mot_2_step = 1'b0;
-assign mot_2_dir = 1'b0;
-assign mot_2_enable = 1'b1;
+    assign avr_rx = 1'b1;
+    assign stm_rx = 1'b1;
 
-assign mot_3_step = 1'b0;
-assign mot_3_dir = 1'b0;
-assign mot_3_enable = 1'b1;
+    assign stm_int = 1'b0;
+    assign stm_miso = 1'b0;
 
-assign mot_4_step = 1'b0;
-assign mot_4_dir = 1'b0;
-assign mot_4_enable = 1'b1;
+    assign mot_1_step = 1'b0;
+    assign mot_1_dir = 1'b0;
+    assign mot_1_enable = 1'b1;
 
-assign mot_5_step = 1'b0;
-assign mot_5_dir = 1'b0;
-assign mot_5_enable = 1'b1;
+    assign mot_2_step = 1'b0;
+    assign mot_2_dir = 1'b0;
+    assign mot_2_enable = 1'b1;
 
-assign mot_6_step = 1'b0;
-assign mot_6_dir = 1'b0;
-assign mot_6_enable = 1'b1;
+    assign mot_3_step = 1'b0;
+    assign mot_3_dir = 1'b0;
+    assign mot_3_enable = 1'b1;
 
-assign mot_7_step = 1'b0;
-assign mot_7_dir = 1'b0;
-assign mot_7_enable = 1'b1;
+    assign mot_4_step = 1'b0;
+    assign mot_4_dir = 1'b0;
+    assign mot_4_enable = 1'b1;
 
-assign mot_8_step = 1'b0;
-assign mot_8_dir = 1'b0;
-assign mot_8_enable = 1'b1;
+    assign mot_5_step = 1'b0;
+    assign mot_5_dir = 1'b0;
+    assign mot_5_enable = 1'b1;
 
-assign mot_9_step = 1'b0;
-assign mot_9_dir = 1'b0;
-assign mot_9_enable = 1'b1;
+    assign mot_6_step = 1'b0;
+    assign mot_6_dir = 1'b0;
+    assign mot_6_enable = 1'b1;
 
-assign mot_10_step = 1'b0;
-assign mot_10_dir = 1'b0;
-assign mot_10_enable = 1'b1;
+    assign mot_7_step = 1'b0;
+    assign mot_7_dir = 1'b0;
+    assign mot_7_enable = 1'b1;
 
-assign mot_11_step = 1'b0;
-assign mot_11_dir = 1'b0;
-assign mot_11_enable = 1'b1;
+    assign mot_8_step = 1'b0;
+    assign mot_8_dir = 1'b0;
+    assign mot_8_enable = 1'b1;
 
-assign mot_12_step = 1'b0;
-assign mot_12_dir = 1'b0;
-assign mot_12_enable = 1'b1;
+    assign mot_9_step = 1'b0;
+    assign mot_9_dir = 1'b0;
+    assign mot_9_enable = 1'b1;
 
-assign ext2_1 = blink_cnt[17];
-assign ext2_2 = blink_cnt[16];
-assign ext2_3 = blink_cnt[15];
-assign ext2_4 = blink_cnt[14];
-assign ext2_5 = blink_cnt[13];
-assign ext2_6 = blink_cnt[12];
-assign ext2_7 = blink_cnt[11];
-assign ext2_8 = blink_cnt[10];
+    assign mot_10_step = 1'b0;
+    assign mot_10_dir = 1'b0;
+    assign mot_10_enable = 1'b1;
+
+    assign mot_11_step = 1'b0;
+    assign mot_11_dir = 1'b0;
+    assign mot_11_enable = 1'b1;
+
+    assign mot_12_step = 1'b0;
+    assign mot_12_dir = 1'b0;
+    assign mot_12_enable = 1'b1;
+
+    assign ext2_1 = blink_cnt[17];
+    assign ext2_2 = blink_cnt[16];
+    assign ext2_3 = blink_cnt[15];
+    assign ext2_4 = blink_cnt[14];
+    assign ext2_5 = blink_cnt[13];
+    assign ext2_6 = blink_cnt[12];
+    assign ext2_7 = blink_cnt[11];
+    assign ext2_8 = blink_cnt[10];
+
+    wire [7:0] tx_data;
+    wire tx_wr;
+    wire tx_done;
+
+    wire [7:0] rx_data;
+    wire rx_done;
+    wire enable_16;
+
+    dds_uart_clock uclock(
+        .clk(clk),
+        .baudrate(EXT_BAUD_RATE/100),
+        .enable_16(enable_16)
+    );
+
+    uart_transceiver uart(
+        .sys_clk(clk),
+        .sys_rst(n_rdy),
+        .uart_rx(ext_tx),
+        .uart_tx(ext_rx),
+        .enable_16(enable_16),
+        .rx_data(rx_data),
+        .rx_done(rx_done),
+        .tx_data(tx_data),
+        .tx_wr(tx_wr),
+        .tx_done(tx_done)
+    );
+
+    wire rx_packet_done;
+    wire rx_packet_error;
+    wire rx_buffer_valid;
+
+    wire [7:0] rx_buffer_addr;
+    wire [7:0] rx_buffer_data;
+
+    wire [7:0] rx_payload_len;
+    wire [7:0] rx_buf0;
+    wire [7:0] rx_buf1;
+    wire [7:0] rx_buf2;
+    wire [7:0] rx_buf3;
+    wire [7:0] rx_buf4;
+    wire [7:0] rx_buf5;
+    wire [7:0] rx_buf6;
+    wire [7:0] rx_buf7;
+    wire [7:0] rx_buf8;
+    wire [7:0] rx_buf9;
+    wire [7:0] rx_buf10;
+    wire [7:0] rx_buf11;
+    wire [7:0] rx_buf12;
+    wire [7:0] rx_buf13;
+    wire [7:0] rx_buf14;
+    wire [7:0] rx_buf15;
+
+    s3g_rx s3g_rx(
+        .clk(clk),
+        .rst(n_rdy),
+        .rx_data(rx_data),
+        .rx_done(rx_done),
+        .packet_done(rx_packet_done),
+        .packet_error(rx_packet_error),
+        .payload_len(rx_payload_len),
+        .buffer_valid(rx_buffer_valid),
+        .buf0(rx_buf0),
+        .buf1(rx_buf1),
+        .buf2(rx_buf2),
+        .buf3(rx_buf3),
+        .buf4(rx_buf4),
+        .buf5(rx_buf5),
+        .buf6(rx_buf6),
+        .buf7(rx_buf7),
+        .buf8(rx_buf8),
+        .buf9(rx_buf9),
+        .buf10(rx_buf10),
+        .buf11(rx_buf11),
+        .buf12(rx_buf12),
+        .buf13(rx_buf13),
+        .buf14(rx_buf14),
+        .buf15(rx_buf15),
+        .buffer_addr(rx_buffer_addr),
+        .buffer_data(rx_buffer_data)
+    );
+
+    wire tx_packet_wr;
+    wire tx_busy;
+
+    wire [7:0] tx_payload_len;
+    wire [7:0] tx_buf0;
+    wire [7:0] tx_buf1;
+    wire [7:0] tx_buf2;
+    wire [7:0] tx_buf3;
+    wire [7:0] tx_buf4;
+    wire [7:0] tx_buf5;
+    wire [7:0] tx_buf6;
+    wire [7:0] tx_buf7;
+    wire [7:0] tx_buf8;
+    wire [7:0] tx_buf9;
+    wire [7:0] tx_buf10;
+    wire [7:0] tx_buf11;
+    wire [7:0] tx_buf12;
+    wire [7:0] tx_buf13;
+    wire [7:0] tx_buf14;
+    wire [7:0] tx_buf15;
+
+    s3g_tx s3g_tx(
+        .clk(clk),
+        .rst(n_rdy),
+        .tx_data(tx_data),
+        .tx_wr(tx_wr),
+        .tx_done(tx_done),
+        .busy(tx_busy),
+        .payload_len(tx_payload_len),
+        .packet_wr(tx_packet_wr),
+        .buf0(tx_buf0),
+        .buf1(tx_buf1),
+        .buf2(tx_buf2),
+        .buf3(tx_buf3),
+        .buf4(tx_buf4),
+        .buf5(tx_buf5),
+        .buf6(tx_buf6),
+        .buf7(tx_buf7),
+        .buf8(tx_buf8),
+        .buf9(tx_buf9),
+        .buf10(tx_buf10),
+        .buf11(tx_buf11),
+        .buf12(tx_buf12),
+        .buf13(tx_buf13),
+        .buf14(tx_buf14),
+        .buf15(tx_buf15)
+    );
+
+    s3g_executor s3g_executor(
+        .clk(clk),
+        .rst(n_rdy),
+        .rx_packet_done(rx_packet_done),
+        .rx_packet_error(rx_packet_error),
+        .rx_buffer_valid(rx_buffer_valid),
+        .rx_payload_len(rx_payload_len),
+        .rx_buf0(rx_buf0),
+        .rx_buf1(rx_buf1),
+        .rx_buf2(rx_buf2),
+        .rx_buf3(rx_buf3),
+        .rx_buf4(rx_buf4),
+        .rx_buf5(rx_buf5),
+        .rx_buf6(rx_buf6),
+        .rx_buf7(rx_buf7),
+        .rx_buf8(rx_buf8),
+        .rx_buf9(rx_buf9),
+        .rx_buf10(rx_buf10),
+        .rx_buf11(rx_buf11),
+        .rx_buf12(rx_buf12),
+        .rx_buf13(rx_buf13),
+        .rx_buf14(rx_buf14),
+        .rx_buf15(rx_buf15),
+        .next_rx_buffer_addr(rx_buffer_addr),
+        .rx_buffer_data(rx_buffer_data),
+        .tx_busy(tx_busy),
+        .tx_packet_wr(tx_packet_wr),
+        .tx_payload_len(tx_payload_len),
+        .tx_buf0(tx_buf0),
+        .tx_buf1(tx_buf1),
+        .tx_buf2(tx_buf2),
+        .tx_buf3(tx_buf3),
+        .tx_buf4(tx_buf4),
+        .tx_buf5(tx_buf5),
+        .tx_buf6(tx_buf6),
+        .tx_buf7(tx_buf7),
+        .tx_buf8(tx_buf8),
+        .tx_buf9(tx_buf9),
+        .tx_buf10(tx_buf10),
+        .tx_buf11(tx_buf11),
+        .tx_buf12(tx_buf12),
+        .tx_buf13(tx_buf13),
+        .tx_buf14(tx_buf14),
+        .tx_buf15(tx_buf15),
+
+        .out_stbs(stbs),
+
+        .int0(1'b0),
+        .int1(1'b0),
+        .int2(1'b0),
+        .int3(1'b0),
+        .int4(1'b0),
+        .int5(1'b0),
+        .int6(1'b0),
+        .int7(1'b0),
+        .int8(1'b0),
+        .int9(1'b0),
+        .int10(1'b0),
+        .int11(1'b0),
+        .int12(1'b0),
+        .int13(1'b0),
+        .int14(1'b0),
+        .int15(1'b0),
+        .int16(1'b0),
+        .int17(1'b0),
+        .int18(1'b0),
+        .int19(1'b0),
+        .int20(1'b0),
+        .int21(1'b0),
+        .int22(1'b0),
+        .int23(1'b0),
+        .int24(1'b0),
+        .int25(1'b0),
+        .int26(1'b0),
+        .int27(1'b0),
+        .int28(1'b0),
+        .int29(1'b0),
+        .int30(1'b0),
+        .int31(1'b0),
+
+        .ext_out_reg_busy(ext_out_reg_busy),
+        .ext_out_reg_data(ext_out_reg_data),
+        .ext_out_reg_addr(ext_out_reg_addr),
+        .ext_out_reg_stb(ext_out_reg_stb),
+
+        .ext_pending_ints(ext_pending_ints),
+        .ext_clear_ints(ext_clear_ints),
+        .ext_out_stbs(ext_out_stbs)
+    );
 
 endmodule
