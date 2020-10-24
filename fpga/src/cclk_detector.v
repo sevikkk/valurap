@@ -7,7 +7,7 @@ module cclk_detector#(
     output ready
 );
 
-    localparam CTR_SIZE=12;
+    localparam CTR_SIZE=10;
 
     reg [CTR_SIZE-1:0] ctr_d, ctr_q;
     reg ready_d, ready_q;
