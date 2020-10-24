@@ -318,6 +318,18 @@ module mojo_top#(
         .buf15(tx_buf15)
     );
 
+    wire [31:0] stbs;
+
+    wire [31:0] ext_out_stbs;
+
+    wire [31:0] ext_out_reg_data;
+    wire [5:0] ext_out_reg_addr;
+    wire ext_out_reg_stb;
+    wire ext_out_reg_busy;
+
+    wire [31:0] ext_pending_ints;
+    wire [31:0] ext_clear_ints;
+
     s3g_executor s3g_executor(
         .clk(clk),
         .rst(n_rdy),
