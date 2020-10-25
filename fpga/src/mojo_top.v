@@ -334,6 +334,7 @@ module mojo_top#(
     wire [39:0] ext_fifo_data;
     wire ext_fifo_wr;
     wire [FIFO_ADDRESS_WIDTH:0] ext_fifo_free_space;
+    wire [FIFO_ADDRESS_WIDTH:0] ext_fifo_data_count;
 
     s3g_executor s3g_executor(
         .clk(clk),
@@ -429,15 +430,35 @@ module mojo_top#(
         .ext_out_stbs(ext_out_stbs)
     );
 
-    reg fifo_read = 0;
+    wire fifo_empty;
+    wire fifo_read;
+    wire [39:0] fifo_read_data;
 
-    fifo#(.ADDRESS_WIDTH(FIFO_ADDRESS_WIDTH), .DATA_WIDTH(40)) fifo(
+    fifo #(.ADDRESS_WIDTH(FIFO_ADDRESS_WIDTH), .DATA_WIDTH(40)) fifo(
         .clk(clk),
         .reset(n_rdy),
         .write_data(ext_fifo_data),
         .write(ext_fifo_wr),
+        .read_data(fifo_read_data),
+        .read(fifo_read),
         .free_count(ext_fifo_free_space),
-        .read(fifo_read)
+        .data_count(ext_fifo_data_count),
+        .empty(fifo_empty)
     );
+
+    buf_executor buf_exec(
+        .clk(clk),
+        .rst(n_rdy),
+        .ext_out_reg_busy(ext_out_reg_busy),
+        .ext_pending_ints(ext_pending_ints),
+        .fifo_empty(fifo_empty),
+        .fifo_data(fifo_read_data),
+        .fifo_read(fifo_read),
+        .fifo_global_count({{(31-FIFO_ADDRESS_WIDTH){1'b0}}, ext_fifo_data_count}),
+        .fifo_local_count({{(31-FIFO_ADDRESS_WIDTH){1'b0}}, ext_fifo_data_count}),
+        .start(stbs[0]),
+        .abort(stbs[1])
+    );
+
 
 endmodule

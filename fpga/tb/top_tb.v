@@ -230,8 +230,8 @@ module top_tb;
                             `assert_rx(128'hd5077654810e000000bc)
                         end
 
-                        62000: dut.fifo_read <= 1;
-                        62001: dut.fifo_read <= 0;
+                        62000: dut.buf_exec.fifo_read <= 1;
+                        62001: dut.buf_exec.fifo_read <= 0;
                         62010: begin
                             `assert_signal("Fifo data count", dut.fifo.data_count, 1)
                             `assert_signal("Fifo free count", dut.fifo.free_count, 15)
@@ -278,14 +278,14 @@ module top_tb;
                                 send_packet = 1;
                             end
 
-                        135000: dut.fifo_read <= 1;
-                        135001: dut.fifo_read <= 0;
-                        136000: dut.fifo_read <= 1;
-                        136001: dut.fifo_read <= 0;
-                        137000: dut.fifo_read <= 1;
-                        137001: dut.fifo_read <= 0;
-                        138000: dut.fifo_read <= 1;
-                        138001: dut.fifo_read <= 0;
+                        135000: dut.buf_exec.fifo_read <= 1;
+                        135001: dut.buf_exec.fifo_read <= 0;
+                        136000: dut.buf_exec.fifo_read <= 1;
+                        136001: dut.buf_exec.fifo_read <= 0;
+                        137000: dut.buf_exec.fifo_read <= 1;
+                        137001: dut.buf_exec.fifo_read <= 0;
+                        138000: dut.buf_exec.fifo_read <= 1;
+                        138001: dut.buf_exec.fifo_read <= 0;
 
                         142000:
                         begin
