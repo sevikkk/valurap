@@ -13,6 +13,8 @@
 `include "../src/motor_step_gen.v"
 `include "../src/motor_mux.v"
 `include "../src/debounce.v"
+`include "../src/dp_ram.v"
+`include "../src/fifo.v"
 `include "../tb/buf_cmds.v"
 
 module top_tb;
@@ -72,7 +74,8 @@ module top_tb;
         end
 
     mojo_top#(
-        .EXT_BAUD_RATE(BR)
+        .EXT_BAUD_RATE(BR),
+        .FIFO_ADDRESS_WIDTH(4)
     ) dut(
         .clk(clk),
         .rst_n(rst_n),
@@ -210,8 +213,127 @@ module top_tb;
                         begin
                             `assert_rx(128'hd503234581c6)
                         end
+                        45000:
+                            begin
+                                // Load simple prog:
+                                //    0x88776655 -> reg0
+                                //    DONE
+                                packet = {
+                                    buf_cmds.S3G_WRITE_FIFO_HDR(2),
+                                    buf_cmds.OUTPUT(0, 32'h88776655),
+                                    buf_cmds.DONE(0)
+                                    };
+                                send_packet = 1;
+                            end
+                        61000:
+                        begin
+                            `assert_rx(128'hd5077654810e000000bc)
+                        end
 
-                        100000:
+                        62000: dut.fifo_read <= 1;
+                        62001: dut.fifo_read <= 0;
+                        62010: begin
+                            `assert_signal("Fifo data count", dut.fifo.data_count, 1)
+                            `assert_signal("Fifo free count", dut.fifo.free_count, 15)
+                        end
+                        63000:
+                            begin
+                                // Load simple prog:
+                                //    0x88776655 -> reg0
+                                //    DONE
+                                packet = {
+                                    buf_cmds.S3G_WRITE_FIFO_HDR(4),
+                                    buf_cmds.OUTPUT(0, 32'h88776655),
+                                    buf_cmds.OUTPUT(1, 32'h88776601),
+                                    buf_cmds.OUTPUT(2, 32'h88776602),
+                                    buf_cmds.DONE(0)
+                                    };
+                                send_packet = 1;
+                            end
+                        85000:
+                        begin
+                            `assert_rx(128'hd5077654810b0000003d)
+                        end
+                        86000:
+                            begin
+                                // Load simple prog:
+                                //    0x88776655 -> reg0
+                                //    DONE
+                                packet = {
+                                    buf_cmds.S3G_WRITE_FIFO_HDR(13),
+                                    buf_cmds.OUTPUT(0, 32'h88776655),
+                                    buf_cmds.OUTPUT(1, 32'h88776601),
+                                    buf_cmds.OUTPUT(2, 32'h88776602),
+                                    buf_cmds.OUTPUT(3, 32'h88776602),
+                                    buf_cmds.OUTPUT(4, 32'h88776602),
+                                    buf_cmds.OUTPUT(5, 32'h88776602),
+                                    buf_cmds.OUTPUT(6, 32'h88776602),
+                                    buf_cmds.OUTPUT(7, 32'h88776602),
+                                    buf_cmds.OUTPUT(8, 32'h88776602),
+                                    buf_cmds.OUTPUT(9, 32'h88776602),
+                                    buf_cmds.OUTPUT(10, 32'h88776602),
+                                    buf_cmds.OUTPUT(11, 32'h88776602),
+                                    buf_cmds.DONE(0)
+                                    };
+                                send_packet = 1;
+                            end
+
+                        135000: dut.fifo_read <= 1;
+                        135001: dut.fifo_read <= 0;
+                        136000: dut.fifo_read <= 1;
+                        136001: dut.fifo_read <= 0;
+                        137000: dut.fifo_read <= 1;
+                        137001: dut.fifo_read <= 0;
+                        138000: dut.fifo_read <= 1;
+                        138001: dut.fifo_read <= 0;
+
+                        142000:
+                        begin
+                            `assert_rx(128'hd50776548100000000a9)
+                        end
+
+                        145000:
+                            begin
+                                // Load simple prog:
+                                //    0x88776655 -> reg0
+                                //    DONE
+                                packet = {
+                                    buf_cmds.S3G_WRITE_FIFO_HDR(13),
+                                    buf_cmds.OUTPUT(0, 32'h88776655),
+                                    buf_cmds.OUTPUT(1, 32'h88776601),
+                                    buf_cmds.OUTPUT(2, 32'h88776602),
+                                    buf_cmds.OUTPUT(3, 32'h88776602),
+                                    buf_cmds.OUTPUT(4, 32'h88776602),
+                                    buf_cmds.OUTPUT(5, 32'h88776602),
+                                    buf_cmds.OUTPUT(6, 32'h88776602),
+                                    buf_cmds.OUTPUT(7, 32'h88776602),
+                                    buf_cmds.OUTPUT(8, 32'h88776602),
+                                    buf_cmds.OUTPUT(9, 32'h88776602),
+                                    buf_cmds.OUTPUT(10, 32'h88776602),
+                                    buf_cmds.OUTPUT(11, 32'h88776602),
+                                    buf_cmds.DONE(0)
+                                    };
+                                send_packet = 1;
+                            end
+
+                        195000:
+                            begin
+                                // Write register 0 (Leds)
+                                packet = buf_cmds.S3G_OUTPUT_T(0, 32'h78563412, 16'h3322);
+                                send_packet = 1;
+                            end
+
+                        201100:
+                        begin
+                            `assert_rx(128'hd50776548202000000e0)
+                        end
+
+                        205000:
+                        begin
+                            `assert_rx(128'hd503332281b8)
+                        end
+
+                        300000:
                             begin
                                 `assert_rx(128'h0)
                                 if (assertions_failed)

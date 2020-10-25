@@ -11,7 +11,8 @@ module fifo
         input wire [DATA_WIDTH-1:0] write_data,
         output wire empty, full,
         output wire [DATA_WIDTH-1:0] read_data,
-        output wire [ADDRESS_WIDTH:0] data_count
+        output wire [ADDRESS_WIDTH:0] data_count,
+        output wire [ADDRESS_WIDTH:0] free_count
     );
 
     // internal signal declarations
@@ -22,6 +23,7 @@ module fifo
 
     assign data_count[ADDRESS_WIDTH-1:0] = write_address_reg-read_address_reg;
     assign data_count[ADDRESS_WIDTH] = full_reg;
+    assign free_count[ADDRESS_WIDTH:0] = {1'b1, {ADDRESS_WIDTH{1'b0}}}-data_count;
 
     // write enable is asserted when write input is asserted and FIFO isn't full
     assign write_en = write & ~full_reg;

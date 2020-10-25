@@ -216,11 +216,9 @@ module s3g_executor(
     input int30,
     input int31,
 
-    output reg [15:0] ext_buffer_addr,
-    output reg [39:0] ext_buffer_data,
-    output reg ext_buffer_wr,
-    input [15:0] ext_buffer_pc,
-    input [7:0] ext_buffer_error,
+    output reg [39:0] ext_fifo_data,
+    output reg ext_fifo_wr,
+    input [31:0] ext_fifo_free_space,
 
     input [5:0] ext_out_reg_addr,
     input [31:0] ext_out_reg_data,
@@ -231,9 +229,9 @@ module s3g_executor(
     output [31:0] ext_pending_ints
 );
 
-    parameter EXT_VER_1=8'h01;
+    parameter EXT_VER_1=8'h02;
     parameter EXT_VER_2=8'h00;
-    parameter EXT_VER_3=8'h01;
+    parameter EXT_VER_3=8'h02;
     parameter EXT_VER_4=8'h00;
     parameter EXT_VER_5=8'hCE;
     parameter EXT_VER_6=8'h00;
@@ -247,11 +245,12 @@ module s3g_executor(
     localparam
         S_INIT=0, S_DELAY=1, S_BUSY=2, S_READ=3, S_READ1=4,
         S_BUFFER0=5, S_BUFFER1=6, S_BUFFER2=7, S_BUFFER3=8,
-        S_BUFFER4=9, S_BUFFER5=10;
+        S_BUFFER4=9, S_BUFFER5=10, S_BUFFER6=11, S_BUFFER_WAIT=12;
 
     reg [3:0] state = S_INIT;
     reg [3:0] next_state;
 
+    reg [3:0] tx_cmd;
     reg [3:0] next_tx_cmd;
 
     reg [5:0] int_out_reg_addr;
@@ -275,14 +274,14 @@ module s3g_executor(
     reg [31:0] ints_to_clear;
 
     reg [7:0] rx_buffer_addr;
-    reg [15:0] next_ext_buffer_addr;
-    reg [39:0] next_ext_buffer_data;
-    reg next_ext_buffer_wr;
-    reg [15:0] saved_ext_buffer_addr;
-    reg [15:0] next_saved_ext_buffer_addr;
+    reg [39:0] next_ext_fifo_data;
+    reg next_ext_fifo_wr;
 
     reg [7:0] word_cnt;
     reg [7:0] next_word_cnt;
+
+    reg [15:0] saved_cmd_id;
+    reg [15:0] next_saved_cmd_id;
 
     assign ints_vector = {
         int31, int30, int29, int28, int27, int26, int25, int24,
@@ -309,10 +308,10 @@ module s3g_executor(
                     in_mux <= 0;
                     rx_buffer_addr <= 0;
                     word_cnt <= 0;
-                    ext_buffer_addr <= 0;
-                    ext_buffer_data <= 0;
-                    ext_buffer_wr <= 0;
-                    saved_ext_buffer_addr <= 0;
+                    ext_fifo_data <= 0;
+                    ext_fifo_wr <= 0;
+                    saved_cmd_id <= 16'hFFFF;
+                    tx_cmd <= CMD_NONE;
                 end
             else
                 begin
@@ -321,10 +320,10 @@ module s3g_executor(
                     in_mux <= next_in_mux;
                     rx_buffer_addr <= next_rx_buffer_addr;
                     word_cnt <= next_word_cnt;
-                    ext_buffer_addr <= next_ext_buffer_addr;
-                    ext_buffer_data <= next_ext_buffer_data;
-                    ext_buffer_wr <= next_ext_buffer_wr;
-                    saved_ext_buffer_addr <= next_saved_ext_buffer_addr;
+                    ext_fifo_data <= next_ext_fifo_data;
+                    ext_fifo_wr <= next_ext_fifo_wr;
+                    saved_cmd_id <= next_saved_cmd_id;
+                    tx_cmd <= next_tx_cmd;
                 end
 
             in_data <= 0;
@@ -413,10 +412,10 @@ module s3g_executor(
 
             next_rx_buffer_addr <= rx_buffer_addr;
             next_word_cnt <= word_cnt;
-            next_ext_buffer_addr <= ext_buffer_addr;
-            next_ext_buffer_data <= ext_buffer_data;
-            next_ext_buffer_wr <= 0;
-            next_saved_ext_buffer_addr <= saved_ext_buffer_addr;
+            next_ext_fifo_data <= ext_fifo_data;
+            next_ext_fifo_wr <= 0;
+
+            next_saved_cmd_id <= saved_cmd_id;
 
             case (state)
                 S_INIT:
@@ -425,6 +424,7 @@ module s3g_executor(
                             begin
                                 next_tx_cmd <= CMD_UNKNOWN;
                                 next_state <= S_DELAY;
+                                next_saved_cmd_id <= {rx_buf1, rx_buf0};
                                 if (rx_payload_len == 0)
                                     begin
                                         next_tx_cmd <= CMD_OK;
@@ -463,12 +463,11 @@ module s3g_executor(
                                                 next_ints_mask <= {rx_buf6, rx_buf5, rx_buf4, rx_buf3};
                                                 next_tx_cmd <= CMD_OK;
                                             end
-                                        65: // WRITE_BUF
+                                        // 65: Not implemented
+                                        66: // WRITE_FIFO
                                             begin
-                                                next_rx_buffer_addr <= 6;
+                                                next_rx_buffer_addr <= 4;
                                                 next_word_cnt <= rx_buf3;
-                                                next_ext_buffer_addr <= {rx_buf5, rx_buf4};
-                                                next_saved_ext_buffer_addr <= {rx_buf5, rx_buf4};
                                                 if (rx_buf3 == 0)
                                                     begin
                                                         next_state <= S_DELAY;
@@ -476,9 +475,14 @@ module s3g_executor(
                                                     end
                                                 else
                                                     begin
-                                                        next_ext_buffer_data <= 0;
-                                                        next_state <= S_BUFFER0;
                                                         next_tx_cmd <= CMD_NONE;
+                                                        if (ext_fifo_free_space >= {{24{1'b0}}, rx_buf3})
+                                                            begin
+                                                                next_state <= S_BUFFER0;
+                                                            end
+                                                        else begin
+                                                            next_state <= S_BUFFER_WAIT;
+                                                        end
                                                     end
                                             end
                                     endcase
@@ -507,37 +511,49 @@ module s3g_executor(
                         next_state <= S_DELAY;
                         next_tx_cmd <= CMD_READ_REG;
                     end
+                S_BUFFER_WAIT:
+                    begin
+                        if (!rx_buffer_valid)
+                            begin
+                                next_state <= S_DELAY;
+                                next_tx_cmd <= CMD_WR_BUF_ERR;
+                            end
+                        else if (ext_fifo_free_space >= {{24{1'b0}}, word_cnt})
+                            begin
+                                next_state <= S_BUFFER0;
+                            end
+                    end
                 S_BUFFER0:
                     begin
                         next_state <= S_BUFFER1;
                         next_rx_buffer_addr <= rx_buffer_addr+1;
-                        next_ext_buffer_data[7:0] <= rx_buffer_data;
+                        next_ext_fifo_data[7:0] <= rx_buffer_data;
                     end
                 S_BUFFER1:
                     begin
                         next_state <= S_BUFFER2;
                         next_rx_buffer_addr <= rx_buffer_addr+1;
-                        next_ext_buffer_data[15:8] <= rx_buffer_data;
+                        next_ext_fifo_data[15:8] <= rx_buffer_data;
                     end
                 S_BUFFER2:
                     begin
                         next_state <= S_BUFFER3;
                         next_rx_buffer_addr <= rx_buffer_addr+1;
-                        next_ext_buffer_data[23:16] <= rx_buffer_data;
+                        next_ext_fifo_data[23:16] <= rx_buffer_data;
                     end
                 S_BUFFER3:
                     begin
                         next_state <= S_BUFFER4;
                         next_rx_buffer_addr <= rx_buffer_addr+1;
-                        next_ext_buffer_data[31:24] <= rx_buffer_data;
+                        next_ext_fifo_data[31:24] <= rx_buffer_data;
                     end
                 S_BUFFER4:
                     begin
-                        next_ext_buffer_data[39:32] <= rx_buffer_data;
+                        next_ext_fifo_data[39:32] <= rx_buffer_data;
                         next_word_cnt <= word_cnt-1;
                         if (rx_buffer_valid)
                             begin
-                                next_ext_buffer_wr <= 1;
+                                next_ext_fifo_wr <= 1;
                                 next_state <= S_BUFFER5;
                             end
                         else
@@ -551,16 +567,19 @@ module s3g_executor(
                     begin
                         if (word_cnt == 0)
                             begin
-                                next_state <= S_DELAY;
-                                next_tx_cmd <= CMD_WR_BUF_OK;
+                                next_state <= S_BUFFER6;
                             end
                         else
                             begin
                                 next_rx_buffer_addr <= rx_buffer_addr+1;
-                                next_ext_buffer_addr <= ext_buffer_addr+1;
                                 next_state <= S_BUFFER0;
-                                next_ext_buffer_data <= 0;
+                                next_ext_fifo_data <= 0;
                             end
+                    end
+                S_BUFFER6:
+                    begin
+                        next_state <= S_DELAY;
+                        next_tx_cmd <= CMD_WR_BUF_OK;
                     end
                 default:
                     next_state <= S_INIT;
@@ -582,8 +601,8 @@ module s3g_executor(
             tx_packet_wr <= 0;
 
             tx_payload_len <= 0;
-            tx_buf0 <= 0;
-            tx_buf1 <= 0;
+            tx_buf0 <= saved_cmd_id[7:0];
+            tx_buf1 <= saved_cmd_id[15:8];
             tx_buf2 <= 0;
             tx_buf3 <= 0;
             tx_buf4 <= 0;
@@ -599,37 +618,29 @@ module s3g_executor(
             tx_buf14 <= 0;
             tx_buf15 <= 0;
 
-            case (next_tx_cmd)
+            case (tx_cmd)
                 CMD_OK:
                     begin
                         tx_packet_wr <= 1;
                         tx_payload_len <= 3;
-                        tx_buf0 <= rx_buf0;
-                        tx_buf1 <= rx_buf1;
                         tx_buf2 <= 8'h81;
                     end
                 CMD_ERROR:
                     begin
                         tx_packet_wr <= 1;
                         tx_payload_len <= 3;
-                        tx_buf0 <= rx_buf0;
-                        tx_buf1 <= rx_buf1;
                         tx_buf2 <= 8'h80;
                     end
                 CMD_UNKNOWN:
                     begin
                         tx_packet_wr <= 1;
                         tx_payload_len <= 3;
-                        tx_buf0 <= rx_buf0;
-                        tx_buf1 <= rx_buf1;
                         tx_buf2 <= 8'h85;
                     end
                 CMD_VERSION:
                     begin
                         tx_packet_wr <= 1;
                         tx_payload_len <= 5;
-                        tx_buf0 <= rx_buf0;
-                        tx_buf1 <= rx_buf1;
                         tx_buf2 <= 8'h81;
                         tx_buf3 <= 8'hBA;
                         tx_buf4 <= 8'hCE;
@@ -638,8 +649,6 @@ module s3g_executor(
                     begin
                         tx_packet_wr <= 1;
                         tx_payload_len <= 11;
-                        tx_buf0 <= rx_buf0;
-                        tx_buf1 <= rx_buf1;
                         tx_buf2 <= 8'h81;
                         tx_buf3 <= EXT_VER_1;
                         tx_buf4 <= EXT_VER_2;
@@ -654,8 +663,6 @@ module s3g_executor(
                     begin
                         tx_packet_wr <= 1;
                         tx_payload_len <= 7;
-                        tx_buf0 <= rx_buf0;
-                        tx_buf1 <= rx_buf1;
                         tx_buf2 <= 8'h81;
                         tx_buf3 <= in_data[7:0];
                         tx_buf4 <= in_data[15:8];
@@ -665,28 +672,22 @@ module s3g_executor(
                 CMD_WR_BUF_OK:
                     begin
                         tx_packet_wr <= 1;
-                        tx_payload_len <= 8;
-                        tx_buf0 <= rx_buf0;
-                        tx_buf1 <= rx_buf1;
+                        tx_payload_len <= 7;
                         tx_buf2 <= 8'h81;
-                        tx_buf3 <= saved_ext_buffer_addr[7:0];
-                        tx_buf4 <= saved_ext_buffer_addr[15:8];
-                        tx_buf5 <= ext_buffer_error[7:0];
-                        tx_buf6 <= ext_buffer_pc[7:0];
-                        tx_buf7 <= ext_buffer_pc[15:8];
+                        tx_buf3 <= ext_fifo_free_space[7:0];
+                        tx_buf4 <= ext_fifo_free_space[15:8];
+                        tx_buf5 <= ext_fifo_free_space[23:16];
+                        tx_buf6 <= ext_fifo_free_space[31:24];
                     end
                 CMD_WR_BUF_ERR:
                     begin
                         tx_packet_wr <= 1;
-                        tx_payload_len <= 8;
-                        tx_buf0 <= rx_buf0;
-                        tx_buf1 <= rx_buf1;
+                        tx_payload_len <= 7;
                         tx_buf2 <= 8'h82;
-                        tx_buf3 <= saved_ext_buffer_addr[7:0];
-                        tx_buf4 <= saved_ext_buffer_addr[15:8];
-                        tx_buf5 <= ext_buffer_error[7:0];
-                        tx_buf6 <= ext_buffer_pc[7:0];
-                        tx_buf7 <= ext_buffer_pc[15:8];
+                        tx_buf3 <= ext_fifo_free_space[7:0];
+                        tx_buf4 <= ext_fifo_free_space[15:8];
+                        tx_buf5 <= ext_fifo_free_space[23:16];
+                        tx_buf6 <= ext_fifo_free_space[31:24];
                     end
             endcase
         end

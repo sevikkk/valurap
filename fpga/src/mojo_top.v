@@ -1,6 +1,7 @@
 module mojo_top#(
     parameter CLK_RATE=50000000,
-    parameter EXT_BAUD_RATE=500000
+    parameter EXT_BAUD_RATE=500000,
+    parameter FIFO_ADDRESS_WIDTH=13
 )(
     // 50MHz clock input
     input clk,
@@ -330,6 +331,10 @@ module mojo_top#(
     wire [31:0] ext_pending_ints;
     wire [31:0] ext_clear_ints;
 
+    wire [39:0] ext_fifo_data;
+    wire ext_fifo_wr;
+    wire [FIFO_ADDRESS_WIDTH:0] ext_fifo_free_space;
+
     s3g_executor s3g_executor(
         .clk(clk),
         .rst(n_rdy),
@@ -377,6 +382,10 @@ module mojo_top#(
 
         .out_stbs(stbs),
 
+        .ext_fifo_data(ext_fifo_data),
+        .ext_fifo_wr(ext_fifo_wr),
+        .ext_fifo_free_space({{(31-FIFO_ADDRESS_WIDTH){1'b0}}, ext_fifo_free_space}),
+
         .int0(1'b0),
         .int1(1'b0),
         .int2(1'b0),
@@ -418,6 +427,17 @@ module mojo_top#(
         .ext_pending_ints(ext_pending_ints),
         .ext_clear_ints(ext_clear_ints),
         .ext_out_stbs(ext_out_stbs)
+    );
+
+    reg fifo_read = 0;
+
+    fifo#(.ADDRESS_WIDTH(FIFO_ADDRESS_WIDTH), .DATA_WIDTH(40)) fifo(
+        .clk(clk),
+        .reset(n_rdy),
+        .write_data(ext_fifo_data),
+        .write(ext_fifo_wr),
+        .free_count(ext_fifo_free_space),
+        .read(fifo_read)
     );
 
 endmodule

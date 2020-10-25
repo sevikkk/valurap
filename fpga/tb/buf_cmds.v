@@ -67,6 +67,18 @@ module buf_cmds();
         end
     endfunction
 
+    function [63:0] S3G_WRITE_FIFO_HDR;
+        input [7:0] len;
+        reg [7:0] cmd_len;
+        begin
+            cmd_len = 4+len*5;
+            S3G_WRITE_FIFO_HDR = {
+                8'hD5, cmd_len, 16'h7654,
+                8'd66, len
+                };
+        end
+    endfunction
+
     function [79:0] S3G_OUTPUT_T(
         input [7:0] reg_num,
         input [31:0] data,
