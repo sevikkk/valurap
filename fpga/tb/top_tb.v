@@ -333,6 +333,77 @@ module top_tb;
                             `assert_rx(128'hd503332281b8)
                         end
 
+                        210000:
+                            begin
+                                // Send abort to buf_exec to flush fifo
+                                packet = buf_cmds.S3G_STB(2);
+                                send_packet = 1;
+                            end
+
+                        220000:
+                        begin
+                            `assert_rx(128'hd503765481a0)
+                        end
+
+                        221000:
+                            begin
+                                // Load simple prog:
+                                //    0x88776655 -> reg0
+                                //    DONE
+                                packet = {
+                                    buf_cmds.S3G_WRITE_FIFO_HDR(13),
+                                    buf_cmds.OUTPUT(0, 32'h88776600),
+                                    buf_cmds.OUTPUT(1, 32'h88776601),
+                                    buf_cmds.OUTPUT(2, 32'h88776602),
+                                    buf_cmds.OUTPUT(3, 32'h88776603),
+                                    buf_cmds.OUTPUT(4, 32'h88776604),
+                                    buf_cmds.OUTPUT(5, 32'h88776605),
+                                    buf_cmds.DONE(0),
+                                    buf_cmds.OUTPUT(6, 32'h88776606),
+                                    buf_cmds.OUTPUT(7, 32'h88776607),
+                                    buf_cmds.OUTPUT(8, 32'h88776608),
+                                    buf_cmds.OUTPUT(9, 32'h88776609),
+                                    buf_cmds.OUTPUT(10, 32'h8877660a),
+                                    buf_cmds.OUTPUT(11, 32'h8877660b)
+                                    };
+                                send_packet = 1;
+                            end
+
+                        270000:
+                        begin
+                            `assert_rx(128'hd5077654810300000021)
+                        end
+
+                        271000:
+                            begin
+                                // Send abort to buf_exec to flush fifo
+                                packet = buf_cmds.S3G_STB(1);
+                                send_packet = 1;
+                            end
+
+                        280000:
+                        begin
+                            `assert_rx(128'hd503765481a0)
+                            `assert_signal("Registers are set", dut.s3g_executor.out_reg2, 32'h88776602)
+                            `assert_signal("Done is set", dut.buf_exec.done, 1)
+                            `assert_signal("Underrun is not set", dut.buf_exec.buffer_underrun, 0)
+
+                        end
+
+                        281000:
+                            begin
+                                // Send abort to buf_exec to flush fifo
+                                packet = buf_cmds.S3G_STB(1);
+                                send_packet = 1;
+                            end
+
+                        290000:
+                        begin
+                            `assert_rx(128'hd503765481a0)
+                            `assert_signal("Done is not set", dut.buf_exec.done, 0)
+                            `assert_signal("Underrun is set", dut.buf_exec.buffer_underrun, 1)
+                        end
+
                         300000:
                             begin
                                 `assert_rx(128'h0)

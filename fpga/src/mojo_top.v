@@ -456,6 +456,9 @@ module mojo_top#(
         .fifo_read(fifo_read),
         .fifo_global_count({{(31-FIFO_ADDRESS_WIDTH){1'b0}}, ext_fifo_data_count}),
         .fifo_local_count({{(31-FIFO_ADDRESS_WIDTH){1'b0}}, ext_fifo_data_count}),
+        .ext_out_reg_addr(ext_out_reg_addr),
+        .ext_out_reg_data(ext_out_reg_data),
+        .ext_out_reg_stb(ext_out_reg_stb),
         .start(stbs[0]),
         .abort(stbs[1])
     );
