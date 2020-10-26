@@ -446,6 +446,11 @@ module mojo_top#(
         .empty(fifo_empty)
     );
 
+    wire [7:0] param_addr;
+    wire [31:0] param_in;
+    wire param_write_hi;
+    wire param_write_lo;
+
     buf_executor buf_exec(
         .clk(clk),
         .rst(n_rdy),
@@ -460,8 +465,23 @@ module mojo_top#(
         .ext_out_reg_data(ext_out_reg_data),
         .ext_out_reg_stb(ext_out_reg_stb),
         .start(stbs[0]),
-        .abort(stbs[1])
+        .abort(stbs[1]),
+        .param_addr(param_addr),
+        .param_write_data(param_in),
+        .param_write_hi(param_write_hi),
+        .param_write_lo(param_write_lo)
     );
 
+
+    profile_gen apg(
+        .clk(clk),
+        .rst(n_rdy),
+        .acc_step(stbs[2]),
+        .param_addr(param_addr),
+        .param_in(param_in),
+        .param_write_hi(param_write_hi),
+        .param_write_lo(param_write_lo),
+        .abort(stbs[10:3])
+    );
 
 endmodule

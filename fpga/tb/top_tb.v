@@ -14,6 +14,7 @@
 `include "../src/motor_mux.v"
 `include "../src/debounce.v"
 `include "../src/dp_ram.v"
+`include "../src/profile_gen.v"
 `include "../src/fifo.v"
 `include "../tb/buf_cmds.v"
 
