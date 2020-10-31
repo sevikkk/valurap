@@ -19,7 +19,9 @@ module profile_gen(
     output signed [63:0] param_out,
     input param_write_hi,
     input param_write_lo,
-    input [7:0] abort
+    input [7:0] abort,
+    output reg [7:0] pending_aborts,
+    output reg [7:0] done_aborts
 );
 
     reg reg_write;
@@ -52,8 +54,6 @@ module profile_gen(
         addrB <= reg_addr;
     end
 
-    reg [7:0] pending_aborts;
-    reg [7:0] done_aborts;
     reg [7:0] next_done_aborts;
 
     always @(posedge clk) begin

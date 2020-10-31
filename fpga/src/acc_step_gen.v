@@ -58,8 +58,8 @@ module acc_step_gen
     reg [31:0] dt_limit;
     reg [31:0] next_dt_limit;
 
-    reg [2:0] state = S_INIT;
-    reg [2:0] next_state;
+    reg [4:0] state = S_INIT;
+    reg [4:0] next_state;
 
     reg next_waiting_for_params;
 
@@ -143,8 +143,8 @@ module acc_step_gen
                                 next_error_abort_requested <= 0;
                                 next_dt <= 0;
                                 next_steps <= 0;
-                                next_dt_limit <= dt_limit;
-                                next_steps_limit <= steps_limit;
+                                next_dt_limit <= dt_val;
+                                next_steps_limit <= steps_val;
                                 next_start_calc <= 1;
                                 next_busy <= 1;
                                 next_state <= S_WAIT_FIRST_CALC;

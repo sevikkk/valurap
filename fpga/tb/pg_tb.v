@@ -62,7 +62,8 @@ module pg_tb;
         .param_write_hi(gated_write_hi),
         .param_write_lo(gated_write_lo),
         .abort(aborts),
-        .done(calc_done)
+        .done(calc_done),
+        .pending_aborts(pending_aborts)
     );
 
     localparam
@@ -443,7 +444,17 @@ module pg_tb;
                         1801: begin
                             acc_step = 0;
                         end
-                        2000:
+                        2000: begin
+                            dt_val = 200;
+                            steps_val = 20;
+                        end
+                        2001: begin
+                            start = 1;
+                        end
+                        2002: begin
+                            start = 0;
+                        end
+                        10000:
                             begin
                                 if (assertions_failed)
                                     begin
