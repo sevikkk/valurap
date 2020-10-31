@@ -1,5 +1,6 @@
 `timescale 1ns/100ps
 
+`include "../src/acc_step_gen.v"
 `include "../src/profile_gen.v"
 
 module pg_tb;
@@ -7,26 +8,61 @@ module pg_tb;
     reg clk;
     reg rst;
     reg acc_step;
+    wire start_calc;
     reg [7:0] param_addr;
-    reg [7:0] abort;
     reg [31:0] param_in;
     reg write_hi;
     reg write_lo;
 
     reg [63:0] cycle;
 
+    reg [31:0] dt_val;
+    reg [31:0] steps_val;
+
     reg assertions_failed = 0;
 
+    wire gated_write_hi;
+    wire gated_write_lo;
+    wire [7:0] pending_aborts;
+    wire [7:0] aborts;
+    wire global_abort;
+    wire calc_done;
+
+    reg start = 0;
+    reg abort = 0;
+    reg asg_abort = 0;
+    reg params_load_done = 0;
+
+    acc_step_gen#(.MIN_LOAD_CYCLES(50)) asg(
+        .clk(clk),
+        .reset(rst),
+        .dt_val(dt_val),
+        .steps_val(steps_val),
+        .start(start),
+        .abort(asg_abort),
+        .param_write_hi(write_hi),
+        .param_write_lo(write_lo),
+        .params_load_done(params_load_done),
+        .gated_param_write_hi(gated_write_hi),
+        .gated_param_write_lo(gated_write_lo),
+        .pending_aborts(pending_aborts),
+        .global_abort(global_abort),
+        .start_calc(start_calc),
+        .acc_calc_done(calc_done)
+    );
+
+    assign aborts = {8{abort | global_abort}};
 
     profile_gen pg(
         .clk(clk),
         .rst(rst),
-        .acc_step(acc_step),
+        .acc_step(acc_step | start_calc),
         .param_addr(param_addr),
         .param_in(param_in),
-        .param_write_hi(write_hi),
-        .param_write_lo(write_lo),
-        .abort(abort)
+        .param_write_hi(gated_write_hi),
+        .param_write_lo(gated_write_lo),
+        .abort(aborts),
+        .done(calc_done)
     );
 
     localparam
@@ -66,6 +102,8 @@ module pg_tb;
             write_hi = 0;
             write_lo = 0;
             abort = 0;
+            dt_val = 0;
+            steps_val = 0;
             #10;
             clk = 1;
             #10;
