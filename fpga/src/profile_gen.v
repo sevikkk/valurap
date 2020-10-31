@@ -111,7 +111,12 @@ module profile_gen(
         R_J=5,
         R_JJ=6,
         R_TARGET_V=7,
-        R_ABORT_A=8;
+        R_ABORT_A=8,
+
+        STATUS_ENABLE_BIT=0,
+        STATUS_ENABLE_MASK=32'h1 << STATUS_ENABLE_BIT,
+        STATUS_TARGET_V_BIT=0,
+        STATUS_TARGET_V_MASK=32'h1 << STATUS_TARGET_V_BIT;
 
     always @(*) begin
         next_state <= state;
@@ -264,9 +269,14 @@ module profile_gen(
                         next_reg_num <= R_A;
                         next_reg_in <= 0;
                         next_reg_write <= 1;
-                        if (abort_in_progress[channel] && (arg1 == reg_out))
+                        if (abort_in_progress[channel] && (arg1 == reg_out)) begin
+                            // Will be triggered on first hit, if next_v == target
+                            // or on the second cycle in other cases
+                            // as A==0, we are guaranted to get hit
+                            // on the second cycle
                             next_abort_in_progress[channel] <= 0;
-                        next_done_aborts[channel] <= 1;
+                            next_done_aborts[channel] <= 1;
+                        end
                         next_state <= state+1;
                     end
                     else begin
