@@ -17,7 +17,8 @@ module pg_tb;
 
     reg assertions_failed = 0;
 
-    profile_gen dut(
+
+    profile_gen pg(
         .clk(clk),
         .rst(rst),
         .acc_step(acc_step),
@@ -28,6 +29,23 @@ module pg_tb;
         .abort(abort)
     );
 
+    localparam
+        CH0=0,
+        CH1=8'h20,
+        CH2=8'h40,
+        CH3=8'h60,
+        CH4=8'h80,
+        CH5=8'hA0,
+        CH6=8'hC0,
+        CH7=8'hE0;
+
+`define assert_signal(name, signal, value) \
+    begin if (signal != value) begin \
+            $display("ASSERTION FAILED in %m at %0d: actual %s %h != expected %h", cycle, name, signal, value); \
+            assertions_failed = 1; \
+        end \
+    end
+
     integer idx;
 
     initial
@@ -36,8 +54,8 @@ module pg_tb;
             $dumpvars;
 
             for (idx = 0; idx < 9; idx = idx+1) begin
-                $dumpvars(0, dut.mem0[idx]);
-                $dumpvars(0, dut.mem1[idx]);
+                $dumpvars(0, pg.mem0[idx]);
+                $dumpvars(0, pg.mem1[idx]);
             end
 
             rst = 1;
@@ -86,151 +104,153 @@ module pg_tb;
                     #6;
                     case (cycle)
                         10: begin
-                            param_addr = 0;
+                            param_addr = CH0 | pg.R_STATUS;
                             param_in = 0;
                             write_hi = 1;
                             write_lo = 1;
                         end
                         11: begin
-                            param_addr = 1;
+                            param_addr = CH0 | pg.R_V_EFF;
                             param_in = 0;
                             write_hi = 1;
                             write_lo = 1;
                         end
                         12: begin
-                            param_addr = 2;
+                            param_addr = CH0 | pg.R_V_IN;
                             param_in = 0;
                             write_hi = 1;
                             write_lo = 1;
                         end
                         13: begin
-                            param_addr = 3;
+                            param_addr = CH0 | pg.R_V_OUT;
                             param_in = 0;
                             write_hi = 1;
                             write_lo = 1;
                         end
                         14: begin
-                            param_addr = 4;
+                            param_addr = CH0 | pg.R_A;
                             param_in = 0;
                             write_hi = 1;
                             write_lo = 1;
                         end
                         15: begin
-                            param_addr = 5;
+                            param_addr = CH0 | pg.R_J;
                             param_in = 0;
                             write_hi = 1;
                             write_lo = 1;
                         end
                         16: begin
-                            param_addr = 6;
+                            param_addr = CH0 | pg.R_JJ;
                             param_in = 0;
                             write_hi = 1;
                             write_lo = 1;
                         end
                         17: begin
+                            param_addr = CH0 | pg.R_TARGET_V;
                             param_addr = 7;
                             param_in = 0;
                             write_hi = 1;
                             write_lo = 1;
                         end
                         18: begin
-                            param_addr = 8'h20;
+                            param_addr = CH0 | pg.R_ABORT_A;
+                            param_addr = 8;
                             param_in = 0;
                             write_hi = 1;
-                            write_lo = 1;
-                        end
-                        19: begin
-                            param_addr = 8'h40;
-                            param_in = 0;
-                            write_hi = 1;
-                            write_lo = 1;
-                        end
-                        20: begin
-                            param_addr = 8'h60;
-                            param_in = 0;
-                            write_hi = 1;
-                            write_lo = 1;
-                        end
-                        21: begin
-                            param_addr = 8'h80;
-                            param_in = 0;
-                            write_hi = 1;
-                            write_lo = 1;
-                        end
-                        22: begin
-                            param_addr = 8'hA0;
-                            param_in = 0;
-                            write_hi = 1;
-                            write_lo = 1;
-                        end
-                        23: begin
-                            param_addr = 8'hC0;
-                            param_in = 0;
-                            write_hi = 1;
-                            write_lo = 1;
-                        end
-                        24: begin
-                            param_addr = 8'hE0;
-                            param_in = 0;
-                            write_hi = 1;
-                            write_lo = 1;
-                        end
-
-                        25: begin
-                            param_addr = 0;
-                            param_in = 3;
-                            write_hi = 0;
-                            write_lo = 1;
-                        end
-                        26: begin
-                            param_addr = 3;
-                            param_in = -300;
-                            write_hi = 0;
-                            write_lo = 1;
-                        end
-                        27: begin
-                            param_addr = 3;
-                            param_in = -1;
-                            write_hi = 1;
-                            write_lo = 0;
-                        end
-                        28: begin
-                            param_addr = 4;
-                            param_in = 70;
-                            write_hi = 0;
-                            write_lo = 1;
-                        end
-                        29: begin
-                            param_addr = 5;
-                            param_in = 0;
-                            write_hi = 0;
                             write_lo = 1;
                         end
                         30: begin
-                            param_addr = 6;
+                            param_addr = CH1;
                             param_in = 0;
-                            write_hi = 0;
+                            write_hi = 1;
                             write_lo = 1;
                         end
                         31: begin
-                            param_addr = 7;
-                            param_in = 40;
-                            write_hi = 0;
+                            param_addr = CH2;
+                            param_in = 0;
+                            write_hi = 1;
                             write_lo = 1;
                         end
                         32: begin
-                            param_addr = 8;
+                            param_addr = CH3;
                             param_in = 0;
                             write_hi = 1;
                             write_lo = 1;
                         end
                         33: begin
-                            param_addr = 8;
-                            param_in = 10;
-                            write_hi = 0;
+                            param_addr = CH4;
+                            param_in = 0;
+                            write_hi = 1;
                             write_lo = 1;
                         end
                         34: begin
+                            param_addr = CH5;
+                            param_in = 0;
+                            write_hi = 1;
+                            write_lo = 1;
+                        end
+                        35: begin
+                            param_addr = CH6;
+                            param_in = 0;
+                            write_hi = 1;
+                            write_lo = 1;
+                        end
+                        36: begin
+                            param_addr = CH7;
+                            param_in = 0;
+                            write_hi = 1;
+                            write_lo = 1;
+                        end
+
+                        50: begin
+                            param_addr = CH0 | pg.R_STATUS;
+                            param_in = pg.STATUS_ENABLE_MASK | pg.STATUS_TARGET_V_MASK;
+                            write_hi = 0;
+                            write_lo = 1;
+                        end
+                        51: begin
+                            param_addr = CH0 | pg.R_V_OUT;
+                            param_in = -300;
+                            write_hi = 0;
+                            write_lo = 1;
+                        end
+                        52: begin
+                            param_addr = CH0 | pg.R_V_OUT;
+                            param_in = -1;
+                            write_hi = 1;
+                            write_lo = 0;
+                        end
+                        53: begin
+                            param_addr = CH0 | pg.R_A;
+                            param_in = 70;
+                            write_hi = 0;
+                            write_lo = 1;
+                        end
+                        54: begin
+                            param_addr = CH0 | pg.R_J;
+                            param_in = 0;
+                            write_hi = 0;
+                            write_lo = 1;
+                        end
+                        55: begin
+                            param_addr = CH0 | pg.R_JJ;
+                            param_in = 0;
+                            write_hi = 0;
+                            write_lo = 1;
+                        end
+                        56: begin
+                            param_addr = CH0 | pg.R_TARGET_V;
+                            param_in = 40;
+                            write_hi = 0;
+                            write_lo = 1;
+                        end
+                        57: begin
+                            param_addr = CH0 | pg.R_ABORT_A;
+                            param_in = 17;
+                            write_hi = 0;
+                            write_lo = 1;
+                        end
+                        58: begin
                             param_addr = 0;
                             param_in = 0;
                             write_hi = 0;
@@ -242,12 +262,16 @@ module pg_tb;
                         101: begin
                             acc_step = 0;
                         end
+
+                        150: `assert_signal("Speed0", pg.speed_0, -265)
+
                         200: begin
                             acc_step = 1;
                         end
                         201: begin
                             acc_step = 0;
                         end
+                        250: `assert_signal("Speed0", pg.speed_0, -195)
                         300: begin
                             acc_step = 1;
                         end
@@ -260,11 +284,21 @@ module pg_tb;
                         314: begin
                             abort = 0;
                         end
+                        350: begin
+                            `assert_signal("Speed0", pg.speed_0, -125)
+                            `assert_signal("Abort0", pg.pending_aborts[0], 1)
+                            `assert_signal("Abort0", pg.abort_in_progress[0], 0)
+                        end
                         400: begin
                             acc_step = 1;
                         end
                         401: begin
                             acc_step = 0;
+                        end
+                        450: begin
+                            `assert_signal("Speed0", pg.speed_0, -82)
+                            `assert_signal("Abort0", pg.pending_aborts[0], 1)
+                            `assert_signal("Abort0", pg.abort_in_progress[0], 1)
                         end
                         500: begin
                             acc_step = 1;
@@ -302,11 +336,21 @@ module pg_tb;
                         901: begin
                             acc_step = 0;
                         end
+                        950: begin
+                            `assert_signal("Speed0", pg.speed_0, -3)
+                            `assert_signal("Abort0", pg.pending_aborts[0], 1)
+                            `assert_signal("Abort0", pg.abort_in_progress[0], 1)
+                        end
                         1000: begin
                             acc_step = 1;
                         end
                         1001: begin
                             acc_step = 0;
+                        end
+                        1050: begin
+                            `assert_signal("Speed0", pg.speed_0, 0)
+                            `assert_signal("Abort0", pg.pending_aborts[0], 0)
+                            `assert_signal("Abort0", pg.abort_in_progress[0], 0)
                         end
                         1100: begin
                             acc_step = 1;
@@ -325,6 +369,11 @@ module pg_tb;
                         end
                         1301: begin
                             acc_step = 0;
+                        end
+                        1350: begin
+                            `assert_signal("Speed0", pg.speed_0, 0)
+                            `assert_signal("Abort0", pg.pending_aborts[0], 0)
+                            `assert_signal("Abort0", pg.abort_in_progress[0], 0)
                         end
                         1400: begin
                             acc_step = 1;
@@ -358,6 +407,15 @@ module pg_tb;
                         end
                         2000:
                             begin
+                                if (assertions_failed)
+                                    begin
+                                        $display("ERROR: Some assertions failed");
+                                    end
+                                else
+                                    begin
+                                        $display("All passed");
+                                    end
+
                                 $display("Done");
                                 $finish();
                             end
