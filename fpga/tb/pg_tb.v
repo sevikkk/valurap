@@ -2,6 +2,7 @@
 
 `include "../src/acc_step_gen.v"
 `include "../src/profile_gen.v"
+`include "../src/speed_integrator.v"
 
 module pg_tb;
 
@@ -33,6 +34,12 @@ module pg_tb;
     reg asg_abort = 0;
     reg params_load_done = 0;
 
+    wire [63:0] speed_0;
+    wire [63:0] speed_1;
+    wire [63:0] speed_2;
+    wire load_speeds;
+
+
     acc_step_gen#(.MIN_LOAD_CYCLES(50)) asg(
         .clk(clk),
         .reset(rst),
@@ -48,10 +55,12 @@ module pg_tb;
         .pending_aborts(pending_aborts),
         .global_abort(global_abort),
         .start_calc(start_calc),
-        .acc_calc_done(calc_done)
+        .acc_calc_done(calc_done),
+        .load_speeds(load_speeds)
     );
 
     assign aborts = {8{abort | global_abort}};
+
 
     profile_gen pg(
         .clk(clk),
@@ -63,7 +72,40 @@ module pg_tb;
         .param_write_lo(gated_write_lo),
         .abort(aborts),
         .done(calc_done),
-        .pending_aborts(pending_aborts)
+        .pending_aborts(pending_aborts),
+        .speed_0(speed_0),
+        .speed_1(speed_1),
+        .speed_2(speed_2)
+    );
+
+    speed_integrator sp0(
+        .clk(clk),
+        .reset(rst),
+        .set_v(load_speeds),
+        .set_x(1'b0),
+        .x_val(64'b0),
+        .v_val(speed_0),
+        .step_bit(6'd32)
+    );
+
+    speed_integrator sp1(
+        .clk(clk),
+        .reset(rst),
+        .set_v(load_speeds),
+        .set_x(1'b0),
+        .x_val(64'b0),
+        .v_val(speed_1),
+        .step_bit(6'd32)
+    );
+
+    speed_integrator sp2(
+        .clk(clk),
+        .reset(rst),
+        .set_v(load_speeds),
+        .set_x(1'b0),
+        .x_val(64'b0),
+        .v_val(speed_2),
+        .step_bit(6'd32)
     );
 
     localparam
@@ -140,6 +182,9 @@ module pg_tb;
             forever
                 begin
                     clk = 1;
+                    write_hi = 0;
+                    write_lo = 0;
+                    params_load_done = 0;
                     #6;
                     case (cycle)
                         10: begin
@@ -462,13 +507,16 @@ module pg_tb;
                             `assert_signal("ASG Busy", asg.busy, 1)
                             `assert_signal("PG Busy", pg.busy, 1)
                         end
-                        6038: begin
+                        5838: begin
                             `assert_signal("Not waiting for params", asg.waiting_for_params, 0)
                             `assert_signal("Steps == 19", asg.steps, 19)
                         end
-                        6039: begin
-                            `assert_signal("Waiting for params", asg.waiting_for_params, 1)
+                        5839: begin
                             `assert_signal("Load_speeds", asg.load_speeds, 1)
+                            `assert_signal("Not start calc", asg.start_calc, 0)
+                        end
+                        5840: begin
+                            `assert_signal("Waiting for params", asg.waiting_for_params, 1)
                             `assert_signal("Not start calc", asg.start_calc, 0)
                         end
                         6200: begin
@@ -507,6 +555,31 @@ module pg_tb;
                             `assert_signal("PG not Busy", pg.busy, 0)
                             `assert_signal("Error late params", asg.error_unexpected_params_write, 1)
                         end
+
+                        //*********************************
+                        // 20 steps with A=5
+                        //*********************************
+                        8400: begin
+                            param_addr = CH0 | pg.R_V_OUT;
+                            param_in = 0;
+                            write_hi = 1;
+                            write_lo = 1;
+                        end
+                        8401: begin
+                            param_addr = CH0 | pg.R_A;
+                            param_in = 0;
+                            write_hi = 1;
+                        end
+                        8402: begin
+                            param_addr = CH0 | pg.R_A;
+                            param_in = 5;
+                            write_lo = 1;
+                        end
+                        8403: begin
+                            param_addr = CH0 | pg.R_STATUS;
+                            param_in = 1;
+                            write_lo = 1;
+                        end
                         8500: begin
                             start = 1;
                         end
@@ -518,47 +591,147 @@ module pg_tb;
                             `assert_signal("ASG Busy", asg.busy, 1)
                             `assert_signal("PG Busy", pg.busy, 1)
                         end
-                        12537: begin
+
+                        12000: `assert_signal("Speed", sp0.v, 87)
+                        12200: `assert_signal("Speed", sp0.v, 92)
+
+                        //*********************************
+                        // 20 steps with A=0
+                        //*********************************
+                        12332: begin
                             `assert_signal("Not waiting for params", asg.waiting_for_params, 0)
                             `assert_signal("Steps == 19", asg.steps, 19)
                         end
-                        12538: begin
-                            `assert_signal("Waiting for params", asg.waiting_for_params, 1)
+                        12333: begin
                             `assert_signal("Load_speeds", asg.load_speeds, 1)
+                            `assert_signal("Not start calc", asg.start_calc, 0)
+                        end
+                        12334: begin
+                            `assert_signal("Waiting for params", asg.waiting_for_params, 1)
                             `assert_signal("Load_next params", asg.load_next_params, 1)
                             `assert_signal("Not start calc", asg.start_calc, 0)
                         end
-                        12650: begin
-                            params_load_done = 1;
-                            `assert_signal("dt == 112", asg.dt, 112)
+                        12380: `assert_signal("Speed", sp0.v, 97)
+                        12400: begin
+                            param_addr = CH0 | pg.R_A;
+                            param_in = 0;
+                            write_hi = 1;
                         end
-                        12651: begin
+                        12401: begin
+                            param_addr = CH0 | pg.R_A;
+                            param_in = 0;
+                            write_lo = 1;
+                        end
+                        12402: begin
+                            param_addr = CH0 | pg.R_STATUS;
+                            param_in = 1;
+                            write_lo = 1;
+                        end
+                        12450: begin
+                            params_load_done = 1;
+                            `assert_signal("dt == 112", asg.dt, 117)
+                        end
+                        12451: begin
                             params_load_done = 0;
                             `assert_signal("Waiting for params", asg.waiting_for_params, 0)
                             `assert_signal("Start calc", asg.start_calc, 1)
                             `assert_signal("Steps == 0", asg.steps, 0)
-                            `assert_signal("dt == 113", asg.dt, 113)
+                            `assert_signal("dt == 113", asg.dt, 118)
                         end
-                        12550: begin
-                            `assert_signal("Waiting for params", asg.waiting_for_params, 1)
-                            `assert_signal("Steps == 20", asg.steps, 20)
-                            `assert_signal("ASG Busy", asg.busy, 1)
+
+                        12600: `assert_signal("Speed", sp0.v, 100)
+                        16000: `assert_signal("Speed", sp0.v, 100)
+                        16200: `assert_signal("Speed", sp0.v, 100)
+                        //*********************************
+                        // 10 steps with A=30
+                        //*********************************
+                        16350: begin
+                            steps_val = 10;
                         end
-                        16600: begin
-                            steps_val = 0;
+                        16351: begin
+                            param_addr = CH0 | pg.R_A;
+                            param_in = 0;
+                            write_hi = 1;
                         end
-                        16601: begin
+                        16352: begin
+                            param_addr = CH0 | pg.R_A;
+                            param_in = 30;
+                            write_lo = 1;
+                        end
+                        16353: begin
+                            param_addr = CH0 | pg.R_STATUS;
+                            param_in = 1;
+                            write_lo = 1;
+                        end
+
+                        16401: begin
                             params_load_done = 1;
                         end
-                        16602: begin
-                            params_load_done = 0;
+
+                        16600: `assert_signal("Speed", sp0.v, 115)
+                        16800: `assert_signal("Speed", sp0.v, 145)
+                        17000: `assert_signal("Speed", sp0.v, 175)
+                        18200: `assert_signal("Speed", sp0.v, 355)
+                         //*********************************
+                        // 30 steps with A=-27 until 0
+                        //*********************************
+                        18350: begin
+                            steps_val = 30;
+                        end
+                        18351: begin
+                            param_addr = CH0 | pg.R_A;
+                            param_in = -1;
+                            write_hi = 1;
+                        end
+                        18352: begin
+                            param_addr = CH0 | pg.R_A;
+                            param_in = -27;
+                            write_lo = 1;
+                        end
+                        18353: begin
+                            param_addr = CH0 | pg.R_TARGET_V;
+                            param_in = 0;
+                            write_lo = 1;
+                        end
+                        18354: begin
+                            param_addr = CH0 | pg.R_STATUS;
+                            param_in = 3;
+                            write_lo = 1;
+                        end
+
+                        18400: begin
+                            params_load_done = 1;
+                        end
+
+                        18450: `assert_signal("Speed", sp0.v, 385)
+                        18650: `assert_signal("Speed", sp0.v, 386)
+                        18850: `assert_signal("Speed", sp0.v, 359)
+                        21200: `assert_signal("Speed", sp0.v, 35)
+                        21400: `assert_signal("Speed", sp0.v, 11)
+                        21600: `assert_signal("Speed", sp0.v, 0)
+
+                        //*********************************
+                        // Done
+                        //*********************************
+                        24400: begin
+                            steps_val = 0;
+                        end
+                        24401: begin
+                            params_load_done = 1;
+                        end
+
+
+                        //*********************************
+                        // Final check
+                        //*********************************
+                        29000: begin
                             `assert_signal("Waiting for params", asg.waiting_for_params, 1)
                             `assert_signal("Steps == 0", asg.steps, 0)
                             `assert_signal("ASG Busy", asg.busy, 0)
                             `assert_signal("Error unexpected params", asg.error_unexpected_params_write, 0)
                             `assert_signal("Error late params", asg.error_late_params, 0)
                         end
-                        20000:
+                        30000:
                             begin
                                 if (assertions_failed)
                                     begin

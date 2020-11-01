@@ -141,7 +141,7 @@ module acc_step_gen
                                 next_error_late_params <= 0;
                                 next_error_abort_requested <= 0;
                                 next_dt <= 0;
-                                next_steps <= 0;
+                                next_steps <= 1;
                                 next_dt_limit <= dt_val;
                                 next_steps_limit <= steps_val;
                                 next_start_calc <= 1;
@@ -204,8 +204,15 @@ module acc_step_gen
                     end
                 S_CALC: begin
                     next_waiting_for_params <= 0;
-                    next_start_calc <= 1;
-                    next_state <= S_WAIT_CALC;
+                    if (steps+1 > steps_limit) begin
+                        next_waiting_for_params <= 1;
+                        next_load_next_params <= 1;
+                        next_state <= S_WAIT_FOR_LOAD;
+                    end
+                    else begin
+                        next_start_calc <= 1;
+                        next_state <= S_WAIT_CALC;
+                    end
                 end
                 S_WAIT_CALC:
                     begin
@@ -221,13 +228,7 @@ module acc_step_gen
                                 next_dt <= 0;
                                 next_steps <= steps+1;
                                 next_load_speeds <= 1;
-                                if (steps+1 >= steps_limit) begin
-                                    next_waiting_for_params <= 1;
-                                    next_load_next_params <= 1;
-                                    next_state <= S_WAIT_FOR_LOAD;
-                                end
-                                else
-                                    next_state <= S_CALC;
+                                next_state <= S_CALC;
                             end
                     end
                 S_WAIT_FOR_LOAD:
