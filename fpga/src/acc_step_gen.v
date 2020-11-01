@@ -47,8 +47,7 @@ module acc_step_gen
                S_CALC=7,
                S_WAIT_CALC=8,
                S_WAIT_FOR_LOAD=9,
-               S_WAIT=10,
-               S_WAIT_LAST=11;
+               S_WAIT=10;
 
     reg [31:0] next_dt;
     reg [31:0] next_steps;
@@ -123,9 +122,9 @@ module acc_step_gen
                 begin
                     next_state <= S_ABORTING;
                     if (abort)
-                        next_error_unexpected_params_write <= 1;
-                    else
                         next_error_abort_requested <= 1;
+                    else
+                        next_error_unexpected_params_write <= 1;
                     next_global_abort_in_progress <= 1;
                     next_global_abort <= 1;
                     next_dt <= 0;
@@ -212,14 +211,7 @@ module acc_step_gen
                     begin
                         if (acc_calc_done)
                             begin
-                                if (steps+1 >= steps_limit)
-                                    begin
-                                        next_waiting_for_params <= 1;
-                                        next_load_next_params <= 1;
-                                        next_state <= S_WAIT_FOR_LOAD;
-                                    end
-                                else
-                                    next_state <= S_WAIT;
+                                next_state <= S_WAIT;
                             end
                     end
                 S_WAIT:
@@ -229,15 +221,27 @@ module acc_step_gen
                                 next_dt <= 0;
                                 next_steps <= steps+1;
                                 next_load_speeds <= 1;
-                                next_state <= S_CALC;
+                                if (steps+1 >= steps_limit) begin
+                                    next_waiting_for_params <= 1;
+                                    next_load_next_params <= 1;
+                                    next_state <= S_WAIT_FOR_LOAD;
+                                end
+                                else
+                                    next_state <= S_CALC;
                             end
                     end
                 S_WAIT_FOR_LOAD:
                     begin
                         if (params_load_done)
                             begin
-                                if (dt_val == 0) begin
-                                    next_state <= S_WAIT_LAST;
+                                if (steps_val == 0) begin
+                                    next_state <= S_INIT;
+                                    next_dt_limit <= 0;
+                                    next_steps_limit <= 0;
+                                    next_steps <= 0;
+                                    next_waiting_for_params <= 1;
+                                    next_busy <= 0;
+                                    next_done <= 1;
                                 end
                                 else begin
                                     next_steps_limit <= steps_val;
@@ -250,24 +254,12 @@ module acc_step_gen
                         else if (dt+MIN_LOAD_CYCLES >= dt_limit)
                             begin
                                 next_state <= S_ABORTING;
+                                next_waiting_for_params <= 0;
                                 next_error_late_params <= 1;
                                 next_global_abort_in_progress <= 1;
                                 next_global_abort <= 1;
                                 next_dt <= 0;
                                 next_steps <= 0;
-                            end
-                    end
-                S_WAIT_LAST:
-                    begin
-                        if (dt+1 >= dt_limit)
-                            begin
-                                next_load_speeds <= 1;
-                                next_state <= S_INIT;
-                                next_dt_limit <= 0;
-                                next_steps_limit <= 0;
-                                next_waiting_for_params <= 1;
-                                next_busy <= 0;
-                                next_done <= 1;
                             end
                     end
 
