@@ -444,6 +444,9 @@ module pg_tb;
                         1801: begin
                             acc_step = 0;
                         end
+                        1990: begin
+                            `assert_signal("Waiting for params", asg.waiting_for_params, 1)
+                        end
                         2000: begin
                             dt_val = 200;
                             steps_val = 20;
@@ -454,7 +457,106 @@ module pg_tb;
                         2002: begin
                             start = 0;
                         end
-                        10000:
+                        2003: begin
+                            `assert_signal("Not waiting for params", asg.waiting_for_params, 0)
+                            `assert_signal("ASG Busy", asg.busy, 1)
+                            `assert_signal("PG Busy", pg.busy, 1)
+                        end
+                        6038: begin
+                            `assert_signal("Not waiting for params", asg.waiting_for_params, 0)
+                            `assert_signal("Steps == 19", asg.steps, 19)
+                        end
+                        6039: begin
+                            `assert_signal("Waiting for params", asg.waiting_for_params, 1)
+                            `assert_signal("Load_speeds", asg.load_speeds, 1)
+                            `assert_signal("Not start calc", asg.start_calc, 0)
+                        end
+                        6200: begin
+                            `assert_signal("Not waiting for params", asg.waiting_for_params, 0)
+                            `assert_signal("Error late params", asg.error_late_params, 1)
+                        end
+                        6500: begin
+                            `assert_signal("Waiting for params", asg.waiting_for_params, 1)
+                            `assert_signal("ASG not Busy", asg.busy, 0)
+                            `assert_signal("PG not Busy", pg.busy, 0)
+                        end
+                        6600: begin
+                            start = 1;
+                        end
+                        6601: begin
+                            start = 0;
+                        end
+                        6610: begin
+                            `assert_signal("Not waiting for params", asg.waiting_for_params, 0)
+                            `assert_signal("ASG Busy", asg.busy, 1)
+                            `assert_signal("PG Busy", pg.busy, 1)
+                        end
+                        7701: begin
+                            write_lo = 1;
+                        end
+                        7702: begin
+                            write_lo = 0;
+                        end
+                        6200: begin
+                            `assert_signal("Not waiting for params", asg.waiting_for_params, 0)
+                            `assert_signal("Error late params", asg.error_unexpected_params_write, 1)
+                        end
+                        8100: begin
+                            `assert_signal("Waiting for params", asg.waiting_for_params, 1)
+                            `assert_signal("ASG not Busy", asg.busy, 0)
+                            `assert_signal("PG not Busy", pg.busy, 0)
+                            `assert_signal("Error late params", asg.error_unexpected_params_write, 1)
+                        end
+                        8500: begin
+                            start = 1;
+                        end
+                        8501: begin
+                            start = 0;
+                        end
+                        8510: begin
+                            `assert_signal("Not waiting for params", asg.waiting_for_params, 0)
+                            `assert_signal("ASG Busy", asg.busy, 1)
+                            `assert_signal("PG Busy", pg.busy, 1)
+                        end
+                        12537: begin
+                            `assert_signal("Not waiting for params", asg.waiting_for_params, 0)
+                            `assert_signal("Steps == 19", asg.steps, 19)
+                        end
+                        12538: begin
+                            `assert_signal("Waiting for params", asg.waiting_for_params, 1)
+                            `assert_signal("Load_speeds", asg.load_speeds, 1)
+                            `assert_signal("Load_next params", asg.load_next_params, 1)
+                            `assert_signal("Not start calc", asg.start_calc, 0)
+                        end
+                        12650: begin
+                            params_load_done = 1;
+                            `assert_signal("dt == 112", asg.dt, 112)
+                        end
+                        12651: begin
+                            params_load_done = 0;
+                            `assert_signal("Waiting for params", asg.waiting_for_params, 0)
+                            `assert_signal("Start calc", asg.start_calc, 1)
+                            `assert_signal("Steps == 0", asg.steps, 0)
+                            `assert_signal("dt == 113", asg.dt, 113)
+                        end
+                        12550: begin
+                            `assert_signal("Waiting for params", asg.waiting_for_params, 1)
+                            `assert_signal("Steps == 20", asg.steps, 20)
+                            `assert_signal("ASG Busy", asg.busy, 1)
+                        end
+                        16600: begin
+                            steps_val = 0;
+                        end
+                        16601: begin
+                            params_load_done = 1;
+                        end
+                        16602: begin
+                            params_load_done = 0;
+                            `assert_signal("Waiting for params", asg.waiting_for_params, 1)
+                            `assert_signal("Steps == 0", asg.steps, 0)
+                            `assert_signal("ASG Busy", asg.busy, 0)
+                        end
+                        20000:
                             begin
                                 if (assertions_failed)
                                     begin
