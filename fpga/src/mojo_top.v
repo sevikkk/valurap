@@ -1,7 +1,8 @@
 module mojo_top#(
     parameter CLK_RATE=50000000,
     parameter EXT_BAUD_RATE=500000,
-    parameter FIFO_ADDRESS_WIDTH=13
+    parameter FIFO_ADDRESS_WIDTH=13,
+    parameter STEP_BIT=32
 )(
     // 50MHz clock input
     input clk,
@@ -133,36 +134,20 @@ module mojo_top#(
     assign stm_int = 1'b0;
     assign stm_miso = 1'b0;
 
-    assign mot_1_step = 1'b0;
-    assign mot_1_dir = 1'b0;
     assign mot_1_enable = 1'b1;
 
-    assign mot_2_step = 1'b0;
-    assign mot_2_dir = 1'b0;
     assign mot_2_enable = 1'b1;
 
-    assign mot_3_step = 1'b0;
-    assign mot_3_dir = 1'b0;
     assign mot_3_enable = 1'b1;
 
-    assign mot_4_step = 1'b0;
-    assign mot_4_dir = 1'b0;
     assign mot_4_enable = 1'b1;
 
-    assign mot_5_step = 1'b0;
-    assign mot_5_dir = 1'b0;
     assign mot_5_enable = 1'b1;
 
-    assign mot_6_step = 1'b0;
-    assign mot_6_dir = 1'b0;
     assign mot_6_enable = 1'b1;
 
-    assign mot_7_step = 1'b0;
-    assign mot_7_dir = 1'b0;
     assign mot_7_enable = 1'b1;
 
-    assign mot_8_step = 1'b0;
-    assign mot_8_dir = 1'b0;
     assign mot_8_enable = 1'b1;
 
     assign mot_9_step = 1'b0;
@@ -336,6 +321,15 @@ module mojo_top#(
     wire [FIFO_ADDRESS_WIDTH:0] ext_fifo_free_space;
     wire [FIFO_ADDRESS_WIDTH:0] ext_fifo_data_count;
 
+    wire be_done;
+    wire [7:0] done_aborts;
+
+    wire [31:0] dt_val;
+    wire [31:0] steps_val;
+    wire [31:0] sp_config;
+
+    wire load_next_params;
+
     s3g_executor s3g_executor(
         .clk(clk),
         .rst(n_rdy),
@@ -387,22 +381,22 @@ module mojo_top#(
         .ext_fifo_wr(ext_fifo_wr),
         .ext_fifo_free_space({{(31-FIFO_ADDRESS_WIDTH){1'b0}}, ext_fifo_free_space}),
 
-        .int0(1'b0),
-        .int1(1'b0),
+        .int0(be_done),
+        .int1(load_next_params),
         .int2(1'b0),
         .int3(1'b0),
         .int4(1'b0),
         .int5(1'b0),
         .int6(1'b0),
         .int7(1'b0),
-        .int8(1'b0),
-        .int9(1'b0),
-        .int10(1'b0),
-        .int11(1'b0),
-        .int12(1'b0),
-        .int13(1'b0),
-        .int14(1'b0),
-        .int15(1'b0),
+        .int8(done_aborts[0]),
+        .int9(done_aborts[1]),
+        .int10(done_aborts[2]),
+        .int11(done_aborts[3]),
+        .int12(done_aborts[4]),
+        .int13(done_aborts[5]),
+        .int14(done_aborts[6]),
+        .int15(done_aborts[7]),
         .int16(1'b0),
         .int17(1'b0),
         .int18(1'b0),
@@ -418,7 +412,7 @@ module mojo_top#(
         .int28(1'b0),
         .int29(1'b0),
         .int30(1'b0),
-        .int31(1'b0),
+        .int31(stbs[31]),
 
         .ext_out_reg_busy(ext_out_reg_busy),
         .ext_out_reg_data(ext_out_reg_data),
@@ -427,14 +421,18 @@ module mojo_top#(
 
         .ext_pending_ints(ext_pending_ints),
         .ext_clear_ints(ext_clear_ints),
-        .ext_out_stbs(ext_out_stbs)
+        .ext_out_stbs(ext_out_stbs),
+
+        .out_reg0(dt_val),
+        .out_reg1(steps_val),
+        .out_reg2(sp_config)
     );
 
     wire fifo_empty;
     wire fifo_read;
     wire [39:0] fifo_read_data;
 
-    fifo #(.ADDRESS_WIDTH(FIFO_ADDRESS_WIDTH), .DATA_WIDTH(40)) fifo(
+    fifo#(.ADDRESS_WIDTH(FIFO_ADDRESS_WIDTH), .DATA_WIDTH(40)) fifo(
         .clk(clk),
         .reset(n_rdy),
         .write_data(ext_fifo_data),
@@ -450,6 +448,16 @@ module mojo_top#(
     wire [31:0] param_in;
     wire param_write_hi;
     wire param_write_lo;
+    wire gated_param_write_hi;
+    wire gated_param_write_lo;
+    wire [7:0] pg_abort;
+    wire global_abort;
+    wire [7:0] pending_aborts;
+    wire start_calc;
+    wire calc_done;
+    wire load_speeds;
+
+    assign pg_abort = stbs[15:8] | {8{global_abort}};
 
     buf_executor buf_exec(
         .clk(clk),
@@ -469,19 +477,157 @@ module mojo_top#(
         .param_addr(param_addr),
         .param_write_data(param_in),
         .param_write_hi(param_write_hi),
-        .param_write_lo(param_write_lo)
+        .param_write_lo(param_write_lo),
+        .done(be_done),
+        .ext_out_stbs(ext_out_stbs),
+        .ext_clear_ints(ext_clear_ints)
     );
 
+    wire [63:0] speed_0;
+    wire [63:0] speed_1;
+    wire [63:0] speed_2;
+    wire [63:0] speed_3;
+    wire [63:0] speed_4;
+    wire [63:0] speed_5;
+    wire [63:0] speed_6;
+    wire [63:0] speed_7;
 
     profile_gen apg(
         .clk(clk),
         .rst(n_rdy),
-        .acc_step(stbs[2]),
+        .acc_step(start_calc),
+        .done(calc_done),
         .param_addr(param_addr),
         .param_in(param_in),
+        .param_write_hi(gated_param_write_hi),
+        .param_write_lo(gated_param_write_lo),
+        .abort(pg_abort),
+        .pending_aborts(pending_aborts),
+        .done_aborts(done_aborts),
+        .speed_0(speed_0),
+        .speed_1(speed_1),
+        .speed_2(speed_2),
+        .speed_3(speed_3),
+        .speed_4(speed_4),
+        .speed_5(speed_5),
+        .speed_6(speed_6),
+        .speed_7(speed_7)
+    );
+
+    acc_step_gen#(.MIN_LOAD_CYCLES(50)) asg(
+        .clk(clk),
+        .reset(n_rdy),
+        .dt_val(dt_val),
+        .steps_val(steps_val),
+        .start(stbs[2]),
+        .abort(stbs[3]),
         .param_write_hi(param_write_hi),
         .param_write_lo(param_write_lo),
-        .abort(stbs[10:3])
+        .gated_param_write_hi(gated_param_write_hi),
+        .gated_param_write_lo(gated_param_write_lo),
+        .params_load_done(stbs[4]),
+        .pending_aborts(pending_aborts),
+        .global_abort(global_abort),
+        .start_calc(start_calc),
+        .acc_calc_done(calc_done),
+        .load_speeds(load_speeds),
+        .load_next_params(load_next_params)
+    );
+
+    speed_integrator sp0(
+        .clk(clk),
+        .reset(n_rdy),
+        .set_v(load_speeds),
+        .set_x(1'b0),
+        .x_val(64'b0),
+        .v_val(speed_0),
+        .step_bit(sp_config[5:0]),
+        .dir(mot_1_dir),
+        .step(mot_1_step)
+    );
+
+    speed_integrator sp1(
+        .clk(clk),
+        .reset(n_rdy),
+        .set_v(load_speeds),
+        .set_x(1'b0),
+        .x_val(64'b0),
+        .v_val(speed_1),
+        .step_bit(sp_config[5:0]),
+        .dir(mot_2_dir),
+        .step(mot_2_step)
+    );
+
+    speed_integrator sp2(
+        .clk(clk),
+        .reset(n_rdy),
+        .set_v(load_speeds),
+        .set_x(1'b0),
+        .x_val(64'b0),
+        .v_val(speed_2),
+        .step_bit(sp_config[5:0]),
+        .dir(mot_3_dir),
+        .step(mot_3_step)
+    );
+
+    speed_integrator sp3(
+        .clk(clk),
+        .reset(n_rdy),
+        .set_v(load_speeds),
+        .set_x(1'b0),
+        .x_val(64'b0),
+        .v_val(speed_3),
+        .step_bit(sp_config[5:0]),
+        .dir(mot_4_dir),
+        .step(mot_4_step)
+    );
+
+    speed_integrator sp4(
+        .clk(clk),
+        .reset(n_rdy),
+        .set_v(load_speeds),
+        .set_x(1'b0),
+        .x_val(64'b0),
+        .v_val(speed_4),
+        .step_bit(sp_config[5:0]),
+        .dir(mot_5_dir),
+        .step(mot_5_step)
+    );
+
+    speed_integrator sp5(
+        .clk(clk),
+        .reset(n_rdy),
+        .set_v(load_speeds),
+        .set_x(1'b0),
+        .x_val(64'b0),
+        .v_val(speed_5),
+        .step_bit(sp_config[5:0]),
+        .dir(mot_6_dir),
+        .step(mot_6_step)
+    );
+
+    speed_integrator sp6(
+        .clk(clk),
+        .reset(n_rdy),
+        .set_v(load_speeds),
+        .set_x(1'b0),
+        .x_val(64'b0),
+        .v_val(speed_6),
+        .step_bit(sp_config[5:0]),
+        .dir(mot_7_dir),
+        .step(mot_7_step)
+    );
+
+    speed_integrator sp7(
+        .clk(clk),
+        .reset(n_rdy),
+        .set_v(load_speeds),
+        .set_x(1'b0),
+        .x_val(64'b0),
+        .v_val(speed_7),
+        .step_bit(sp_config[5:0]),
+        .dir(mot_8_dir),
+        .step(mot_8_step)
     );
 
 endmodule
