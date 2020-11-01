@@ -48,9 +48,9 @@ module speed_integrator(
                     if (x[step_bit] != x_acc[step_bit])
                         begin
                             if (v > 0)
-                                next_dir <= 1;
-                            else
                                 next_dir <= 0;
+                            else
+                                next_dir <= 1;
                             next_step <= 1;
                         end
                 end
