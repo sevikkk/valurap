@@ -672,7 +672,7 @@ module pg_tb;
                         16800: `assert_signal("Speed", sp0.v, 145)
                         17000: `assert_signal("Speed", sp0.v, 175)
                         18200: `assert_signal("Speed", sp0.v, 355)
-                         //*********************************
+                        //*********************************
                         // 30 steps with A=-27 until 0
                         //*********************************
                         18350: begin
@@ -709,6 +709,7 @@ module pg_tb;
                         21200: `assert_signal("Speed", sp0.v, 35)
                         21400: `assert_signal("Speed", sp0.v, 11)
                         21600: `assert_signal("Speed", sp0.v, 0)
+                        21601: `assert_signal("Speed", sp0.x, 1689600)
 
                         //*********************************
                         // Done
