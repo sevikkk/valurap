@@ -163,13 +163,19 @@ module top_tb;
                                 //    0x88776655 -> reg0
                                 //    DONE
                                 packet = {
-                                    buf_cmds.S3G_WRITE_FIFO_HDR(34),
+                                    buf_cmds.S3G_WRITE_FIFO_HDR(38),
+                                    /* 0 */
                                     buf_cmds.OUTPUT(0, 32'd1000),    // dt_val = 1000
                                     buf_cmds.OUTPUT(1, 32'd100),     // steps_val = 100
                                     buf_cmds.OUTPUT(2, 32'd16),       // step_bit = 16
+                                    buf_cmds.OUTPUT(3, 32'd16),       // pre_n
+                                    buf_cmds.OUTPUT(4, 32'd32),       // pulse_n
+                                    buf_cmds.OUTPUT(5, 32'd48),       // post_n
+                                    buf_cmds.OUTPUT(7, 32'h80808),       // post_n
                                     buf_cmds.PARAM_ADDR(0),
                                     buf_cmds.PARAM_WRITE_LO(0, 1),   // CH0.STATUS=1
                                     buf_cmds.PARAM_WRITE_HI(0),
+                                    /* 10 */
                                     buf_cmds.PARAM_WRITE_LO(3, 0),   // CH0.V_OUT=0
                                     buf_cmds.PARAM_WRITE_HI(0),
                                     buf_cmds.PARAM_WRITE_LO(1, 5),   // CH0.A=5
@@ -180,6 +186,7 @@ module top_tb;
                                     buf_cmds.PARAM_WRITE_HI(0),
                                     buf_cmds.PARAM_WRITE_LO(1, 0),   // CH0.TARGET_V=0
                                     buf_cmds.PARAM_WRITE_HI(0),
+
                                     buf_cmds.PARAM_WRITE_LO(1, 10),   // CH0.ABORT_A=10
                                     buf_cmds.PARAM_WRITE_HI(0),
                                     buf_cmds.PARAM_WRITE_LO_NC(0),   // CH1.STATUS=0
@@ -190,6 +197,7 @@ module top_tb;
                                     buf_cmds.PARAM_WRITE_HI(0),
                                     buf_cmds.PARAM_WRITE_LO_NC(0),   // CH4
                                     buf_cmds.PARAM_WRITE_HI(0),
+
                                     buf_cmds.PARAM_WRITE_LO_NC(0),   // CH5
                                     buf_cmds.PARAM_WRITE_HI(0),
                                     buf_cmds.PARAM_WRITE_LO_NC(0),   // CH6
@@ -202,14 +210,14 @@ module top_tb;
                                 send_packet = 1;
                             end
 
-                        115000:
+                        126000:
                             begin
-                                `assert_rx(128'hd507765481de03000059)
+                                `assert_rx(128'hd507765481da03000057)
                                 packet = buf_cmds.S3G_STB(1);
                                 send_packet = 1;
                             end
 
-                        124000:
+                        135000:
                         begin
                             `assert_rx(128'hd503765481a0)
                         end

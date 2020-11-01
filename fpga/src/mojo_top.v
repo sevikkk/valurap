@@ -134,38 +134,6 @@ module mojo_top#(
     assign stm_int = 1'b0;
     assign stm_miso = 1'b0;
 
-    assign mot_1_enable = 1'b1;
-
-    assign mot_2_enable = 1'b1;
-
-    assign mot_3_enable = 1'b1;
-
-    assign mot_4_enable = 1'b1;
-
-    assign mot_5_enable = 1'b1;
-
-    assign mot_6_enable = 1'b1;
-
-    assign mot_7_enable = 1'b1;
-
-    assign mot_8_enable = 1'b1;
-
-    assign mot_9_step = 1'b0;
-    assign mot_9_dir = 1'b0;
-    assign mot_9_enable = 1'b1;
-
-    assign mot_10_step = 1'b0;
-    assign mot_10_dir = 1'b0;
-    assign mot_10_enable = 1'b1;
-
-    assign mot_11_step = 1'b0;
-    assign mot_11_dir = 1'b0;
-    assign mot_11_enable = 1'b1;
-
-    assign mot_12_step = 1'b0;
-    assign mot_12_dir = 1'b0;
-    assign mot_12_enable = 1'b1;
-
     assign ext2_1 = blink_cnt[17];
     assign ext2_2 = blink_cnt[16];
     assign ext2_3 = blink_cnt[15];
@@ -330,6 +298,14 @@ module mojo_top#(
 
     wire load_next_params;
 
+    wire [8*12:0] motor_cfg;
+    wire [31:0] motor_x [0:11];
+    wire [31:0] motor_hold [0:11];
+    wire [31:0] pre_n;
+    wire [31:0] pulse_n;
+    wire [31:0] post_n;
+    wire [31:0] motor_x_val;
+
     s3g_executor s3g_executor(
         .clk(clk),
         .rst(n_rdy),
@@ -425,7 +401,14 @@ module mojo_top#(
 
         .out_reg0(dt_val),
         .out_reg1(steps_val),
-        .out_reg2(sp_config)
+        .out_reg2(sp_config),
+        .out_reg3(pre_n),
+        .out_reg4(pulse_n),
+        .out_reg5(post_n),
+        .out_reg6(motor_x_val),
+        .out_reg7(motor_cfg[31:0]),
+        .out_reg8(motor_cfg[63:32]),
+        .out_reg9(motor_cfg[95:64])
     );
 
     wire fifo_empty;
@@ -483,14 +466,7 @@ module mojo_top#(
         .ext_clear_ints(ext_clear_ints)
     );
 
-    wire [63:0] speed_0;
-    wire [63:0] speed_1;
-    wire [63:0] speed_2;
-    wire [63:0] speed_3;
-    wire [63:0] speed_4;
-    wire [63:0] speed_5;
-    wire [63:0] speed_6;
-    wire [63:0] speed_7;
+    wire [63:0] speed [0:7];
 
     profile_gen apg(
         .clk(clk),
@@ -504,14 +480,14 @@ module mojo_top#(
         .abort(pg_abort),
         .pending_aborts(pending_aborts),
         .done_aborts(done_aborts),
-        .speed_0(speed_0),
-        .speed_1(speed_1),
-        .speed_2(speed_2),
-        .speed_3(speed_3),
-        .speed_4(speed_4),
-        .speed_5(speed_5),
-        .speed_6(speed_6),
-        .speed_7(speed_7)
+        .speed_0(speed[0]),
+        .speed_1(speed[1]),
+        .speed_2(speed[2]),
+        .speed_3(speed[3]),
+        .speed_4(speed[4]),
+        .speed_5(speed[5]),
+        .speed_6(speed[6]),
+        .speed_7(speed[7])
     );
 
     acc_step_gen#(.MIN_LOAD_CYCLES(50)) asg(
@@ -534,100 +510,116 @@ module mojo_top#(
         .load_next_params(load_next_params)
     );
 
-    speed_integrator sp0(
-        .clk(clk),
-        .reset(n_rdy),
-        .set_v(load_speeds),
-        .set_x(1'b0),
-        .x_val(64'b0),
-        .v_val(speed_0),
-        .step_bit(sp_config[5:0]),
-        .dir(mot_1_dir),
-        .step(mot_1_step)
-    );
+    wire [7:0] sp_steps;
+    wire [7:0] sp_dirs;
+    wire [7:0] sp_holds;
 
-    speed_integrator sp1(
-        .clk(clk),
-        .reset(n_rdy),
-        .set_v(load_speeds),
-        .set_x(1'b0),
-        .x_val(64'b0),
-        .v_val(speed_1),
-        .step_bit(sp_config[5:0]),
-        .dir(mot_2_dir),
-        .step(mot_2_step)
-    );
+    wire [11:0] mm_steps;
+    wire [11:0] mm_dirs;
+    wire [11:0] mm_holds;
+    wire [11:0] motor_steps;
+    wire [11:0] motor_dirs;
+    wire [11:0] motor_enables;
 
-    speed_integrator sp2(
-        .clk(clk),
-        .reset(n_rdy),
-        .set_v(load_speeds),
-        .set_x(1'b0),
-        .x_val(64'b0),
-        .v_val(speed_2),
-        .step_bit(sp_config[5:0]),
-        .dir(mot_3_dir),
-        .step(mot_3_step)
-    );
 
-    speed_integrator sp3(
-        .clk(clk),
-        .reset(n_rdy),
-        .set_v(load_speeds),
-        .set_x(1'b0),
-        .x_val(64'b0),
-        .v_val(speed_3),
-        .step_bit(sp_config[5:0]),
-        .dir(mot_4_dir),
-        .step(mot_4_step)
-    );
+    assign sp_holds = 8'b0;
 
-    speed_integrator sp4(
-        .clk(clk),
-        .reset(n_rdy),
-        .set_v(load_speeds),
-        .set_x(1'b0),
-        .x_val(64'b0),
-        .v_val(speed_4),
-        .step_bit(sp_config[5:0]),
-        .dir(mot_5_dir),
-        .step(mot_5_step)
-    );
+    genvar ch;
+    generate
+        for (ch = 0; ch < 8; ch = ch+1) begin
+            speed_integrator sp(
+                .clk(clk),
+                .reset(n_rdy),
+                .set_v(load_speeds),
+                .set_x(1'b0),
+                .x_val(64'b0),
+                .v_val(speed[ch]),
+                .step_bit(sp_config[5:0]),
+                .dir(sp_dirs[ch]),
+                .step(sp_steps[ch])
+            );
+        end
+    endgenerate
 
-    speed_integrator sp5(
-        .clk(clk),
-        .reset(n_rdy),
-        .set_v(load_speeds),
-        .set_x(1'b0),
-        .x_val(64'b0),
-        .v_val(speed_5),
-        .step_bit(sp_config[5:0]),
-        .dir(mot_6_dir),
-        .step(mot_6_step)
-    );
+    generate
+        for (ch = 0; ch < 12; ch = ch+1) begin
+            motor_mux mm(
+                .steps(sp_steps),
+                .dirs(sp_dirs),
+                .holds(sp_holds),
+                .mux_select(motor_cfg[8*ch+2:8*ch]),
+                .enable(motor_cfg[8*ch+3]),
+                .invert_dir(motor_cfg[8*ch+4]),
+                .step(mm_steps[ch]),
+                .dir(mm_dirs[ch]),
+                .hold(mm_holds[ch])
+            );
+            motor_step_gen sg(
+                .clk(clk),
+                .reset(n_rdy),
+                .pre_n(pre_n),
+                .pulse_n(pulse_n),
+                .post_n(post_n),
+                .step_stb(mm_steps[ch]),
+                .step_dir(mm_dirs[ch]),
+                .set_x(motor_cfg[8*ch+6] & stbs[5]),
+                .x_val(motor_x_val),
+                .x(motor_x[ch]),
+                .hold(mm_holds[ch]),
+                .x_hold(motor_hold[ch]),
+                .step(motor_steps[ch]),
+                .dir(motor_dirs[ch])
+            );
+            assign motor_enables[ch] = motor_cfg[8*ch+7];
+        end
+    endgenerate
 
-    speed_integrator sp6(
-        .clk(clk),
-        .reset(n_rdy),
-        .set_v(load_speeds),
-        .set_x(1'b0),
-        .x_val(64'b0),
-        .v_val(speed_6),
-        .step_bit(sp_config[5:0]),
-        .dir(mot_7_dir),
-        .step(mot_7_step)
-    );
+    assign mot_1_step = motor_steps[0];
+    assign mot_1_dir = motor_dirs[0];
+    assign mot_1_enable = motor_enables[0];
 
-    speed_integrator sp7(
-        .clk(clk),
-        .reset(n_rdy),
-        .set_v(load_speeds),
-        .set_x(1'b0),
-        .x_val(64'b0),
-        .v_val(speed_7),
-        .step_bit(sp_config[5:0]),
-        .dir(mot_8_dir),
-        .step(mot_8_step)
-    );
+    assign mot_2_step = motor_steps[1];
+    assign mot_2_dir = motor_dirs[1];
+    assign mot_2_enable = motor_enables[1];
+
+    assign mot_3_step = motor_steps[2];
+    assign mot_3_dir = motor_dirs[2];
+    assign mot_3_enable = motor_enables[2];
+
+    assign mot_4_step = motor_steps[3];
+    assign mot_4_dir = motor_dirs[3];
+    assign mot_4_enable = motor_enables[3];
+
+    assign mot_5_step = motor_steps[4];
+    assign mot_5_dir = motor_dirs[4];
+    assign mot_5_enable = motor_enables[4];
+
+    assign mot_6_step = motor_steps[5];
+    assign mot_6_dir = motor_dirs[5];
+    assign mot_6_enable = motor_enables[5];
+
+    assign mot_7_step = motor_steps[6];
+    assign mot_7_dir = motor_dirs[6];
+    assign mot_7_enable = motor_enables[6];
+
+    assign mot_8_step = motor_steps[7];
+    assign mot_8_dir = motor_dirs[7];
+    assign mot_8_enable = motor_enables[7];
+
+    assign mot_9_step = motor_steps[8];
+    assign mot_9_dir = motor_dirs[8];
+    assign mot_9_enable = motor_enables[8];
+
+    assign mot_10_step = motor_steps[9];
+    assign mot_10_dir = motor_dirs[9];
+    assign mot_10_enable = motor_enables[9];
+
+    assign mot_11_step = motor_steps[10];
+    assign mot_11_dir = motor_dirs[10];
+    assign mot_11_enable = motor_enables[10];
+
+    assign mot_12_step = motor_steps[11];
+    assign mot_12_dir = motor_dirs[11];
+    assign mot_12_enable = motor_enables[11];
 
 endmodule
