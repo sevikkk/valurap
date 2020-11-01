@@ -555,6 +555,8 @@ module pg_tb;
                             `assert_signal("Waiting for params", asg.waiting_for_params, 1)
                             `assert_signal("Steps == 0", asg.steps, 0)
                             `assert_signal("ASG Busy", asg.busy, 0)
+                            `assert_signal("Error unexpected params", asg.error_unexpected_params_write, 0)
+                            `assert_signal("Error late params", asg.error_late_params, 0)
                         end
                         20000:
                             begin
