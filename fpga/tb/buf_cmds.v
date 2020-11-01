@@ -54,6 +54,49 @@ module buf_cmds();
         end
     endfunction
 
+    function [39:0] PARAM_ADDR;
+        input [31:0] data;
+        begin
+            PARAM_ADDR = BUF_CMD(2, 6, data);
+        end
+    endfunction
+
+    function [39:0] PARAM_WRITE_HI;
+        input [31:0] data;
+        begin
+            PARAM_WRITE_HI = BUF_CMD(2, 7, data);
+        end
+    endfunction
+
+    function [39:0] PARAM_WRITE_LO;
+        input [2:0] offset;
+        input [31:0] data;
+        begin
+            PARAM_WRITE_LO = BUF_CMD(2, 8+offset, data);
+        end
+    endfunction
+
+    function [39:0] PARAM_WRITE_LO_NC;
+        input [31:0] data;
+        begin
+            PARAM_WRITE_LO_NC = BUF_CMD(2, 15, data);
+        end
+    endfunction
+
+    function [39:0] PARAM_WAIT_LOCAL_FIFO;
+        input [31:0] data;
+        begin
+            PARAM_WAIT_LOCAL_FIFO = BUF_CMD(2, 5, {1'b0, data[30:0]});
+        end
+    endfunction
+
+    function [39:0] PARAM_WAIT_GLOBAL_FIFO;
+        input [31:0] data;
+        begin
+            PARAM_WAIT_GLOBAL_FIFO = BUF_CMD(2, 5, {1'b1, data[30:0]});
+        end
+    endfunction
+
     function [63:0] S3G_WRITE_BUFFER_HDR;
         input [15:0] offset;
         input [7:0] len;
