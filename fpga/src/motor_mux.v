@@ -14,7 +14,7 @@ module motor_mux
     );
 
     assign step = steps[mux_select] & enable;
-    assign hold = steps[mux_select] & enable;
+    assign hold = holds[mux_select] & enable;
     assign dir = dirs[mux_select] ^ invert_dir;
 
 endmodule

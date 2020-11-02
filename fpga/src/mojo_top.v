@@ -526,12 +526,12 @@ module mojo_top#(
 
     genvar ch;
     generate
-        for (ch = 0; ch < 8; ch = ch+1) begin
+        for (ch = 0; ch < 8; ch = ch+1) begin : speeds_block
             speed_integrator sp(
                 .clk(clk),
                 .reset(n_rdy),
                 .set_v(load_speeds),
-                .set_x(1'b0),
+                .set_x(stbs[5]),
                 .x_val(64'b0),
                 .v_val(speed[ch]),
                 .step_bit(sp_config[5:0]),
@@ -542,7 +542,7 @@ module mojo_top#(
     endgenerate
 
     generate
-        for (ch = 0; ch < 12; ch = ch+1) begin
+        for (ch = 0; ch < 12; ch = ch+1) begin : motors_block
             motor_mux mm(
                 .steps(sp_steps),
                 .dirs(sp_dirs),
@@ -562,7 +562,7 @@ module mojo_top#(
                 .post_n(post_n),
                 .step_stb(mm_steps[ch]),
                 .step_dir(mm_dirs[ch]),
-                .set_x(motor_cfg[8*ch+6] & stbs[5]),
+                .set_x(motor_cfg[8*ch+6] & stbs[6]),
                 .x_val(motor_x_val),
                 .x(motor_x[ch]),
                 .hold(mm_holds[ch]),

@@ -70,6 +70,9 @@ module motor_step_gen(
 
             if (!reset & hold)
                 next_x_hold <= x;
+
+            if (!reset & set_x)
+                next_x <= x_val;
         end
 
     always @(posedge clk)
