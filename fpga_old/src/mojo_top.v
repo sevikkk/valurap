@@ -1,7 +1,7 @@
 module mojo_top #(
     parameter CLK_RATE = 50000000,
     parameter AVR_BAUD_RATE = 500000,
-    parameter EXT_BAUD_RATE = 500000,
+    parameter EXT_BAUD_RATE = 1500000,
     parameter INTS_TIMER = 10000000
 )(
     // 50MHz clock input

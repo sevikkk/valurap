@@ -4,6 +4,7 @@ from valurap.s3g import S3GPortBase
 
 
 class S3GPort(S3GPortBase):
+    default_baudrate = 1500000
     OUT_LEDS = 0
     OUT_ASG_STEPS_VAL = 1
     OUT_ASG_DT_VAL = 2
