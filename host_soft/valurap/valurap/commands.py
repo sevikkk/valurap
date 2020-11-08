@@ -333,7 +333,7 @@ class S3GPort(S3GPortBase):
         data = bytearray().join(values)
         l = len(data)
         if l % 5 != 0:
-            raise ValueError("Buffer length is not mutiple of 5")
+            raise ValueError("Buffer length is not multiple of 5")
 
         l = l / 5
         while data:
