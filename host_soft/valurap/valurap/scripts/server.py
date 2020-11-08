@@ -81,7 +81,7 @@ def valurap_processing_loop():
             elif q[0] == "exec_code":
                 prn.abs_safe = False
                 code = q[1]
-                prn.exec_long_code(code, splits=1000, verbose=True)
+                prn.exec_long_code(code, splits=1000, low_buf=2500, verbose=True)
             else:
                 print("Unknown command", q[0])
     except CancelledError:
@@ -178,6 +178,45 @@ def load_layer(layer):
 
     print("all done")
     return 200, {"ok": 1}
+
+def load_binary(layer):
+    try:
+        print("pickle load start")
+        full_code = pickle.loads(layer)
+        print("pickle load done")
+    except:
+        return 400, {"ok": 0, "err": "unpickle failed"}
+
+    prn = prns[0]
+
+    if prn.long_code and len(prn.long_code) > 100:
+        print("longcode append")
+        prn.long_code.extend(full_code)
+        print("longcode append done")
+    else:
+        print("format command")
+        long_code = deque()
+        long_code.extend(full_code)
+        print("queue put")
+        fut = asyncio.run_coroutine_threadsafe(prn_queue.put(["exec_code", long_code]), loop)
+        fut.result()
+        print("queue put done")
+        attempts = 10000
+        while True:
+            if prn.long_code and len(prn.long_code) > 0:
+                break
+            else:
+                attempts -= 1
+                if attempts < 0:
+                    print("waiting for print start failed")
+                    return 400, {"ok": 0, "err": "waiting for print start timed out"}
+
+                print("waiting for print start")
+                time.sleep(0.01)
+
+    print("all done")
+    return 200, {"ok": 1}
+
 
 async def stop_valurap(app):
     global stopping
@@ -319,6 +358,11 @@ async def api(request):
         layer = data["code"].file.read()
         print("code len: {} {}".format(len(layer), type(layer)))
         status, result = await loop.run_in_executor(None, load_layer, layer)
+    elif cmd == "exec_binary":
+        data = await request.post()
+        layer = data["code"].file.read()
+        print("binary len: {} {}".format(len(layer), type(layer)))
+        status, result = await loop.run_in_executor(None, load_binary, layer)
     elif cmd == "query":
         result = {
             "idle": prns[0].idle,

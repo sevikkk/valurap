@@ -59,6 +59,17 @@ class Client:
         r = requests.post(self.motion_base + "?cmd=exec_code", files={"code": data})
         return r
 
+
+    def exec_binary(self, codes):
+        if self.emu:
+            print("send code", len(codes))
+            return
+
+        data = pickle.dumps(codes)
+        r = requests.post(self.motion_base + "?cmd=exec_binary", files={"code": data})
+        return r
+
+
     def abort(self):
         self._do_api_request('abort')
 

@@ -11,10 +11,16 @@ import cv2
 from sklearn.linear_model import LinearRegression
 
 from valurap import rest_client
+from valurap.asg import ProfileSegment
+from valurap.printer import Valurap
 from valurap import path_planning2 as pp2
 
 fn_tpl = '{}_{:05d}.layer'
+
 base = sys.argv[1]
+if base.endswith(".gcode"):
+    base = base[:-6]
+
 assert os.path.exists(fn_tpl.format(base, 0))
 
 c = rest_client.Client()
@@ -68,6 +74,13 @@ class Prn():
         self.accumulated_layers = []
         self.first_send = True
         self.offsets = deepcopy(self.base_offsets)
+        self.prn = Valurap()
+        self.prn.axe_z.enabled = True
+        self.prn.axe_x1.enabled = True
+        self.prn.axe_x2.enabled = True
+        self.prn.axe_e1.enabled = True
+        self.prn.axe_e2.enabled = True
+        self.prn.axe_y.enabled = True
 
     def wait(self, axe="X1"):
         r = self.c.wait_idle()
@@ -159,7 +172,7 @@ class Prn():
 
         c.moveto(**{axe: int(round(tx)), "Y": int(round(ty))})
         rf = self.wait(axe)
-        att = 5
+        att = 20
         while True:
             cx, cy, img = self.get_circles(axe=axe)
 
@@ -219,12 +232,20 @@ class Prn():
             if acc_len > exp_len:
                 self.first_send = False
                 exp_len = 500
-                self.c.exec_code(sub_chunks)
+                if 0:
+                    self.c.exec_code(sub_chunks)
+                else:
+                    codes = self.format_layer(sub_chunks)
+                    self.c.exec_binary(codes)
                 sub_chunks = []
                 acc_len = 0
 
         if sub_chunks:
-            self.c.exec_code(sub_chunks)
+            if 0:
+                self.c.exec_code(sub_chunks)
+            else:
+                codes = self.format_layer(sub_chunks)
+                self.c.exec_binary(codes)
 
         print("[PRN] DONE")
 
@@ -238,7 +259,7 @@ class Prn():
         r = c.wait_idle()
         print(r)
 
-        if 1:
+        if 0:
             self.adjust_offsets()
 
         c.moveto(X1=-190 * self.planner.spm, X2=170 * self.planner.spm)
@@ -316,6 +337,44 @@ class Prn():
             "extruder": self.current_extruder
         }, tupled_segment))
 
+    def format_layer(self, layer):
+        codes = []
+        prn = self.prn
+        for pp in layer:
+            if pp[0] != "segment":
+                continue
+
+            cmd, meta, segments = pp
+            if "map" in meta:
+                if meta["map"]:
+                    codes.append(prn.asg.gen_map_code(meta["map"]))
+
+            pr_opt = []
+
+            apgs = {
+                "X": prn.apg_x,
+                "Y": prn.apg_y,
+                "Z": prn.apg_z,
+            }
+
+            for dt, segs in segments:
+                pr_opt.append([
+                    dt, [ProfileSegment.from_tuple(s, apgs) for s in segs]
+                ])
+
+            path_code = prn.asg.gen_path_code(pr_opt,
+                                              accel_step=50000000/meta["acc_step"],
+                                              real_apgs=apgs)
+            print(len(path_code))
+            codes.append(path_code)
+
+        full_code = []
+        for code in codes:
+            full_code.extend(code[:-1])
+
+        return full_code
+
+
     def process_segment(self, segment, start, end, e):
         assert e == self.current_extruder
         if self.current_extruder == "E1":
@@ -383,7 +442,11 @@ class Prn():
                 if acc_len > exp_len:
                     self.first_send = False
                     exp_len = 500
-                    self.c.exec_code(sub_chunks)
+                    if 0:
+                        self.c.exec_code(sub_chunks)
+                    else:
+                        codes = self.format_layer(sub_chunks)
+                        self.c.exec_binary(codes)
                     sub_chunks = []
                     acc_len = 0
 
