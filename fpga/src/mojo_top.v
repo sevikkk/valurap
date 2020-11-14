@@ -634,13 +634,13 @@ module mojo_top#(
             motor_mux mm(
                 .steps(sp_steps),
                 .dirs(sp_dirs),
-                .mux_select(motor_cfg[16*ch+5:16*ch+3]),
-                .enable_step(motor_cfg[16*ch+6]),
-                .invert_dir(motor_cfg[16*ch+7]),
+                .enable_step(motor_cfg[16*ch+3]),
+                .mux_select(motor_cfg[16*ch+6:16*ch+4]),
+                .enable_es_abort(motor_cfg[16*ch+7]),
+                .invert_dir(motor_cfg[16*ch+8]),
 
                 .in_aborts(es_aborts[ch]),
                 .out_aborts(es_aborts[ch+1]),
-                .enable_es_abort(motor_cfg[16*ch+8]),
                 .es_abort(mm_stbs[ch]),
 
                 .step(mm_steps[ch]),

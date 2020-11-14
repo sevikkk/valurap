@@ -172,7 +172,7 @@ module top_tb;
                                     buf_cmds.OUTPUT(3, 32'd16),       // pre_n
                                     buf_cmds.OUTPUT(4, 32'd32),       // pulse_n
                                     buf_cmds.OUTPUT(5, 32'd48),       // post_n
-                                    buf_cmds.OUTPUT(7, 32'h888888),       // post_n
+                                    buf_cmds.OUTPUT(7, 32'h80198008),       // post_n
                                     buf_cmds.PARAM_ADDR(0),
                                     buf_cmds.PARAM_WRITE_LO(0, 1),   // CH0.STATUS=1
                                     buf_cmds.PARAM_WRITE_HI(0),

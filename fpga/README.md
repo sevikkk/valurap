@@ -21,7 +21,14 @@ Outputs
 | 4 | MSG_ALL_PULSE_N | 31..0 | Length of pulse
 | 5 | MSG_ALL_POST_N | 31..0 | Length of post-pulse
 | 6  | MSG_X_VAL| 31..0 | Value to set X to
-| 7 | MSG_CONFIG0 | |
+| 7 | MSG_CONFIG0 | 2..0 | ES mux select
+|  |              | 3 | Enable steps
+|  |              | 6..4 | SP mux select
+|  |              | 7 | Enable abort on ES change
+|  |              | 8 | Invert Direction
+|  |              | 9 | Set X value by stb[6]
+|  |              | 14..10 | Unused
+|  |              | 15 | Set enable output
 | 8 | MSG_CONFIG1 | |
 | 9 | MSG_CONFIG2 | |
 | 10 | MSG_CONFIG3 | |
