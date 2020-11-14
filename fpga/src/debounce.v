@@ -7,7 +7,7 @@ module debounce(
     output reg signal,
     output reg hold,
     output reg stb,
-    output reg [7:0] cycles
+    output locked
 );
 
     reg sig_reg1;
@@ -23,7 +23,8 @@ module debounce(
     localparam
         S_STABLE=0,
         S_BOUNCE1=1,
-        S_BOUNCE2=2;
+        S_BOUNCE2=2,
+        S_LOCKED=3;
 
     reg [15:0] timer;
     reg [15:0] next_timer;
@@ -33,6 +34,8 @@ module debounce(
     reg next_signal;
     reg next_hold;
     reg next_stb;
+
+    assign locked = (state == S_LOCKED);
 
     always @(*)
         begin
@@ -60,6 +63,14 @@ module debounce(
                                         next_hold <= 1;
                                     end
                             end
+                        S_LOCKED:
+                            begin
+                                if (unlock)
+                                    begin
+                                        next_signal <= sig;
+                                        next_state <= S_STABLE;
+                                    end
+                            end
                         S_BOUNCE1:
                             begin
                                 if (sig != signal)
@@ -68,7 +79,7 @@ module debounce(
                                         if (timer > timeout[15:0])
                                             begin
                                                 next_signal <= sig;
-                                                next_state <= S_STABLE;
+                                                next_state <= S_LOCKED;
                                                 next_stb <= 1;
                                             end
                                     end
