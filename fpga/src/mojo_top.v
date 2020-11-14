@@ -286,11 +286,13 @@ module mojo_top#(
 
     wire [39:0] ext_fifo_data;
     wire ext_fifo_wr;
-    wire [FIFO_ADDRESS_WIDTH:0] ext_fifo_free_space;
-    wire [FIFO_ADDRESS_WIDTH:0] ext_fifo_data_count;
+    wire [31:0] ext_fifo_free_space;
+    wire [31:0] ext_fifo_data_count;
 
     wire be_done;
     wire [7:0] done_aborts;
+
+    wire asg_done;
 
     wire [31:0] dt_val;
     wire [31:0] steps_val;
@@ -298,13 +300,21 @@ module mojo_top#(
 
     wire load_next_params;
 
-    wire [8*12:0] motor_cfg;
+    wire [16*12:0] motor_cfg;
     wire [31:0] motor_x [0:11];
     wire [31:0] motor_hold [0:11];
     wire [31:0] pre_n;
     wire [31:0] pulse_n;
     wire [31:0] post_n;
     wire [31:0] motor_x_val;
+
+    wire [31:0] es_timeout;
+    wire [31:0] reg_loopback;
+    wire [31:0] be_status;
+    wire [31:0] apg_status;
+    wire [31:0] es_status;
+
+    wire global_abort;
 
     s3g_executor s3g_executor(
         .clk(clk),
@@ -355,12 +365,12 @@ module mojo_top#(
 
         .ext_fifo_data(ext_fifo_data),
         .ext_fifo_wr(ext_fifo_wr),
-        .ext_fifo_free_space({{(31-FIFO_ADDRESS_WIDTH){1'b0}}, ext_fifo_free_space}),
+        .ext_fifo_free_space(ext_fifo_free_space),
 
         .int0(be_done),
         .int1(load_next_params),
-        .int2(1'b0),
-        .int3(1'b0),
+        .int2(asg_done),
+        .int3(global_abort),
         .int4(1'b0),
         .int5(1'b0),
         .int6(1'b0),
@@ -408,12 +418,39 @@ module mojo_top#(
         .out_reg6(motor_x_val),
         .out_reg7(motor_cfg[31:0]),
         .out_reg8(motor_cfg[63:32]),
-        .out_reg9(motor_cfg[95:64])
+        .out_reg9(motor_cfg[95:64]),
+        .out_reg10(motor_cfg[127:96]),
+        .out_reg11(motor_cfg[159:128]),
+        .out_reg12(motor_cfg[191:160]),
+        .out_reg13(es_timeout),
+        .out_reg63(reg_loopback),
+
+        .in_reg0(be_status),
+        .in_reg1(apg_status),
+        .in_reg2(es_status),
+        .in_reg3(ext_fifo_free_space),
+        .in_reg4(ext_fifo_data_count),
+        .in_reg5(motor_hold[0]),
+        .in_reg6(motor_hold[1]),
+        .in_reg7(motor_hold[2]),
+        .in_reg8(motor_hold[3]),
+        .in_reg9(motor_hold[4]),
+        .in_reg10(motor_hold[5]),
+        .in_reg11(motor_hold[6]),
+        .in_reg12(motor_hold[7]),
+        .in_reg13(motor_hold[8]),
+        .in_reg14(motor_hold[9]),
+        .in_reg15(motor_hold[10]),
+        .in_reg16(motor_hold[11]),
+        .in_reg63(reg_loopback)
     );
 
     wire fifo_empty;
     wire fifo_read;
     wire [39:0] fifo_read_data;
+
+    assign ext_fifo_free_space[31:FIFO_ADDRESS_WIDTH+1] = 0;
+    assign ext_fifo_data_count[31:FIFO_ADDRESS_WIDTH+1] = 0;
 
     fifo#(.ADDRESS_WIDTH(FIFO_ADDRESS_WIDTH), .DATA_WIDTH(40)) fifo(
         .clk(clk),
@@ -422,8 +459,8 @@ module mojo_top#(
         .write(ext_fifo_wr),
         .read_data(fifo_read_data),
         .read(fifo_read),
-        .free_count(ext_fifo_free_space),
-        .data_count(ext_fifo_data_count),
+        .free_count(ext_fifo_free_space[FIFO_ADDRESS_WIDTH:0]),
+        .data_count(ext_fifo_data_count[FIFO_ADDRESS_WIDTH:0]),
         .empty(fifo_empty)
     );
 
@@ -434,13 +471,14 @@ module mojo_top#(
     wire gated_param_write_hi;
     wire gated_param_write_lo;
     wire [7:0] pg_abort;
-    wire global_abort;
     wire [7:0] pending_aborts;
     wire start_calc;
     wire calc_done;
     wire load_speeds;
 
-    assign pg_abort = stbs[15:8] | {8{global_abort}};
+    wire [7:0] es_abort;
+
+    assign pg_abort = stbs[15:8] | {8{global_abort}} | es_abort;
 
     buf_executor buf_exec(
         .clk(clk),
@@ -450,8 +488,8 @@ module mojo_top#(
         .fifo_empty(fifo_empty),
         .fifo_data(fifo_read_data),
         .fifo_read(fifo_read),
-        .fifo_global_count({{(31-FIFO_ADDRESS_WIDTH){1'b0}}, ext_fifo_data_count}),
-        .fifo_local_count({{(31-FIFO_ADDRESS_WIDTH){1'b0}}, ext_fifo_data_count}),
+        .fifo_global_count(ext_fifo_data_count),
+        .fifo_local_count(ext_fifo_data_count),
         .ext_out_reg_addr(ext_out_reg_addr),
         .ext_out_reg_data(ext_out_reg_data),
         .ext_out_reg_stb(ext_out_reg_stb),
@@ -463,7 +501,14 @@ module mojo_top#(
         .param_write_lo(param_write_lo),
         .done(be_done),
         .ext_out_stbs(ext_out_stbs),
-        .ext_clear_ints(ext_clear_ints)
+        .ext_clear_ints(ext_clear_ints),
+        .busy(be_status[0]),
+        .aborting(be_status[1]),
+        .waiting_for_data(be_status[2]),
+        .waiting_for_int(be_status[3]),
+        .aborted(be_status[4]),
+        .buffer_underrun(be_status[5]),
+        .bad_code(be_status[6])
     );
 
     wire [63:0] speed [0:7];
@@ -507,12 +552,24 @@ module mojo_top#(
         .start_calc(start_calc),
         .acc_calc_done(calc_done),
         .load_speeds(load_speeds),
-        .load_next_params(load_next_params)
+        .load_next_params(load_next_params),
+        .busy(apg_status[0]),
+        .done(asg_done)
     );
+
+    wire [7:0] es_inputs;
+
+    assign es_inputs[0] = endstop_x1;
+    assign es_inputs[1] = endstop_x2;
+    assign es_inputs[2] = endstop_y1;
+    assign es_inputs[3] = endstop_y2;
+    assign es_inputs[4] = endstop_z1;
+    assign es_inputs[5] = endstop_z2;
+    assign es_inputs[6] = endstop_z3;
+    assign es_inputs[7] = endstop_z4;
 
     wire [7:0] sp_steps;
     wire [7:0] sp_dirs;
-    wire [7:0] sp_holds;
 
     wire [11:0] mm_steps;
     wire [11:0] mm_dirs;
@@ -521,10 +578,27 @@ module mojo_top#(
     wire [11:0] motor_dirs;
     wire [11:0] motor_enables;
 
+    wire [7:0] es_holds;
+    wire [7:0] es_stbs;
 
-    assign sp_holds = 8'b0;
 
     genvar ch;
+    generate
+        for (ch = 0; ch < 8; ch = ch+1) begin : es_block
+            debounce db(
+                .clk(clk),
+                .reset(n_rdy),
+                .signal_in(es_inputs[ch]),
+                .unlock(stbs[7]),
+                .timeout(es_timeout),
+                .signal(es_status[ch*4]),
+                .locked(es_status[ch*4 + 1]),
+                .hold(es_holds[ch]),
+                .stb(es_stbs[ch])
+            );
+        end
+    endgenerate
+
     generate
         for (ch = 0; ch < 8; ch = ch+1) begin : speeds_block
             speed_integrator sp(
@@ -541,19 +615,38 @@ module mojo_top#(
         end
     endgenerate
 
+    wire [11:0] mm_stbs;
+    wire [7:0] es_aborts [0:12];
+
+    assign es_aborts[0] = 8'b0;
+    assign es_abort = es_aborts[12];
+
     generate
         for (ch = 0; ch < 12; ch = ch+1) begin : motors_block
+            endstop_mux em(
+                .holds(es_holds),
+                .stbs(es_stbs),
+                .mux_select(motor_cfg[16*ch+2:16*ch]),
+                .hold(mm_holds[ch]),
+                .stb(mm_stbs[ch])
+            );
+
             motor_mux mm(
                 .steps(sp_steps),
                 .dirs(sp_dirs),
-                .holds(sp_holds),
-                .mux_select(motor_cfg[8*ch+2:8*ch]),
-                .enable(motor_cfg[8*ch+3]),
-                .invert_dir(motor_cfg[8*ch+4]),
+                .mux_select(motor_cfg[16*ch+5:16*ch+3]),
+                .enable_step(motor_cfg[16*ch+6]),
+                .invert_dir(motor_cfg[16*ch+7]),
+
+                .in_aborts(es_aborts[ch]),
+                .out_aborts(es_aborts[ch+1]),
+                .enable_es_abort(motor_cfg[16*ch+8]),
+                .es_abort(mm_stbs[ch]),
+
                 .step(mm_steps[ch]),
-                .dir(mm_dirs[ch]),
-                .hold(mm_holds[ch])
+                .dir(mm_dirs[ch])
             );
+
             motor_step_gen sg(
                 .clk(clk),
                 .reset(n_rdy),
@@ -562,7 +655,7 @@ module mojo_top#(
                 .post_n(post_n),
                 .step_stb(mm_steps[ch]),
                 .step_dir(mm_dirs[ch]),
-                .set_x(motor_cfg[8*ch+6] & stbs[6]),
+                .set_x(motor_cfg[16*ch+9] & stbs[6]),
                 .x_val(motor_x_val),
                 .x(motor_x[ch]),
                 .hold(mm_holds[ch]),
@@ -570,7 +663,7 @@ module mojo_top#(
                 .step(motor_steps[ch]),
                 .dir(motor_dirs[ch])
             );
-            assign motor_enables[ch] = !motor_cfg[8*ch+7];
+            assign motor_enables[ch] = !motor_cfg[8*ch+15];
         end
     endgenerate
 

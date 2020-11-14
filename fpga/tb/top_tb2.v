@@ -16,6 +16,7 @@
 `include "../src/dp_ram.v"
 `include "../src/profile_gen.v"
 `include "../src/speed_integrator.v"
+`include "../src/endstop_mux.v"
 `include "../src/fifo.v"
 `include "../tb/buf_cmds.v"
 

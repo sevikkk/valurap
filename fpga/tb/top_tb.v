@@ -12,10 +12,11 @@
 `include "../src/acc_step_gen.v"
 `include "../src/motor_step_gen.v"
 `include "../src/motor_mux.v"
-`include "../src/debounce.v"
 `include "../src/dp_ram.v"
 `include "../src/profile_gen.v"
 `include "../src/speed_integrator.v"
+`include "../src/endstop_mux.v"
+`include "../src/debounce.v"
 `include "../src/fifo.v"
 `include "../tb/buf_cmds.v"
 
