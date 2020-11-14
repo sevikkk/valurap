@@ -48,6 +48,10 @@ module top_tb;
     reg stop_x2 = 0;
     reg stop_y1 = 0;
     reg stop_y2 = 0;
+    reg stop_z1 = 0;
+    reg stop_z2 = 0;
+    reg stop_z3 = 0;
+    reg stop_z4 = 0;
 
     localparam BR=1000000;
 
@@ -88,7 +92,11 @@ module top_tb;
         .endstop_x1(stop_x1),
         .endstop_x2(stop_x2),
         .endstop_y1(stop_y1),
-        .endstop_y2(stop_y2)
+        .endstop_y2(stop_y2),
+        .endstop_z1(stop_z1),
+        .endstop_z2(stop_z2),
+        .endstop_z3(stop_z3),
+        .endstop_z4(stop_z4)
     );
 
 `define assert_rx(value) \
@@ -172,7 +180,7 @@ module top_tb;
                                     buf_cmds.OUTPUT(3, 32'd16),       // pre_n
                                     buf_cmds.OUTPUT(4, 32'd32),       // pulse_n
                                     buf_cmds.OUTPUT(5, 32'd48),       // post_n
-                                    buf_cmds.OUTPUT(7, 32'h80198008),       // post_n
+                                    buf_cmds.OUTPUT(7, 32'h80908080),       // enable 1 and 2 motors
                                     buf_cmds.PARAM_ADDR(0),
                                     buf_cmds.PARAM_WRITE_LO(0, 1),   // CH0.STATUS=1
                                     buf_cmds.PARAM_WRITE_HI(0),
@@ -223,7 +231,88 @@ module top_tb;
                             `assert_rx(128'hd503765481a0)
                         end
 
-                        500000:
+                        300000:
+                            begin
+                                // Load simple prog:
+                                //    0x88776655 -> reg0
+                                //    DONE
+                                packet = {
+                                    buf_cmds.S3G_WRITE_FIFO_HDR(44),
+                                    /* 0 */
+                                    buf_cmds.OUTPUT(1, 32'd100),     // steps_val = 100
+                                    buf_cmds.OUTPUT(7, 32'h8093808A),   //       Motor 1: Motor 2:
+                                                                        // ES:      2       3
+                                                                        // SP:      0       1
+                                                                        // ES_ABRT: +       -
+                                    buf_cmds.OUTPUT(8, 32'h80AD80AC),   //       Motor 3: Motor 4:
+                                                                        // ES:      4       5
+                                                                        // SP:      2       2
+                                                                        // ES_ABRT: +       +
+
+                                    // Channel 0: A = 5, ABORT_A = 10
+                                    buf_cmds.PARAM_ADDR(0),
+                                    buf_cmds.PARAM_WRITE_LO(0, 1),   // CH0.STATUS=1
+                                    buf_cmds.PARAM_WRITE_HI(0),
+                                    buf_cmds.PARAM_WRITE_LO(3, 0),   // CH0.V_OUT=0
+                                    buf_cmds.PARAM_WRITE_HI(0),
+                                    buf_cmds.PARAM_WRITE_LO(1, 5),   // CH0.A=5
+                                    buf_cmds.PARAM_WRITE_HI(0),
+                                    buf_cmds.PARAM_WRITE_LO(1, 0),   // CH0.J=0
+                                    buf_cmds.PARAM_WRITE_HI(0),
+                                    buf_cmds.PARAM_WRITE_LO(1, 0),   // CH0.JJ=0
+                                    buf_cmds.PARAM_WRITE_HI(0),
+                                    buf_cmds.PARAM_WRITE_LO(2, 10),   // CH0.ABORT_A=10
+                                    buf_cmds.PARAM_WRITE_HI(0),
+
+                                    // Channel 1: A = 6, ABORT_A = 20
+                                    buf_cmds.PARAM_WRITE_LO_NC(1),   // CH1.STATUS=1
+                                    buf_cmds.PARAM_WRITE_HI(0),
+                                    buf_cmds.PARAM_WRITE_LO(3, 0),   // CH1.V_OUT=0
+                                    buf_cmds.PARAM_WRITE_HI(0),
+                                    buf_cmds.PARAM_WRITE_LO(1, 6),   // CH1.A=6
+                                    buf_cmds.PARAM_WRITE_HI(0),
+                                    buf_cmds.PARAM_WRITE_LO(1, 0),   // CH1.J=0
+                                    buf_cmds.PARAM_WRITE_HI(0),
+                                    buf_cmds.PARAM_WRITE_LO(1, 0),   // CH1.JJ=0
+                                    buf_cmds.PARAM_WRITE_HI(0),
+                                    buf_cmds.PARAM_WRITE_LO(2, 20),   // CH1.ABORT_A=20
+                                    buf_cmds.PARAM_WRITE_HI(0),
+
+                                    // Channel 2: A = 7, ABORT_A = 15
+                                    buf_cmds.PARAM_WRITE_LO_NC(1),   // CH2.STATUS=1
+                                    buf_cmds.PARAM_WRITE_HI(0),
+                                    buf_cmds.PARAM_WRITE_LO(3, 0),   // CH2.V_OUT=0
+                                    buf_cmds.PARAM_WRITE_HI(0),
+                                    buf_cmds.PARAM_WRITE_LO(1, 7),   // CH2.A=6
+                                    buf_cmds.PARAM_WRITE_HI(0),
+                                    buf_cmds.PARAM_WRITE_LO(1, 0),   // CH2.J=0
+                                    buf_cmds.PARAM_WRITE_HI(0),
+                                    buf_cmds.PARAM_WRITE_LO(1, 0),   // CH2.JJ=0
+                                    buf_cmds.PARAM_WRITE_HI(0),
+                                    buf_cmds.PARAM_WRITE_LO(2, 15),   // CH2.ABORT_A=15
+                                    buf_cmds.PARAM_WRITE_HI(0),
+
+                                    buf_cmds.STB(5),   // SP Zero
+                                    buf_cmds.STB(7),   // ES Unlock
+                                    buf_cmds.STB(4),   // ASG Load Done
+                                    buf_cmds.DONE(0)
+                                    };
+                                send_packet = 1;
+                            end
+
+                        445000:
+                            begin
+                                `assert_rx(128'hd507765481d403000042)
+                                packet = buf_cmds.S3G_STB(1);   // BE Start
+                                send_packet = 1;
+                            end
+
+                        475000:
+                        begin
+                            `assert_rx(128'hd503765481a0)
+                        end
+
+                        1000000:
                             begin
                                 `assert_rx(128'h0)
                                 if (assertions_failed)
