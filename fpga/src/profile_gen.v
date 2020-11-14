@@ -60,7 +60,7 @@ module profile_gen(
         if (rst)
             pending_aborts <= 0;
         else
-            pending_aborts <= (pending_aborts | abort) & !done_aborts;
+            pending_aborts <= (pending_aborts | abort) & ~done_aborts;
     end
 
     reg [5:0] state;
@@ -162,6 +162,10 @@ module profile_gen(
                 S_READ_STATUS2: begin
                     if (!reg_out[0]) begin
                         // Not enabled, skipping
+                        if (pending_aborts[channel]) begin
+                            next_abort_in_progress[channel] <= 0;
+                            next_done_aborts[channel] <= 1;
+                        end
                         if (channel == 7) begin
                             next_state <= S_INIT;
                             next_busy <= 0;
