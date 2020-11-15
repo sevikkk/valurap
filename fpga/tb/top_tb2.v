@@ -237,7 +237,7 @@ module top_tb;
                                 //    0x88776655 -> reg0
                                 //    DONE
                                 packet = {
-                                    buf_cmds.S3G_WRITE_FIFO_HDR(44),
+                                    buf_cmds.S3G_WRITE_FIFO_HDR(45),
                                     /* 0 */
                                     buf_cmds.OUTPUT(1, 32'd100),     // steps_val = 100
                                     buf_cmds.OUTPUT(7, 32'h8093808A),   //       Motor 1: Motor 2:
@@ -248,6 +248,7 @@ module top_tb;
                                                                         // ES:      4       5
                                                                         // SP:      2       2
                                                                         // ES_ABRT: +       +
+                                    buf_cmds.OUTPUT(13, 500),   // ES_TIMEOUT
 
                                     // Channel 0: A = 5, ABORT_A = 10
                                     buf_cmds.PARAM_ADDR(0),
@@ -302,7 +303,7 @@ module top_tb;
 
                         445000:
                             begin
-                                `assert_rx(128'hd507765481d403000042)
+                                `assert_rx(128'hd507765481d3030000c4)
                                 packet = buf_cmds.S3G_STB(1);   // BE Start
                                 send_packet = 1;
                             end
@@ -311,6 +312,15 @@ module top_tb;
                         begin
                             `assert_rx(128'hd503765481a0)
                         end
+
+                        480000: stop_y2 = 1;
+                        480100: stop_y2 = 0;
+                        480200: stop_y2 = 1;
+                        480400: stop_y2 = 0;
+                        480700: stop_y2 = 1;
+
+                        485000: stop_y1 = 1;
+                        515500: stop_z2 = 1;
 
                         1000000:
                             begin
