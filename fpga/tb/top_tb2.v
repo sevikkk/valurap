@@ -240,14 +240,19 @@ module top_tb;
                                     buf_cmds.S3G_WRITE_FIFO_HDR(45),
                                     /* 0 */
                                     buf_cmds.OUTPUT(1, 32'd100),     // steps_val = 100
-                                    buf_cmds.OUTPUT(7, 32'h8093808A),   //       Motor 1: Motor 2:
-                                                                        // ES:      2       3
-                                                                        // SP:      0       1
-                                                                        // ES_ABRT: +       -
-                                    buf_cmds.OUTPUT(8, 32'h80AD80AC),   //       Motor 3: Motor 4:
-                                                                        // ES:      4       5
-                                                                        // SP:      2       2
-                                                                        // ES_ABRT: +       +
+
+                                    //       Motor 1: Motor 2:
+                                    // ES:      2       3
+                                    // SP:      0       1
+                                    // ES_ABRT: +       -
+                                    buf_cmds.OUTPUT(7, 32'h8093808A),
+
+                                    //       Motor 3: Motor 4:
+                                    // ES:      4       5
+                                    // SP:      2       2
+                                    // ES_ABRT: +       +
+                                    buf_cmds.OUTPUT(8, 32'h80AD80AC),
+
                                     buf_cmds.OUTPUT(13, 500),   // ES_TIMEOUT
 
                                     // Channel 0: A = 5, ABORT_A = 10

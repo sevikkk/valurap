@@ -592,7 +592,7 @@ module mojo_top#(
                 .unlock(stbs[7]),
                 .timeout(es_timeout),
                 .signal(es_status[ch*4]),
-                .locked(es_status[ch*4 + 1]),
+                .locked(es_status[ch*4+1]),
                 .hold(es_holds[ch]),
                 .stb(es_stbs[ch])
             );
