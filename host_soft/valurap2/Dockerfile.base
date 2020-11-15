@@ -1,0 +1,17 @@
+FROM arm32v7/python:3.8.6-buster
+
+RUN mkdir /code
+COPY requirements.txt /code/requirements.txt
+COPY constraints.txt /code/constraints.txt
+COPY wheels_cache.tgz /code/wheels_cache.tgz
+COPY wheels_cache2.tgz /code/wheels_cache2.tgz
+COPY wheels_cache3.tgz /code/wheels_cache3.tgz
+
+RUN mkdir -p ~/.cache/pip/wheels && cd ~/.cache/pip/wheels \
+	&& tar xvzf /code/wheels_cache.tgz \
+	&& tar xvzf /code/wheels_cache2.tgz \
+	&& tar xvzf /code/wheels_cache3.tgz
+
+RUN pip install -c /code/constraints.txt -r /code/requirements.txt
+
+LABEL org.opencontainers.image.source https://github.com/sevikkk/valurap
