@@ -663,7 +663,7 @@ module mojo_top#(
                 .step(motor_steps[ch]),
                 .dir(motor_dirs[ch])
             );
-            assign motor_enables[ch] = !motor_cfg[8*ch+15];
+            assign motor_enables[ch] = !motor_cfg[16*ch+15];
         end
     endgenerate
 
