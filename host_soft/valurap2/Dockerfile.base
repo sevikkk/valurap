@@ -1,17 +1,25 @@
-FROM arm32v7/python:3.8.6-buster
+FROM arm32v7/debian:buster
+#FROM arm32v7/python:3.8-buster
+
+RUN apt-get update && apt-get install -y --no-install-recommends python3-pandas python3-numpy python3-scipy python3-pip python3-ipython python3-matplotlib python3-setuptools python3-scipy python3-sklearn python3-cffi python3-cffi-backend python3-pillow crossbuild-essential-armhf build-essential python3-notebook python3-ipywidgets python3-dev
+#RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libblas3 libexpat1 libgfortran5 liblapack3 libmpdec2
 
 RUN mkdir /code
 COPY requirements.txt /code/requirements.txt
 COPY constraints.txt /code/constraints.txt
-COPY wheels_cache.tgz /code/wheels_cache.tgz
-COPY wheels_cache2.tgz /code/wheels_cache2.tgz
-COPY wheels_cache3.tgz /code/wheels_cache3.tgz
+COPY wh_cache/wheels_cache.tgz /code/wheels_cache.tgz
+COPY wh_cache/wheels_cache2.tgz /code/wheels_cache2.tgz
+COPY wh_cache/wheels_cache3.tgz /code/wheels_cache3.tgz
 
 RUN mkdir -p ~/.cache/pip/wheels && cd ~/.cache/pip/wheels \
 	&& tar xvzf /code/wheels_cache.tgz \
 	&& tar xvzf /code/wheels_cache2.tgz \
 	&& tar xvzf /code/wheels_cache3.tgz
 
-RUN pip install -c /code/constraints.txt -r /code/requirements.txt
+RUN pip3 install -U pip
+RUN pip3 install -c /code/constraints.txt numpy
+RUN pip3 install -c /code/constraints.txt pandas
+RUN pip3 install -c /code/constraints.txt scipy
+RUN pip3 install -c /code/constraints.txt -r /code/requirements.txt
 
 LABEL org.opencontainers.image.source https://github.com/sevikkk/valurap

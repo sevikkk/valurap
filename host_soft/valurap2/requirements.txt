@@ -9,10 +9,10 @@ aioserial
 requests
 smbus2
 spidev
-pandas
 numpy
+pandas
 scipy
 sklearn
 Cython
-jupyther
+jupyter
 ipython

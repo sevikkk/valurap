@@ -1,6 +1,6 @@
 image: Dockerfile
-	docker build -f Dockerfile.base -t valurap-base:latest .
-	docker build -f Dockerfile -t valurap:latest .
+	docker build --platform armhf -f Dockerfile.base -t valurap-base:latest .
+	docker build --platform armhf -f Dockerfile -t valurap:latest .
 
 TAG := $(shell date "+%Y%m%d-%H%M%S")
 
