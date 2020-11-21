@@ -93,7 +93,7 @@ Strobes
 | 6| MSG set X | set x=MSG_X_VAL for selected by MSG_CONFIG channels
 | 7| ES unlock
 | 8..15| Abort APG channel 0..7
-| 8..30| Unused
+| 16..30| Unused
 | 31 | SE_INT_LB | Looped back to Int 31
 
 
@@ -147,7 +147,7 @@ Command Codes
 |  63    | CLEAR  | Clear pending interrupts| 0..3: Mask
 |  64    | MASK  | Mask interrupts| 0..3: Mask
 |  65    | Unused (was WRITE_BUFFER in old version)
-|  66    | WRITE_BUFFER | Write buf_exec memory| 0: Word count 1..1+N*5: Data| {OK, BufError} 0..3: Fifo free space
+|  66    | WRITE_FIFO | Put data into buf_exec Fifo | 0: Word count 1..1+N*5: Data| {OK, BufError} 0..3: Fifo free space
 
 Buf Executor Commands
 =====================

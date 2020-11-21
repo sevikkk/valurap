@@ -1,6 +1,6 @@
 module mojo_top#(
     parameter CLK_RATE=50000000,
-    parameter EXT_BAUD_RATE=500000,
+    parameter EXT_BAUD_RATE=1500000,
     parameter FIFO_ADDRESS_WIDTH=13,
     parameter STEP_BIT=32
 )(
