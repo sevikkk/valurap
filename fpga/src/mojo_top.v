@@ -637,12 +637,10 @@ module mojo_top#(
                 .enable_es_abort(motor_cfg[16*ch+3]),
                 .mux_select(motor_cfg[16*ch+6:16*ch+4]),
                 .enable_step(motor_cfg[16*ch+7]),
-                .invert_dir(motor_cfg[16*ch+8]),
 
                 .in_aborts(es_aborts[ch]),
                 .out_aborts(es_aborts[ch+1]),
                 .es_abort(mm_stbs[ch]),
-
                 .step(mm_steps[ch]),
                 .dir(mm_dirs[ch])
             );
@@ -660,6 +658,7 @@ module mojo_top#(
                 .x(motor_x[ch]),
                 .hold(mm_holds[ch]),
                 .x_hold(motor_hold[ch]),
+                .invert_dir(motor_cfg[16*ch+8]),
                 .step(motor_steps[ch]),
                 .dir(motor_dirs[ch])
             );

@@ -5,7 +5,6 @@ module motor_mux
 
         input [2:0] mux_select,
         input enable_step,
-        input invert_dir,
 
         input [7:0] in_aborts,
         input enable_es_abort,
@@ -17,7 +16,7 @@ module motor_mux
     );
 
     assign step = steps[mux_select] & enable_step;
-    assign dir = dirs[mux_select] ^ invert_dir;
+    assign dir = dirs[mux_select];
 
     always @(*) begin
         out_aborts <= in_aborts;

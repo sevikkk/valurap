@@ -6,6 +6,7 @@ module motor_step_gen(
     input [31:0] post_n,
     input step_stb,
     input step_dir,
+    input invert_dir,
     output reg step,
     output reg dir,
     output reg missed,
@@ -45,7 +46,7 @@ module motor_step_gen(
                 begin
                     if (step_stb)
                         begin
-                            next_dir <= step_dir;
+                            next_dir <= step_dir ^ invert_dir;
                             next_cnt <= 1;
                             if (step_dir)
                                 next_x <= x-1;
