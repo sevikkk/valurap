@@ -443,6 +443,20 @@ module mojo_top#(
         .in_reg14({{32-X_BITS{1'b0}}, motor_hold[9]}),
         .in_reg15({{32-X_BITS{1'b0}}, motor_hold[10]}),
         .in_reg16({{32-X_BITS{1'b0}}, motor_hold[11]}),
+        .in_reg17({{32-X_BITS{1'b0}}, motor_x[0]}),
+        .in_reg18({{32-X_BITS{1'b0}}, motor_x[1]}),
+        .in_reg19({{32-X_BITS{1'b0}}, motor_x[2]}),
+        .in_reg20({{32-X_BITS{1'b0}}, motor_x[3]}),
+        .in_reg21({{32-X_BITS{1'b0}}, motor_x[4]}),
+        .in_reg22({{32-X_BITS{1'b0}}, motor_x[5]}),
+        .in_reg23({{32-X_BITS{1'b0}}, motor_x[6]}),
+        .in_reg24({{32-X_BITS{1'b0}}, motor_x[7]}),
+        .in_reg25({{32-X_BITS{1'b0}}, motor_x[8]}),
+        .in_reg26({{32-X_BITS{1'b0}}, motor_x[9]}),
+        .in_reg27({{32-X_BITS{1'b0}}, motor_x[10]}),
+        .in_reg28({{32-X_BITS{1'b0}}, motor_x[11]}),
+
+        .in_reg62(ext_pending_ints),
         .in_reg63(reg_loopback)
     );
 
