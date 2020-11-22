@@ -79,7 +79,8 @@ module buf_executor(
                S_FETCH=4,
                S_DRAIN=5,
                S_WAIT_FOR_DATA=6,
-               S_FETCH_2=7;
+               S_FETCH_2=7,
+               S_WRITE_HI=8;
 
     always @(*)
         begin
@@ -282,7 +283,7 @@ module buf_executor(
                                                 next_param_write_data <= command[31:0];
                                                 next_param_write_lo <= 1;
                                                 next_param_addr <= param_addr+command[34:32];
-                                                next_state <= S_FETCH;
+                                                next_state <= S_WRITE_HI;
                                             end
                                         15: // PARAM_WRITE_LO_NC write to low 32 bits of param with addr preincrement to next channel status
                                             // ADDR = ( ADDR + 0x20 ) & 0xE0
@@ -290,7 +291,7 @@ module buf_executor(
                                                 next_param_write_data <= command[31:0];
                                                 next_param_write_lo <= 1;
                                                 next_param_addr <= (param_addr+8'h20) & 8'hE0;
-                                                next_state <= S_FETCH;
+                                                next_state <= S_WRITE_HI;
                                             end
                                         63: // DONE
                                             begin
@@ -312,6 +313,12 @@ module buf_executor(
                                         next_state <= S_INIT;
                                     end
                             endcase
+                        end
+                    S_WRITE_HI:
+                        begin
+                            next_param_write_data <= {32{command[31]}};
+                            next_param_write_hi <= 1;
+                            next_state <= S_FETCH;
                         end
                 endcase
         end

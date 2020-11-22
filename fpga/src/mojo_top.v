@@ -2,7 +2,8 @@ module mojo_top#(
     parameter CLK_RATE=50000000,
     parameter EXT_BAUD_RATE=1500000,
     parameter FIFO_ADDRESS_WIDTH=13,
-    parameter STEP_BIT=32
+    parameter STEP_BIT=32,
+    parameter X_BITS=20
 )(
     // 50MHz clock input
     input clk,
@@ -301,8 +302,8 @@ module mojo_top#(
     wire load_next_params;
 
     wire [16*12:0] motor_cfg;
-    wire [31:0] motor_x [0:11];
-    wire [31:0] motor_hold [0:11];
+    wire [X_BITS-1:0] motor_x [0:11];
+    wire [X_BITS-1:0] motor_hold [0:11];
     wire [31:0] pre_n;
     wire [31:0] pulse_n;
     wire [31:0] post_n;
@@ -430,18 +431,18 @@ module mojo_top#(
         .in_reg2(es_status),
         .in_reg3(ext_fifo_free_space),
         .in_reg4(ext_fifo_data_count),
-        .in_reg5(motor_hold[0]),
-        .in_reg6(motor_hold[1]),
-        .in_reg7(motor_hold[2]),
-        .in_reg8(motor_hold[3]),
-        .in_reg9(motor_hold[4]),
-        .in_reg10(motor_hold[5]),
-        .in_reg11(motor_hold[6]),
-        .in_reg12(motor_hold[7]),
-        .in_reg13(motor_hold[8]),
-        .in_reg14(motor_hold[9]),
-        .in_reg15(motor_hold[10]),
-        .in_reg16(motor_hold[11]),
+        .in_reg5({{32-X_BITS{1'b0}}, motor_hold[0]}),
+        .in_reg6({{32-X_BITS{1'b0}}, motor_hold[1]}),
+        .in_reg7({{32-X_BITS{1'b0}}, motor_hold[2]}),
+        .in_reg8({{32-X_BITS{1'b0}}, motor_hold[3]}),
+        .in_reg9({{32-X_BITS{1'b0}}, motor_hold[4]}),
+        .in_reg10({{32-X_BITS{1'b0}}, motor_hold[5]}),
+        .in_reg11({{32-X_BITS{1'b0}}, motor_hold[6]}),
+        .in_reg12({{32-X_BITS{1'b0}}, motor_hold[7]}),
+        .in_reg13({{32-X_BITS{1'b0}}, motor_hold[8]}),
+        .in_reg14({{32-X_BITS{1'b0}}, motor_hold[9]}),
+        .in_reg15({{32-X_BITS{1'b0}}, motor_hold[10]}),
+        .in_reg16({{32-X_BITS{1'b0}}, motor_hold[11]}),
         .in_reg63(reg_loopback)
     );
 
@@ -600,7 +601,7 @@ module mojo_top#(
     endgenerate
 
     generate
-        for (ch = 0; ch < 8; ch = ch+1) begin : speeds_block
+        for (ch = 0; ch < 7; ch = ch+1) begin : speeds_block
             speed_integrator sp(
                 .clk(clk),
                 .reset(n_rdy),
@@ -614,6 +615,9 @@ module mojo_top#(
             );
         end
     endgenerate
+
+    assign sp_dirs[7] = 1'b0;
+    assign sp_steps[7] = 1'b0;
 
     wire [11:0] mm_stbs;
     wire [7:0] es_aborts [0:12];
@@ -645,7 +649,7 @@ module mojo_top#(
                 .dir(mm_dirs[ch])
             );
 
-            motor_step_gen sg(
+            motor_step_gen#(.X_BITS(X_BITS)) sg(
                 .clk(clk),
                 .reset(n_rdy),
                 .pre_n(pre_n),
@@ -654,7 +658,7 @@ module mojo_top#(
                 .step_stb(mm_steps[ch]),
                 .step_dir(mm_dirs[ch]),
                 .set_x(motor_cfg[16*ch+9] & stbs[6]),
-                .x_val(motor_x_val),
+                .x_val(motor_x_val[X_BITS-1:0]),
                 .x(motor_x[ch]),
                 .hold(mm_holds[ch]),
                 .x_hold(motor_hold[ch]),

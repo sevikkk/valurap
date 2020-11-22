@@ -1,4 +1,8 @@
-module motor_step_gen(
+module motor_step_gen
+   #(parameter
+    X_BITS=24
+    )
+    (
     input clk,
     input reset,
     input [31:0] pre_n,
@@ -12,17 +16,17 @@ module motor_step_gen(
     output reg missed,
 
     input set_x,
-    input signed [31:0] x_val,
-    output reg signed [31:0] x,
+    input signed [X_BITS-1:0] x_val,
+    output reg signed [X_BITS-1:0] x,
 
     input hold,
-    output reg signed [31:0] x_hold
+    output reg signed [X_BITS-1:0] x_hold
 );
 
     reg [15:0] cnt;
     reg [15:0] next_cnt;
-    reg signed [31:0] next_x;
-    reg signed [31:0] next_x_hold;
+    reg signed [X_BITS-1:0] next_x;
+    reg signed [X_BITS-1:0] next_x_hold;
     reg next_dir;
     reg next_step;
     reg next_missed;
