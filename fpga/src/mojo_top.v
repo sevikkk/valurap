@@ -555,6 +555,10 @@ module mojo_top#(
         .load_speeds(load_speeds),
         .load_next_params(load_next_params),
         .busy(apg_status[0]),
+        .error_unexpected_params_write(apg_status[1]),
+        .error_late_params(apg_status[2]),
+        .error_abort_requested(apg_status[3]),
+
         .done(asg_done)
     );
 
@@ -601,7 +605,7 @@ module mojo_top#(
     endgenerate
 
     generate
-        for (ch = 0; ch < 7; ch = ch+1) begin : speeds_block
+        for (ch = 0; ch < 6; ch = ch+1) begin : speeds_block
             speed_integrator sp(
                 .clk(clk),
                 .reset(n_rdy),
@@ -616,6 +620,8 @@ module mojo_top#(
         end
     endgenerate
 
+    assign sp_dirs[6] = 1'b0;
+    assign sp_steps[6] = 1'b0;
     assign sp_dirs[7] = 1'b0;
     assign sp_steps[7] = 1'b0;
 
