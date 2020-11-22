@@ -60,7 +60,20 @@ Inputs
 |  14 | MOTOR10_HOLD_X
 |  15 | MOTOR11_HOLD_X
 |  16 | MOTOR12_HOLD_X
-|  17..62 | Unused
+|  17 | MOTOR1_HOLD_X
+|  18 | MOTOR2_HOLD_X
+|  19 | MOTOR3_HOLD_X
+|  20 | MOTOR4_HOLD_X
+|  21 | MOTOR5_HOLD_X
+|  22 | MOTOR6_HOLD_X
+|  23 | MOTOR7_HOLD_X
+|  24 | MOTOR8_HOLD_X
+|  25 | MOTOR9_HOLD_X
+|  26 | MOTOR10_HOLD_X
+|  27 | MOTOR11_HOLD_X
+|  28 | MOTOR12_HOLD_X
+|  29..61 | Unused
+|   62 | PENDING_INTS | 31..0 | Pending interrupts
 |   63 | SE_REG_LB | 31..0 | Loopback from output 63
 
 

@@ -30,6 +30,7 @@ class S3GPort(S3GPortBase):
     OUT_MSG_CONFIG3 = 10
     OUT_MSG_CONFIG4 = 11
     OUT_MSG_CONFIG5 = 12
+    OUT_ES_TIMEOUT = 13
     # Unused
     OUT_SE_REG_LB = 63
 
@@ -50,7 +51,20 @@ class S3GPort(S3GPortBase):
     IN_MOTOR10_HOLD_X = 14
     IN_MOTOR11_HOLD_X = 15
     IN_MOTOR12_HOLD_X = 16
+    IN_MOTOR1_X = 17
+    IN_MOTOR2_X = 18
+    IN_MOTOR3_X = 19
+    IN_MOTOR4_X = 20
+    IN_MOTOR5_X = 21
+    IN_MOTOR6_X = 22
+    IN_MOTOR7_X = 23
+    IN_MOTOR8_X = 24
+    IN_MOTOR9_X = 25
+    IN_MOTOR10_X = 26
+    IN_MOTOR11_X = 27
+    IN_MOTOR12_X = 28
     # Unused
+    IN_PENDING_INTS = 62
     IN_SE_REG_LB = 63
 
     STB_BE_START = 0x00000001
