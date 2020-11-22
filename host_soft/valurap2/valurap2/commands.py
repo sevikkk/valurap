@@ -169,11 +169,10 @@ class S3GPort(S3GPortBase):
 
             packet_cmds = int(len(packet_data) / 5)
             payload = struct.pack("<BB", 66, packet_cmds) + packet_data
-            s = []
-            for ch in payload:
-                s.append("%02X" % ch)
-
-            print("".join(s))
+            #s = []
+            #for ch in payload:
+            #    s.append("%02X" % ch)
+            #print("".join(s))
 
             # print(`payload`)
             reply = self.send_and_wait_reply(payload, kw.get("cmd_id", None), timeout=0.1)
