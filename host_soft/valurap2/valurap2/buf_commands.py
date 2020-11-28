@@ -99,16 +99,31 @@ class CommandBuffer(object):
     # Unused
     INT_SE_INT_LB = 0x80000000
 
-    def __init__(self):
-        self.buffer = deque()
+    PARAM_STATUS = 0
+    PARAM_V_EFF = 1
+    PARAM_V_IN = 2
+    PARAM_V_OUT = 3
+    PARAM_A = 4
+    PARAM_J = 5
+    PARAM_JJ = 6
+    PARAM_TARGET_V = 7
+    PARAM_ABORT_A = 8
 
-    def BUF_OUTPUT(self, reg, *args):
+    PARAM_STATUS_ENABLE = 0x00000001
+    PARAM_STATUS_TARGET_V = 0x00000002
+
+    def __init__(self, debug=False):
+        self.debug = debug
+        self.reset()
+
+    def reset(self):
+        self.buffer = deque()
+        self.last_addr = None
+
+    def BUF_OUTPUT(self, reg, val):
         """
         Set output to value
         """
-        val = 0
-        for v in args:
-            val |= v
 
         if val > 2 ** 31:
             val = val - 2 ** 32
@@ -119,78 +134,150 @@ class CommandBuffer(object):
             print("regs:", reg, val)
             raise
 
+        if self.debug:
+            print("BUF_OUTPUT({}, {})".format(reg, val))
+
         self.buffer.append(data)
 
-    def _BUF_simple(self, cmd, args):
+    def _BUF_simple(self, cmd, val):
         """
         Generic template
         """
-        val = 0
-        for v in args:
-            val |= v
+
+        if val > 2 ** 31:
+            val = val - 2 ** 32
 
         data = struct.pack("<iB", val, 128 + cmd)
 
         self.buffer.append(data)
 
-    def BUF_STB(self, *args):
+    def BUF_STB(self, val):
         """
         Send strobes
         """
 
-        self._BUF_simple(1, args)
+        if self.debug:
+            print("BUF_STB(0x{:08X})".format(val))
 
-    def BUF_WAIT_ALL(self, *args):
+        self._BUF_simple(1, val)
+
+    def BUF_WAIT_ALL(self, val):
         """
         Wait for all specified interrupts
         """
-        self._BUF_simple(2, args)
+        if self.debug:
+            print("BUF_WAIT_ALL(0x{:08X})".format(val))
 
-    def BUF_WAIT_ANY(self, *args):
+        self._BUF_simple(2, val)
+
+    def BUF_WAIT_ANY(self, val):
         """
         Wait for any of specified interrupts
         """
-        self._BUF_simple(3, args)
+        if self.debug:
+            print("BUF_WAIT_ANY(0x{:08X})".format(val))
 
-    def BUF_CLEAR(self, *args):
+        self._BUF_simple(3, val)
+
+    def BUF_CLEAR(self, val):
         """
         Clear pending interrupts
         """
-        self._BUF_simple(4, args)
+        if self.debug:
+            print("BUF_CLEAR(0x{:08X})".format(val))
 
-    def BUF_WAIT_FIFO(self, *args):
+        self._BUF_simple(4, val)
+
+    def BUF_WAIT_FIFO(self, val):
         """
         Wait for at least this number of commands already in fifo
         """
-        self._BUF_simple(5, args)
+        if self.debug:
+            print("BUF_WAIT_FIFO({})".format(val))
 
-    def BUF_PARAM_ADDR(self, *args):
+        self._BUF_simple(5, val)
+
+    def BUF_PARAM_ADDR(self, val):
         """
         Set address pointer
         """
-        self._BUF_simple(6, args)
+        if self.debug:
+            print("BUF_PARAM_ADDR({})".format(val))
 
-    def BUF_PARAM_WRITE_HI(self, *args):
+        self.last_addr = val
+        self._BUF_simple(6, val)
+
+    def BUF_PARAM_WRITE_HI(self, val):
         """
         Write high half of register
         """
-        self._BUF_simple(7, args)
+        if self.debug:
+            print("BUF_WRITE_HI({})".format(val))
 
-    def BUF_PARAM_WRITE_LO(self, n, *args):
+        self._BUF_simple(7, val)
+
+    def BUF_PARAM_WRITE_LO(self, n, val):
         """
         Write low half of register and increment address
         """
         assert n >= 0 and n <= 6
-        self._BUF_simple(8 + n, args)
+        self.last_addr += n
+        if self.debug:
+            print("BUF_PARAM_WRITE_LO({}, {})".format(n, val))
 
-    def BUF_PARAM_WRITE_LO_NC(self, *args):
+        self._BUF_simple(8 + n, val)
+
+    def BUF_PARAM_WRITE_LO_NC(self, val):
         """
         Write low half of register and set address to the next bank
         """
-        self._BUF_simple(15, args)
+        if self.debug:
+            print("BUF_PARAM_WRITE_LO_NC({})".format(val))
 
-    def BUF_DONE(self, *args):
+        self.last_addr = (self.last_addr + 0x20) & 0xE0
+        self._BUF_simple(15, val)
+
+    def BUF_DONE(self, val):
         """
         Finish execution
         """
-        self._BUF_simple(63, args)
+        if self.debug:
+            print("BUF_DONE({})".format(val))
+
+        self._BUF_simple(63, val)
+
+    def write_param(self, chan, addr, value):
+        value_lo = value & 0xffffffff
+        if value_lo >= 2 ** 31:
+            value_lo -= 2 ** 32
+
+        value_hi = value >> 32
+        if value_hi >= 2 ** 31:
+            value_hi -= 2 ** 32
+
+        if value_lo >= 0 and value_hi == 0:
+            value_hi = None
+        elif value_lo < 0 and value_hi == -1:
+            value_hi = None
+
+        full_addr = chan * 0x20 + addr
+        need_addr = False
+        if self.last_addr is None:
+            need_addr = True
+        else:
+            addr_delta = full_addr - self.last_addr
+            addr_nc = (self.last_addr + 0x20) & 0xE0
+
+            if addr_delta >= 0 and addr_delta <= 6:
+                self.BUF_PARAM_WRITE_LO(addr_delta, value_lo)
+            elif full_addr == addr_nc:
+                self.BUF_PARAM_WRITE_LO_NC(value_lo)
+            else:
+                need_addr = True
+
+        if need_addr:
+            self.BUF_PARAM_ADDR(full_addr)
+            self.BUF_PARAM_WRITE_LO(0, value_lo)
+
+        if value_hi is not None:
+            self.BUF_PARAM_WRITE_HI(0, value_hi)
