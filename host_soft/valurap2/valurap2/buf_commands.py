@@ -6,7 +6,7 @@ class CommandBuffer(object):
     OUT_ASG_STEPS_VAL = 1
 
     OUT_SP_CONFIG = 2
-    OUT_SP_CONFIF_STEP_BIT = (OUT_SP_CONFIG, 5, 0)
+    OUT_SP_CONFIG_STEP_BIT = (OUT_SP_CONFIG, 0, 5)
 
     OUT_MSG_ALL_PRE_N = 3
     OUT_MSG_ALL_PULSE_N = 4
@@ -14,9 +14,9 @@ class CommandBuffer(object):
     OUT_MSG_X_VAL = 6
 
     OUT_MSG_CONFIG0 = 7
-    OUT_MSG_CONFIG_ES_MUX = (OUT_MSG_CONFIG0, 2, 0)
+    OUT_MSG_CONFIG_ES_MUX = (OUT_MSG_CONFIG0, 0, 3)
     OUT_MSG_CONFIG_ES_ABORT = (OUT_MSG_CONFIG0, 3)
-    OUT_MSG_CONFIG_SP_MUX = (OUT_MSG_CONFIG0, 6, 4)
+    OUT_MSG_CONFIG_SP_MUX = (OUT_MSG_CONFIG0, 4, 3)
     OUT_MSG_CONFIG_SP_ENABLE = (OUT_MSG_CONFIG0, 7)
     OUT_MSG_CONFIG_INVERT = (OUT_MSG_CONFIG0, 8)
     OUT_MSG_CONFIG_SET_X = (OUT_MSG_CONFIG0, 9)
@@ -32,6 +32,8 @@ class CommandBuffer(object):
     OUT_SE_REG_LB = 63
 
     IN_BE_STATUS = 0
+    IN_BE_STATUS_BUSY = (IN_BE_STATUS, 0)
+    IN_BE_STATUS_ABORTING = (IN_BE_STATUS, 1)
     IN_APG_STATUS = 1
     IN_ES_STATUS = 2
     IN_FIFO_FREE_SPACE = 3
@@ -119,6 +121,24 @@ class CommandBuffer(object):
     def reset(self):
         self.buffer = deque()
         self.last_addr = None
+
+    def format_field(self, field_descr, val):
+        if len(field_descr) == 2:
+            reg, bit_num = field_descr
+            bit_len = 1
+        else:
+            reg, bit_num, bit_len = field_descr
+        mask = 2 ** bit_len - 1
+        return (val & mask) << bit_num
+
+    def extract_field(self, field_descr, val):
+        if len(field_descr) == 2:
+            reg, bit_num = field_descr
+            bit_len = 1
+        else:
+            reg, bit_num, bit_len = field_descr
+        mask = 2 ** bit_len - 1
+        return (val >> bit_num) & mask
 
     def BUF_OUTPUT(self, reg, val):
         """
@@ -237,7 +257,7 @@ class CommandBuffer(object):
         self.last_addr = (self.last_addr + 0x20) & 0xE0
         self._BUF_simple(15, val)
 
-    def BUF_DONE(self, val):
+    def BUF_DONE(self, val=0):
         """
         Finish execution
         """
@@ -281,3 +301,48 @@ class CommandBuffer(object):
 
         if value_hi is not None:
             self.BUF_PARAM_WRITE_HI(0, value_hi)
+
+    def hw_reset(self):
+        self.BUF_STB(self.STB_ASG_ABORT)
+        self.BUF_CLEAR(-1)
+
+        self.BUF_OUTPUT(self.OUT_SP_CONFIG, 40)           # step_bit = 40
+        self.BUF_OUTPUT(self.OUT_MSG_ALL_PRE_N, 100)          # pre_n
+        self.BUF_OUTPUT(self.OUT_MSG_ALL_PULSE_N, 400)          # pulse_n
+        self.BUF_OUTPUT(self.OUT_MSG_ALL_POST_N, 500)          # post_n
+        self.BUF_OUTPUT(self.OUT_ES_TIMEOUT, 500000)       # ES_TIMEOUT 10ms
+
+        for i in range(8):
+            self.BUF_OUTPUT(self.OUT_MSG_CONFIG0 + i, 1)   # disarm all motors
+
+        self.BUF_OUTPUT(self.OUT_ASG_DT_VAL, 50000)  # 1ms accel steps
+        self.BUF_OUTPUT(self.OUT_ASG_STEPS_VAL, 5)  # 5 steps
+
+        # set zeroes
+        for i in range(8):
+            self.write_param(i, self.PARAM_STATUS, 0)
+            self.write_param(i, self.PARAM_V_EFF, 0)
+            self.write_param(i, self.PARAM_V_OUT, 0)
+            self.write_param(i, self.PARAM_A, 0)
+            self.write_param(i, self.PARAM_J, 0)
+            self.write_param(i, self.PARAM_JJ, 0)
+
+        self.BUF_STB(self.STB_ASG_START)  # Start ASG cycles
+        self.BUF_WAIT_ALL(self.INT_ASG_LOAD)  # Wait for APG ready for new segment
+        self.BUF_CLEAR(self.INT_ASG_LOAD)  # Clear pending int
+        self.BUF_OUTPUT(self.OUT_ASG_STEPS_VAL, 0)  # steps_val = 0 - End of path
+        self.BUF_STB(self.STB_ASG_LOAD_DONE)
+        self.BUF_WAIT_ALL(self.INT_ASG_DONE)  # Wait for ASG done
+        self.BUF_CLEAR(self.INT_ASG_DONE)
+
+        # reset counters for all motors
+        val = self.format_field(self.OUT_MSG_CONFIG_SET_X, 1)
+        val = val | (val << 16)
+        for i in range(6):
+            self.BUF_OUTPUT(self.OUT_MSG_CONFIG0 + i, val)   # set SET_X for al motors
+        self.BUF_OUTPUT(self.OUT_MSG_X_VAL, 0)   # value to set
+        self.BUF_STB(self.STB_MSG_SET_X)   # set x values
+        self.BUF_STB(self.STB_SP_ZERO)   # reset speed integrators
+
+        self.BUF_CLEAR(-1)   # clear all ending ints just in case
+
