@@ -7,14 +7,9 @@ import numpy as np
 import pandas as pd
 from numpy.linalg import norm
 
-from valurap import gcode
-from valurap.asg import ProfileSegment
-from valurap.emulate import emulate
-
-
-class FakeApg:
-    def __init__(self, name):
-        self.name = name
+from . import gcode
+from .profile import ProfileSegment
+from .emulate import emulate
 
 
 class PathPlanner:
@@ -35,12 +30,10 @@ class PathPlanner:
     min_plato_len = 1
     skip_plato_len = 0.01
     assert min_seg > skip_plato_len * 3
-    j_by_speed = False
     spm = 80
     spme = 837
     spmz = 1600
-    acc_step = 10000
-    v_step = 50000000
+    accel_step = 5000
 
     max_a_extra = 1.2
     max_a_extra2 = 1.5
@@ -52,52 +45,22 @@ class PathPlanner:
     delta_e_err = 1.0
     delta_ve_err = 1.0
 
-    def init_coefs(self):
-        self.v_mult = self.v_step / self.acc_step
-        self.k_xxy = 2.0 ** 32 * self.spm
-        self.k_vxy = 2.0 ** 32 * self.spm / self.v_step
-        self.k_axy = self.k_vxy * 65536 / self.acc_step
-        self.k_jxy = self.k_axy / self.acc_step
-        self.k_xe = 2.0 ** 32 * self.spme
-        self.k_ve = 2.0 ** 32 * self.spme / self.v_step
-        self.k_ae = self.k_ve * 65536 / self.acc_step
-        self.k_je = self.k_ae / self.acc_step
-        self.k_xz = 2.0 ** 32 * self.spmz
-        self.k_vz = 2.0 ** 32 * self.spmz / self.v_step
-        self.k_az = self.k_vz * 65536 / self.acc_step
-        self.k_jz = self.k_az / self.acc_step
-
-        self.int_max_ax = self.max_xa * self.k_axy * 1.2
-        self.int_max_ay = self.max_ya * self.k_axy * 1.2
-        self.int_max_ae = self.max_ea * self.k_ae * 1.2
-        self.int_max_az = self.max_za * self.k_az * 1.2
-        self.accel_step = int(self.v_step / self.acc_step)
-
-    def __init__(self, apgs=None):
-        if apgs is None:
-            apgs = {}
-
-        self.apgs = apgs
-        for l in ["X", "Y", "Z"]:
-            apgs.setdefault(l, FakeApg(l))
-
+    def __init__(self):
         self.apg_states = {}
         self.emu_t = 0
         self.last_x = None
         self.last_y = None
-        self.init_coefs()
 
-    @property
-    def apg_x(self):
-        return self.apgs["X"]
-
-    @property
-    def apg_y(self):
-        return self.apgs["Y"]
-
-    @property
-    def apg_z(self):
-        return self.apgs["Z"]
+    def init_apgs(self):
+        if not self.apg_states:
+            self.apg_states = {}
+            emulate(
+                [],
+                apg_states=self.apg_states,
+                accel_step=self.accel_step,
+                #        X0         X1        Y         Z           E0         E1
+                spms=[self.spm, self.spm, self.spm, self.spmz, self.spme/2, self.spme]
+            )
 
     def make_path(self, gcode_path, speed_k=1.0):
         filtered_path = self.filter_path(gcode_path)
@@ -536,8 +499,29 @@ class PathPlanner:
 
         return new_slowdowns, updated
 
-    def gen_segments_float(self, path, slowdowns, do_reset=True):
-        self.init_coefs()
+    def gen_segments_float(self, path, slowdowns, extruder=1, do_reset=True):
+        self.init_apgs()
+        if extruder == 0:
+            apg_map = {
+                "X": 0,
+                "Y": 2,
+                "Z": 3,
+                "E": 4
+            }
+        else:
+            apg_map = {
+                "X": 1,
+                "Y": 2,
+                "Z": 3,
+                "E": 5
+            }
+
+        self.apg_x = apg_map["X"]
+        self.apg_x_s = self.apg_states[self.apg_x]
+        self.apg_y = apg_map["Y"]
+        self.apg_y_s = self.apg_states[self.apg_y]
+        self.apg_e = apg_map["E"]
+        self.apg_e_s = self.apg_states[self.apg_e]
 
         speeds = self.gen_speeds(path, slowdowns)
         _, _, cc = self.process_corner_errors(path, slowdowns)
@@ -580,10 +564,10 @@ class PathPlanner:
             segs = []
             if do_reset:
                 segs.extend([
-                    ProfileSegment(apg=self.apg_x, x=last_x * self.spm, v=0, a=0),
-                    ProfileSegment(apg=self.apg_y, x=last_y * self.spm, v=0, a=0),
+                    ProfileSegment(apg=self.apg_x, x=int(last_x / self.apg_x_s.x_k), v=0, a=0),
+                    ProfileSegment(apg=self.apg_y, x=int(last_y / self.apg_y_s.x_k), v=0, a=0),
                 ])
-            segs.append(ProfileSegment(apg=self.apg_z, x=last_e * self.spme, v=0, a=0))
+            segs.append(ProfileSegment(apg=self.apg_e, x=int(last_e / self.apg_e_s.x_k), v=0, a=0))
             sub_profile = [[5, segs]]
             emulate(
                 sub_profile,
@@ -594,10 +578,11 @@ class PathPlanner:
             profile.extend(sub_profile)
             self.emu_t += 5
 
-            last_x_n = self.apg_states["X"].x / self.k_xxy
-            last_y_n = self.apg_states["Y"].x / self.k_xxy
+            last_x_n = self.apg_x_s.to_floats()["x"]
+            last_y_n = self.apg_y_s.to_floats()["x"]
+
             print("Restarting, deltas:", last_x - last_x_n, last_y - last_y_n)
-            print("            Speeds:", self.apg_states["X"].v, self.apg_states["Y"].v)
+            print("            Speeds:", self.apg_x_s.v_eff, self.apg_y_s.v_eff)
             last_x = last_x_n
             last_y = last_y_n
 
@@ -606,7 +591,7 @@ class PathPlanner:
             s_speeds = speeds.iloc[i]
             s_plato = plato.iloc[i]
             s_path = path.iloc[i]
-            print("======== {} L{} T{:.4f} =========".format(i, s_path["line"], self.emu_t / self.acc_step))
+            print("======== {} L{} T{:.4f} =========".format(i, s_path["line"], self.emu_t * self.apg_x_s.t_k))
 
             unit_x = s_speeds["unit_x"]
             unit_y = s_speeds["unit_y"]
@@ -1044,7 +1029,7 @@ class PathPlanner:
             segs = [
                 ProfileSegment(apg=self.apg_x, v=0, a=0),
                 ProfileSegment(apg=self.apg_y, v=0, a=0),
-                ProfileSegment(apg=self.apg_z, v=0, a=0),
+                ProfileSegment(apg=self.apg_e, v=0, a=0),
             ]
             sub_profile = [[5, segs]]
             emulate(
@@ -1099,11 +1084,12 @@ class PathPlanner:
         last_ve,
         target_ve
     ):
-        int_dt = int(ceil(dt * self.acc_step))
+        int_dt = int(ceil(dt / self.apg_states[0].t_k))
+        orig_dt = dt
         if int_dt < 3:
             return []
 
-        dt = 1.0 / self.acc_step * int_dt
+        dt = int_dt * self.apg_states[0].t_k
 
         retest = 0
 
@@ -1115,23 +1101,27 @@ class PathPlanner:
         jx = 0
         jy = 0
         je = 0
-        int_last_vx = self.apg_states["X"].v
-        int_last_vy = self.apg_states["Y"].v
-        int_last_ve = self.apg_states["Z"].v
-        int_ax = round(ax * self.k_axy)
-        int_ay = round(ay * self.k_axy)
-        int_ae = round(ae * self.k_ae)
-        int_tvx = round(target_vx * self.k_vxy)
-        int_tvy = round(target_vy * self.k_vxy)
-        int_tve = round(target_ve * self.k_ve)
+        int_last_vx = self.apg_x_s.v_out
+        int_last_vy = self.apg_y_s.v_out
+        int_last_ve = self.apg_e_s.v_out
+        int_ax = round(ax / self.apg_x_s.a_k)
+        int_ay = round(ay / self.apg_y_s.a_k)
+        int_ae = round(ae / self.apg_e_s.a_k)
+        int_tvx = round(target_vx / self.apg_x_s.v_k)
+        int_tvy = round(target_vy / self.apg_y_s.v_k)
+        int_tve = round(target_ve / self.apg_e_s.v_k)
         int_jx = 0
         int_jy = 0
         int_je = 0
+        print("dt:", orig_dt, int_dt, dt)
+        print("ax:", ax)
+        print("ay:", ay)
         print("ae:", ae)
 
         test_x, test_y, test_e, test_vx, test_vy, test_ve = self.emu_profile(int_dt, int_ax, int_ay, int_ae, int_jx, int_jy, int_je, int_tvx, int_tvy, int_tve)
 
         if not ((abs(test_x - target_x) < self.max_delta / 2) and (abs(test_vx - target_vx) < 1)):
+            print("delta_x", test_x, target_x, test_vx, target_vx)
             retest = 1
             jx = 12 * (last_x - target_x) / pow(dt, 3) + 6 * (last_vx + target_vx) / pow(dt, 2)
             ax = (target_vx - last_vx) / dt - jx * dt / 2
@@ -1143,6 +1133,7 @@ class PathPlanner:
                 ax = (target_vx - last_vx) / dt - jx * dt / 2
 
         if not ((abs(test_y - target_y) < self.max_delta / 2) and (abs(test_vy - target_vy) < 1)):
+            print("delta_y", test_y, target_y, test_vy, target_vy)
             retest = 1
             jy = 12 * (last_y - target_y) / pow(dt, 3) + 6 * (last_vy + target_vy) / pow(dt, 2)
             ay = (target_vy - last_vy) / dt - jy * dt / 2
@@ -1154,6 +1145,7 @@ class PathPlanner:
                 ay = (target_vy - last_vy) / dt - jy * dt / 2
 
         if not ((abs(test_e - target_e) < self.max_delta_e / 2) and (abs(test_ve - target_ve) < 1)):
+            print("delta_e", test_e, target_e, test_ve, target_ve)
             retest = 1
             je = 12 * (last_e - target_e) / pow(dt, 3) + 6 * (last_ve + target_ve) / pow(dt, 2)
             ae = (target_ve - last_ve) / dt - je * dt / 2
@@ -1169,36 +1161,18 @@ class PathPlanner:
                     je = 0
 
         if retest:
-            int_last_vx = self.apg_states["X"].v
-            int_last_vy = self.apg_states["Y"].v
-            int_last_ve = self.apg_states["Z"].v
-            int_tvx = round(target_vx * self.k_vxy)
-            int_tvy = round(target_vy * self.k_vxy)
-            int_tve = round(target_ve * self.k_ve)
-            int_ax = round(ax * self.k_axy)
-            int_ay = round(ay * self.k_axy)
-            int_ae = round(ae * self.k_ae)
-            int_jx = round(jx * self.k_jxy)
-            int_jy = round(jy * self.k_jxy)
-            int_je = round(je * self.k_je)
-
-            if self.j_by_speed:
-                # eq: [
-                #     tvx = vx + avg_ax * dt,
-                #     avg_ax = (ax + tax) / 2,
-                #     tax = ax + j * dt
-                # ];
-                # solve(eq, [avg_ax, tax, j]);
-                #
-                # j=-(2*vx-2*tvx+2*ax*dt)/dt^2
-                int_jx2 = -round((2 * int_last_vx * 65536 - 2 * int_tvx * 65536 + 2 * int_ax * int_dt) / (int_dt ** 2))
-                int_jy2 = -round((2 * int_last_vy * 65536 - 2 * int_tvy * 65536 + 2 * int_ay * int_dt) / (int_dt ** 2))
-                int_je2 = -round((2 * int_last_ve * 65536 - 2 * int_tve * 65536 + 2 * int_ae * int_dt) / (int_dt ** 2))
-                print("int_j:", int_jx, int_jx2, int_jy, int_jy2, int_je, int_je2)
-
-                int_jx = int_jx2
-                int_jy = int_jy2
-                int_je = int_je2
+            int_last_vx = self.apg_x_s.v_out
+            int_last_vy = self.apg_y_s.v_out
+            int_last_ve = self.apg_e_s.v_out
+            int_tvx = round(target_vx / self.apg_x_s.v_k)
+            int_tvy = round(target_vy / self.apg_y_s.v_k)
+            int_tve = round(target_ve / self.apg_e_s.v_k)
+            int_ax = round(ax / self.apg_x_s.a_k)
+            int_ay = round(ay / self.apg_y_s.a_k)
+            int_ae = round(ae / self.apg_e_s.a_k)
+            int_jx = round(jx / self.apg_x_s.j_k)
+            int_jy = round(jy / self.apg_y_s.j_k)
+            int_je = round(je / self.apg_e_s.j_k)
 
             test_x, test_y, test_e, test_vx, test_vy, test_ve = self.emu_profile(int_dt, int_ax, int_ay, int_ae, int_jx, int_jy, int_je, int_tvx, int_tvy, int_tve)
             tests = (
@@ -1223,22 +1197,22 @@ class PathPlanner:
         print("int_v:", int_last_vx, int_tvx, int_last_vy, int_tvy, int_last_ve, int_tve)
         print("int_j:", int_jx, int_jy, int_je)
 
-        ax0 = int_ax / self.k_axy
-        ax1 = (int_ax + int_jx * (int_dt - 1)) / self.k_axy
+        ax0 = int_ax * self.apg_x_s.a_k
+        ax1 = (int_ax + int_jx * (int_dt - 1)) * self.apg_x_s.a_k
 
         vxm = 0
         if (jx != 0) and (ax0 * ax1 < 0):
             vxm = -pow(ax, 2) / 2 / jx
 
-        ay0 = int_ay / self.k_axy
-        ay1 = (int_ay + int_jy * (int_dt - 1)) / self.k_axy
+        ay0 = int_ay * self.apg_y_s.a_k
+        ay1 = (int_ay + int_jy * (int_dt - 1)) * self.apg_y_s.a_k
 
         vym = 0
         if (jy != 0) and (ay0 * ay1 < 0):
             vym = -pow(ay0, 2) / 2 / jy
 
-        ae0 = int_ae / self.k_ae
-        ae1 = (int_ae + int_je * (int_dt - 1)) / self.k_ae
+        ae0 = int_ae * self.apg_e_s.a_k
+        ae1 = (int_ae + int_je * (int_dt - 1)) * self.apg_e_s.a_k
 
         vem = 0
         if (je != 0) and (ae0 * ae1 < 0):
@@ -1267,7 +1241,7 @@ class PathPlanner:
             segs = [
                 ProfileSegment(apg=self.apg_x, a=int(int_ax), j=int(int_jx), target_v=int_tvx),
                 ProfileSegment(apg=self.apg_y, a=int(int_ay), j=int(int_jy), target_v=int_tvy),
-                ProfileSegment(apg=self.apg_z, a=int(int_ae), j=int(int_je), target_v=int_tve),
+                ProfileSegment(apg=self.apg_e, a=int(int_ae), j=int(int_je), target_v=int_tve),
             ]
 
             sub_profile = [[int_dt, segs]]
@@ -1279,12 +1253,12 @@ class PathPlanner:
         )
 
         self.emu_t += int_dt
-        self.last_x = self.apg_states["X"].x / self.k_xxy
-        self.last_y = self.apg_states["Y"].x / self.k_xxy
-        self.last_e = self.apg_states["Z"].x / self.k_xe
-        self.last_vx = self.apg_states["X"].v / self.k_vxy
-        self.last_vy = self.apg_states["Y"].v / self.k_vxy
-        self.last_ve = self.apg_states["Z"].v / self.k_ve
+        self.last_x = self.apg_x_s.to_floats()["x"]
+        self.last_y = self.apg_y_s.to_floats()["x"]
+        self.last_e = self.apg_e_s.to_floats()["x"]
+        self.last_vx = self.apg_x_s.to_floats()["v_out"]
+        self.last_vy = self.apg_y_s.to_floats()["v_out"]
+        self.last_ve = self.apg_e_s.to_floats()["v_out"]
         self.last_v = hypot(self.last_vx, self.last_vy)
         print(
             "last_x",
@@ -1318,19 +1292,15 @@ class PathPlanner:
         return sub_profile
 
     def emu_profile(self, int_dt, int_ax, int_ay, int_ae, int_jx, int_jy, int_je, int_tvx, int_tvy, int_tve):
-        test_states = {
-            "X": self.apg_states["X"].copy(),
-            "Y": self.apg_states["Y"].copy(),
-            "Z": self.apg_states["Z"].copy(),
-        }
+        test_states = { k: v.copy() for k, v in self.apg_states.items() }
 
         test_profile = [
             [
                 int_dt,
                 [
-                    ProfileSegment(apg=self.apg_x, a=int(int_ax), j=int(int_jx), target_v=int_tvx),
-                    ProfileSegment(apg=self.apg_y, a=int(int_ay), j=int(int_jy), target_v=int_tvy),
-                    ProfileSegment(apg=self.apg_z, a=int(int_ae), j=int(int_je), target_v=int_tve),
+                    ProfileSegment(apg=self.apg_x, a=int_ax, j=int_jx, target_v=int_tvx),
+                    ProfileSegment(apg=self.apg_y, a=int_ay, j=int_jy, target_v=int_tvy),
+                    ProfileSegment(apg=self.apg_e, a=int_ae, j=int_je, target_v=int_tve),
                 ],
             ]
         ]
@@ -1340,12 +1310,12 @@ class PathPlanner:
             raise RuntimeError("INT_AE is too big: {}".format(int_ae))
 
         emulate(test_profile, apg_states=test_states, accel_step=self.accel_step, no_tracking=True)
-        test_x = test_states["X"].x / self.k_xxy
-        test_y = test_states["Y"].x / self.k_xxy
-        test_e = test_states["Z"].x / self.k_xe
-        test_vx = test_states["X"].v / self.k_vxy
-        test_vy = test_states["Y"].v / self.k_vxy
-        test_ve = test_states["Z"].v / self.k_ve
+        test_x = test_states[self.apg_x].to_floats()["x"]
+        test_y = test_states[self.apg_y].to_floats()["x"]
+        test_e = test_states[self.apg_e].to_floats()["x"]
+        test_vx = test_states[self.apg_x].to_floats()["v_out"]
+        test_vy = test_states[self.apg_y].to_floats()["v_out"]
+        test_ve = test_states[self.apg_e].to_floats()["v_out"]
         return test_x, test_y, test_e, test_vx, test_vy, test_ve
 
     def ext_to_code(self, e, f, axe="E"):
