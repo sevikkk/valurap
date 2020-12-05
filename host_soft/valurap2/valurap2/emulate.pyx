@@ -24,6 +24,8 @@ cdef class ApgState(object):
     cdef public float x_k
     cdef public float v_k
     cdef public float a_k
+    cdef public float j_k
+    cdef public float jj_k
     cdef public float t_k
 
     def __init__(self, accel_step=50000, step_freq=50000000, step_bit=40, spm=1.0):
@@ -43,6 +45,8 @@ cdef class ApgState(object):
         self.x_k = 1.0 / (2 ** step_bit) / spm
         self.v_k = self.x_k * self.step_freq
         self.a_k = self.v_k * self.step_freq / self.accel_step
+        self.j_k = self.a_k * self.step_freq / self.accel_step
+        self.jj_k = self.j_k * self.step_freq / self.accel_step
         self.t_k = self.accel_step / self.step_freq
 
     def to_floats(self):
@@ -53,8 +57,8 @@ cdef class ApgState(object):
                 "v_eff": float(self.v_eff) * self.v_k,
                 "target_v": float(self.target_v) * self.v_k,
                 "a": float(self.a) * self.a_k,
-                "j": float(self.j) * self.a_k,
-                "jj": float(self.jj) * self.a_k
+                "j": float(self.j) * self.j_k,
+                "jj": float(self.jj) * self.jj_k
         }
 
     def __str__(self):
