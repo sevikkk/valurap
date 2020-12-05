@@ -40,23 +40,23 @@ def path_gen(lines):
     line_number = 0
     while 1:
         try:
-            l = next(lines)
+            line = next(lines)
             line_number += 1
         except StopIteration:
             if path and current_mode:
                 yield do_path(current_mode, path)
             break
 
-        if ';' in l:
-            l = l.split(';')[0]
-        l = l.strip()
-        if not l:
+        if ';' in line:
+            line = line.split(';')[0]
+        line = line.strip()
+        if not line:
             continue
 
         # print("Line:", l)
 
-        if l[0] == "M":
-            parts = l.split()
+        if line[0] == "M":
+            parts = line.split()
             code = int(parts[0][1:])
             if code == 82:
                 relative_extrude_mode = False
@@ -70,8 +70,8 @@ def path_gen(lines):
                 print("{}: Unknown M{} command".format(line_number, code))
                 break
 
-        if l[0] == "G":
-            parts = l.split()
+        if line[0] == "G":
+            parts = line.split()
             code = int(parts[0][1:])
             if code == 28:
                 if path and current_mode:
@@ -133,10 +133,10 @@ def path_gen(lines):
                 print("{}: Unknown G{} command".format(line_number, code))
                 break
 
-        if l[0] == "T":
-            parts = l.split()
+        if line[0] == "T":
+            parts = line.split()
             code = int(parts[0][1:])
-            if code in (0,1):
+            if code in (0, 1):
                 print("Extruder switch to", code)
                 if path and current_mode:
                     yield do_path(current_mode, path)
@@ -145,9 +145,8 @@ def path_gen(lines):
                 yield do_extruder(code)
                 continue
 
-        print("{}: Unknown command: {}".format(line_number, l))
+        print("{}: Unknown command: {}".format(line_number, line))
         break
-
 
 
 def gen_segments(pg, split_len=None):
@@ -178,7 +177,7 @@ def gen_segments(pg, split_len=None):
 
             gc_segment = gc_path.path[1:]
             for i, p in enumerate(gc_segment):
-                if ("Z" in p) or ((not "X" in p) and (not "Y" in p)):
+                if ("Z" in p) or (("X" not in p) and ("Y" not in p)):
                     if len(path) > 1:
                         path.append([x, y, 0, ext, path[-1][4]])
                         yield do_segment(path)
@@ -248,3 +247,8 @@ def gen_segments(pg, split_len=None):
 
         yield do_segment(path)
 
+
+def file_reader(fn):
+    lines = reader(fn)
+    pg = path_gen(lines)
+    return gen_segments(pg)
