@@ -98,8 +98,8 @@ class S3GPort(S3GPortBase):
             #print("".join(s))
 
             # print(`payload`)
-            reply = self.send_and_wait_reply(payload, kw.get("cmd_id", None), timeout=0.1)
+            reply = self.send_and_wait_reply(payload, kw.get("cmd_id", None), timeout=5)
             if reply[0] != 0x81:
-                raise RuntimeError("Unexpected reply code")
+                raise RuntimeError("Unexpected reply code: {}".format(reply[0]))
         return
 
