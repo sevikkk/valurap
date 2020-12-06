@@ -1239,9 +1239,9 @@ class PathPlanner:
         sub_profile = []
         if int_dt > 0:
             segs = [
-                ProfileSegment(apg=self.apg_x, a=int(int_ax), j=int(int_jx), target_v=int_tvx),
-                ProfileSegment(apg=self.apg_y, a=int(int_ay), j=int(int_jy), target_v=int_tvy),
-                ProfileSegment(apg=self.apg_e, a=int(int_ae), j=int(int_je), target_v=int_tve),
+                ProfileSegment(apg=self.apg_x, a=int(int_ax), j=int(int_jx), target_v=int(int_tvx)),
+                ProfileSegment(apg=self.apg_y, a=int(int_ay), j=int(int_jy), target_v=int(int_tvy)),
+                ProfileSegment(apg=self.apg_e, a=int(int_ae), j=int(int_je), target_v=int(int_tve)),
             ]
 
             sub_profile = [[int_dt, segs]]
@@ -1393,7 +1393,7 @@ class PathPlanner:
 
 
     def gen_layers(self, input_fn, output_prefix=None, speed_k=1.0):
-        self.init_coefs()
+        self.init_apgs()
         if output_prefix is None:
             output_prefix = os.path.splitext(input_fn)[0]
 
