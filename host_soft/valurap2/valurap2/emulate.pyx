@@ -188,6 +188,7 @@ def emulate(profile, verbose=0, apg_states=None, accel_step=50000, no_tracking=T
 
             while i < int_dt:
                 if int_tracking:
+                    vals = state.to_floats()
                     step_data = steps.setdefault(ts_start + i, {"ts": ts_start + i})
                     step_data[prefix + "jj"] = vals["jj"]
                     step_data[prefix + "j"] = vals["j"]
