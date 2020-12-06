@@ -346,3 +346,63 @@ class CommandBuffer(object):
 
         self.BUF_CLEAR(-1)   # clear all ending ints just in case
 
+    def add_segments(self, segments):
+        first = True
+        j_set = {}
+        jj_set = {}
+        for dt, segs in segments:
+            self.BUF_OUTPUT(self.OUT_ASG_STEPS_VAL, dt)  # 5 steps
+            all_segs = {v.apg: v for v in segs}
+            for chan in range(8):
+                if chan not in all_segs:
+                    self.write_param(chan, self.PARAM_STATUS, 0)
+                    j_set[chan] = True
+                    jj_set[chan] = True
+                    continue
+
+                seg = all_segs[chan]
+                status = self.PARAM_STATUS_ENABLE
+                if seg.target_v is not None:
+                    status |= self.PARAM_STATUS_TARGET_V
+
+                self.write_param(chan, self.PARAM_STATUS, status)
+                if seg.v is not None:
+                    self.write_param(chan, self.PARAM_V_OUT, seg.v)
+                self.write_param(chan, self.PARAM_A, seg.a)
+                if seg.j == 0 and seg.jj == 0:
+                    if j_set.get(chan, True) or jj_set.get(chan, True):
+                        self.write_param(chan, self.PARAM_J, 0)
+                    if jj_set.get(chan, True):
+                        self.write_param(chan, self.PARAM_JJ, 0)
+                    j_set[chan] = False
+                    jj_set[chan] = False
+                elif seg.j != 0 and seg.jj == 0:
+                    self.write_param(chan, self.PARAM_J, seg.j)
+                    if jj_set.get(chan, True):
+                        self.write_param(chan, self.PARAM_JJ, 0)
+                    j_set[chan] = True
+                    jj_set[chan] = False
+                else:
+                    self.write_param(chan, self.PARAM_J, seg.j)
+                    self.write_param(chan, self.PARAM_JJ, seg.jj)
+                    j_set[chan] = True
+                    jj_set[chan] = True
+
+                if seg.target_v is not None:
+                    self.write_param(chan, self.PARAM_TARGET_V, seg.target_v)
+
+            if first:
+                self.BUF_STB(self.STB_ASG_START)  # Start ASG cycles
+                self.BUF_WAIT_ALL(self.INT_ASG_LOAD)  # Wait for APG ready for new segment
+                self.BUF_CLEAR(self.INT_ASG_LOAD)  # Clear pending int
+                first = False
+            else:
+                self.BUF_STB(self.STB_ASG_LOAD_DONE)  # Inform ASG, next segment setup is done
+                self.BUF_WAIT_ALL(self.INT_ASG_LOAD)
+                self.BUF_CLEAR(self.INT_ASG_LOAD)
+
+        if not first:
+            self.BUF_OUTPUT(self.OUT_ASG_STEPS_VAL, 0)  # steps_val = 0 - End of path
+            self.BUF_STB(self.STB_ASG_LOAD_DONE)
+            self.BUF_WAIT_ALL(self.INT_ASG_DONE)  # Wait for ASG done
+            self.BUF_CLEAR(self.INT_ASG_DONE)
