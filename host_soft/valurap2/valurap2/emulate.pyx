@@ -1,11 +1,11 @@
-from math import copysign
+from math import ceil
 
 try:
     import pandas as pd
 except ImportError:
     pd = None
 
-from libc.stdint cimport int32_t, int64_t
+from libc.stdint cimport int64_t
 
 cdef class ApgState(object):
     cdef public int64_t x
@@ -61,6 +61,52 @@ cdef class ApgState(object):
                 "jj": float(self.jj) * self.jj_k
         }
 
+    def dt_float(self, dt):
+        return float(dt) * self.t_k
+
+    def x_float(self, x=None):
+        if x is None:
+            x = self.x
+        return x * self.x_k
+
+    def v_float(self, v=None):
+        if v is None:
+            v = self.v_out
+        return float(v) * self.v_k
+
+    def a_float(self, a=None):
+        if a is None:
+            a = self.a
+        return float(a) * self.a_k
+
+    def j_float(self, j=None):
+        if j is None:
+            j = self.j
+        return float(j) * self.j_k
+
+    def jj_float(self, jj=None):
+        if jj is None:
+            jj = self.jj
+        return float(jj) * self.jj_k
+
+    def dt_int(self, dt):
+        return int(round(dt / self.t_k))
+
+    def x_int(self, x):
+        return int(round(x / self.x_k))
+
+    def v_int(self, v):
+        return int(round(v / self.v_k))
+
+    def a_int(self, a):
+        return int(round(a / self.a_k))
+
+    def j_int(self, j):
+        return int(round(j / self.j_k))
+
+    def jj_int(self, jj):
+        return int(round(jj / self.jj_k))
+
     def __str__(self):
         data = self.to_floats()
         s = "<ApgState x={x:.2f} v={v_out:.2f} a={a:.2f} j={j:.2f} jj={jj:.2f}".format(**data)
@@ -86,17 +132,18 @@ cdef class ApgState(object):
         else:
             self.target_v_set = False
 
-    def copy(self):
+    def copy(self, zero=False):
         c = ApgState(accel_step=self.accel_step, step_freq=self.step_freq, step_bit=self.step_bit, spm=self.spm)
-        c.x = self.x
-        c.v_in = self.v_in
-        c.v_out = self.v_out
-        c.v_eff = self.v_eff
-        c.a = self.a
-        c.j = self.j
-        c.jj = self.jj
-        c.target_v = self.target_v
-        c.target_v_set = self.target_v_set
+        if not zero:
+            c.x = self.x
+            c.v_in = self.v_in
+            c.v_out = self.v_out
+            c.v_eff = self.v_eff
+            c.a = self.a
+            c.j = self.j
+            c.jj = self.jj
+            c.target_v = self.target_v
+            c.target_v_set = self.target_v_set
         return c
 
     def step(self):
