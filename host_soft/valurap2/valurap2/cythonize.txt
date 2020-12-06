@@ -1,0 +1,7 @@
+Linux:
+
+cythonize -3 -i emulate.pyx
+
+macOS:
+
+CFLAGS='-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk' cythonize -i -3 emulate.pyx
