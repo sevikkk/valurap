@@ -1,14 +1,16 @@
-module speed_integrator(
+module speed_integrator#(
+    SPEED_BITS=64
+) (
     input clk,
     input reset,
     input set_v,
     input set_x,
-    input signed [63:0] x_val,
-    input signed [63:0] v_val,
+    input signed [SPEED_BITS-1:0] x_val,
+    input signed [SPEED_BITS-1:0] v_val,
     input [5:0] step_bit,
 
-    output reg signed [63:0] x,
-    output reg signed [63:0] v,
+    output reg signed [SPEED_BITS-1:0] x,
+    output reg signed [SPEED_BITS-1:0] v,
 
     output reg step,
     output reg dir
@@ -16,10 +18,10 @@ module speed_integrator(
 
     reg next_dir;
     reg next_step;
-    reg signed [63:0] next_x;
-    reg signed [63:0] next_v;
+    reg signed [SPEED_BITS-1:0] next_x;
+    reg signed [SPEED_BITS-1:0] next_v;
 
-    wire signed [63:0] x_acc;
+    wire signed [SPEED_BITS-1:0] x_acc;
 
     assign x_acc = x+v;
 

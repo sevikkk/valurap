@@ -1,18 +1,18 @@
-module profile_gen(
+module profile_gen#(SPEED_BITS=64) (
     input clk,
     input rst,
     input acc_step,
     output reg busy,
     output reg done,
 
-    output reg signed [63:0] speed_0,
-    output reg signed [63:0] speed_1,
-    output reg signed [63:0] speed_2,
-    output reg signed [63:0] speed_3,
-    output reg signed [63:0] speed_4,
-    output reg signed [63:0] speed_5,
-    output reg signed [63:0] speed_6,
-    output reg signed [63:0] speed_7,
+    output reg signed [SPEED_BITS-1:0] speed_0,
+    output reg signed [SPEED_BITS-1:0] speed_1,
+    output reg signed [SPEED_BITS-1:0] speed_2,
+    output reg signed [SPEED_BITS-1:0] speed_3,
+    output reg signed [SPEED_BITS-1:0] speed_4,
+    output reg signed [SPEED_BITS-1:0] speed_5,
+    output reg signed [SPEED_BITS-1:0] speed_6,
+    output reg signed [SPEED_BITS-1:0] speed_7,
 
     input [7:0] param_addr,
     input [31:0] param_in,
@@ -410,14 +410,14 @@ module profile_gen(
         end
         else if (next_speed_stb)
             case (next_channel)
-                0: speed_0 <= next_speed_value;
-                1: speed_1 <= next_speed_value;
-                2: speed_2 <= next_speed_value;
-                3: speed_3 <= next_speed_value;
-                4: speed_4 <= next_speed_value;
-                5: speed_5 <= next_speed_value;
-                6: speed_6 <= next_speed_value;
-                7: speed_7 <= next_speed_value;
+                0: speed_0 <= next_speed_value[SPEED_BITS-1:0];
+                1: speed_1 <= next_speed_value[SPEED_BITS-1:0];
+                2: speed_2 <= next_speed_value[SPEED_BITS-1:0];
+                3: speed_3 <= next_speed_value[SPEED_BITS-1:0];
+                4: speed_4 <= next_speed_value[SPEED_BITS-1:0];
+                5: speed_5 <= next_speed_value[SPEED_BITS-1:0];
+                6: speed_6 <= next_speed_value[SPEED_BITS-1:0];
+                7: speed_7 <= next_speed_value[SPEED_BITS-1:0];
             endcase
     end
 

@@ -2,7 +2,8 @@ module mojo_top#(
     parameter CLK_RATE=50000000,
     parameter EXT_BAUD_RATE=1500000,
     parameter FIFO_ADDRESS_WIDTH=13,
-    parameter STEP_BIT=32,
+    parameter STEP_BIT=40,
+    parameter SPEED_BITS=42,
     parameter X_BITS=20
 )(
     // 50MHz clock input
@@ -457,7 +458,9 @@ module mojo_top#(
         .in_reg28({{32-X_BITS{1'b0}}, motor_x[11]}),
 
         .in_reg62(ext_pending_ints),
-        .in_reg63(reg_loopback)
+        .in_reg63(reg_loopback),
+
+        .in_status({reg_loopback[30:0] & apg_status[0] & be_status[0]})
     );
 
     wire fifo_empty;
@@ -526,9 +529,9 @@ module mojo_top#(
         .bad_code(be_status[6])
     );
 
-    wire [63:0] speed [0:7];
+    wire [SPEED_BITS-1:0] speed [0:7];
 
-    profile_gen apg(
+    profile_gen#(.SPEED_BITS(SPEED_BITS)) apg(
         .clk(clk),
         .rst(n_rdy),
         .acc_step(start_calc),
@@ -619,25 +622,25 @@ module mojo_top#(
     endgenerate
 
     generate
-        for (ch = 0; ch < 6; ch = ch+1) begin : speeds_block
-            speed_integrator sp(
+        for (ch = 0; ch < 8; ch = ch+1) begin : speeds_block
+            speed_integrator#(.SPEED_BITS(SPEED_BITS)) sp(
                 .clk(clk),
                 .reset(n_rdy),
                 .set_v(load_speeds),
                 .set_x(stbs[5]),
                 .x_val(64'b0),
                 .v_val(speed[ch]),
-                .step_bit(sp_config[5:0]),
+                .step_bit(STEP_BIT),
                 .dir(sp_dirs[ch]),
                 .step(sp_steps[ch])
             );
         end
     endgenerate
 
-    assign sp_dirs[6] = 1'b0;
-    assign sp_steps[6] = 1'b0;
-    assign sp_dirs[7] = 1'b0;
-    assign sp_steps[7] = 1'b0;
+    //assign sp_dirs[6] = 1'b0;
+    //assign sp_steps[6] = 1'b0;
+    //assign sp_dirs[7] = 1'b0;
+    //assign sp_steps[7] = 1'b0;
 
     wire [11:0] mm_stbs;
     wire [7:0] es_aborts [0:12];

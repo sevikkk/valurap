@@ -181,6 +181,8 @@ module s3g_executor(
     input [31:0] in_reg62,
     input [31:0] in_reg63,
 
+    input [31:0] in_status,
+
     output reg [31:0] out_stbs,
 
     input int0,
@@ -672,22 +674,30 @@ module s3g_executor(
                 CMD_WR_BUF_OK:
                     begin
                         tx_packet_wr <= 1;
-                        tx_payload_len <= 7;
+                        tx_payload_len <= 11;
                         tx_buf2 <= 8'h81;
                         tx_buf3 <= ext_fifo_free_space[7:0];
                         tx_buf4 <= ext_fifo_free_space[15:8];
                         tx_buf5 <= ext_fifo_free_space[23:16];
                         tx_buf6 <= ext_fifo_free_space[31:24];
+                        tx_buf7 <= in_status[7:0];
+                        tx_buf8 <= in_status[15:8];
+                        tx_buf9 <= in_status[23:16];
+                        tx_buf10 <= in_status[31:24];
                     end
                 CMD_WR_BUF_ERR:
                     begin
                         tx_packet_wr <= 1;
-                        tx_payload_len <= 7;
+                        tx_payload_len <= 11;
                         tx_buf2 <= 8'h82;
                         tx_buf3 <= ext_fifo_free_space[7:0];
                         tx_buf4 <= ext_fifo_free_space[15:8];
                         tx_buf5 <= ext_fifo_free_space[23:16];
                         tx_buf6 <= ext_fifo_free_space[31:24];
+                        tx_buf7 <= in_status[7:0];
+                        tx_buf8 <= in_status[15:8];
+                        tx_buf9 <= in_status[23:16];
+                        tx_buf10 <= in_status[31:24];
                     end
             endcase
         end
