@@ -1,4 +1,5 @@
 import struct
+from collections import deque
 
 from valurap2.buf_commands import CommandBuffer
 
@@ -67,39 +68,40 @@ class S3GPort(S3GPortBase):
             raise RuntimeError("Unexpected reply code")
         return
 
-    def S3G_WRITE_FIFO(self, *values, **kw):
+    # noinspection PyUnreachableCode
+    def S3G_WRITE_FIFO(self, *values, timeout=5, max_cmds=None, cmd_id=None, until_free=None):
         """
         Write data to buf_executor memory
         """
 
         if len(values) == 1 and isinstance(values[0], CommandBuffer):
-            data = bytearray().join(values[0].buffer)
+            data = values[0].buffer
         else:
-            data = bytearray().join(values)
+            data = deque(values)
 
-        l = len(data)
-        if l % 5 != 0:
-            raise ValueError("Buffer length is not multiple of 5")
-
-        l = l / 5
+        free_space, status = None, None
         while data:
-            if l < 40:
-                packet_data = data
-                data = None
-            else:
-                packet_data = data[: 40 * 5]
-                data = data[40 * 5 :]
+            l = min(40, len(data))
 
-            packet_cmds = int(len(packet_data) / 5)
-            payload = struct.pack("<BB", 66, packet_cmds) + packet_data
-            #s = []
-            #for ch in payload:
-            #    s.append("%02X" % ch)
-            #print("".join(s))
+            if max_cmds is not None:
+                l = min(l, max_cmds)
+                max_cmds -= l
 
-            # print(`payload`)
-            reply = self.send_and_wait_reply(payload, kw.get("cmd_id", None), timeout=5)
+            if l == 0:
+                break
+
+            packet_data = bytearray().join([data.popleft() for _ in range(l)])
+            assert len(packet_data) == l * 5
+
+            payload = struct.pack("<BB", 66, l) + packet_data
+
+            reply = self.send_and_wait_reply(payload, cmd_id=cmd_id, timeout=timeout)
             if reply[0] != 0x81:
                 raise RuntimeError("Unexpected reply code: {}".format(reply[0]))
-        return
+            free_space, status = struct.unpack("<ii", reply[1:9])
+            if until_free is not None:
+                if free_space < until_free:
+                    break
+
+        return free_space, status
 
