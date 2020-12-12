@@ -177,7 +177,7 @@ cdef class ApgState(object):
         self.jj = next_jj
 
 
-NUM_APGS = 6
+NUM_APGS = 8
 def emulate(profile, verbose=0, apg_states=None, accel_step=50000, no_tracking=True, step_freq=50000000, step_bit=40, spms=None):
     cdef int int_verbose = verbose
     cdef int int_tracking = not no_tracking
