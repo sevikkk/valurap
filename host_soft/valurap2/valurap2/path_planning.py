@@ -45,6 +45,9 @@ class PathPlanner:
     delta_v_err = 1.0
     delta_e_err = 1.0
     delta_ve_err = 1.0
+    home_spms = [spm, spm, spm, spm, spmz, spmz, spmz, spmz]
+    print_spms = [spm, spm, spm, spmz, spme1, spme2, 1.0, 1.0]
+    spms = print_spms
 
     def __init__(self):
         self.apg_states = {}
@@ -60,7 +63,7 @@ class PathPlanner:
                 apg_states=self.apg_states,
                 accel_step=self.accel_step,
                 #        X1         X2        Y         Z           E1         E2
-                spms=[self.spm, self.spm, self.spm, self.spmz, self.spme1, self.spme2]
+                spms=self.spms
             )
 
     def make_path(self, gcode_path, speed_k=1.0):
@@ -1319,12 +1322,93 @@ class PathPlanner:
         test_ve = test_states[self.apg_e].to_floats()["v_out"]
         return test_x, test_y, test_e, test_vx, test_vy, test_ve
 
-    def ext_to_code(self, dx, speed=None, axe="E"):
+    def ext_to_code(self, dx, speed=None, axe=None, axes=None):
+        if axes is None:
+            axes = []
+
+        if axe:
+            axes = [axe] + axes
+
+        if type(dx) not in (list, tuple):
+            dxes = [dx] * len(axes)
+        else:
+            dxes = list(dx)
+
+        assert len(dxes) == len(axes)
+
+        main_axe = None
+        main_k = 1
+        all_apgs = []
+
+        max_dx = max([abs(dx) for dx in dxes])
+        for i in range(len(axes)):
+            axe = axes[i]
+            dx = dxes[i]
+            if axe[0] == "-":
+                axe = axe[1:]
+                dx = -dx
+                dxes[i] = dx
+
+            k = dx / max_dx
+            if not main_axe or (abs(k) > abs(main_k)):
+                main_axe = axe
+                main_k = k
+            all_apgs.append((self.axe_params(axe)[0], k))
+
+        apg, speed, max_a = self.axe_params(main_axe, speed)
+
+        apg_s = self.apg_states[apg]
+
+        segs = []
+
+        acc_dt = speed / max_a
+        full_dx = max_a * acc_dt * acc_dt  # / 2 * 2
+        if max_dx > full_dx:
+            plato_de = max_dx - full_dx
+            plato_dt = plato_de / speed
+            plato_v = speed
+        else:
+            acc_dt = sqrt(max_dx / max_a)
+            plato_v = max_a * acc_dt
+            plato_dt = 0
+
+        int_acc_dt = apg_s.dt_int(acc_dt)
+        int_plato_dt = apg_s.dt_int(plato_dt)
+        segs_acc = []
+        segs_dec = []
+        segs_stop = []
+        for apg, k in all_apgs:
+            apg_2 = self.apg_states[apg]
+            assert apg_2.spm == apg_s.spm
+            int_v = apg_s.v_int(plato_v * k)
+            int_a = int(int_v/int_acc_dt)
+            segs_acc.append(ProfileSegment(apg=apg, v=0, a=int_a, target_v=int_v))
+            segs_dec.append(ProfileSegment(apg=apg, a=-int_a, target_v=0))
+            segs_stop.append(ProfileSegment(apg=apg, v=0, a=0))
+
+        segs.append([int_acc_dt + int_plato_dt, segs_acc])
+        segs.append([int_acc_dt, segs_dec])
+        segs.append([5, segs_stop])
+
+        test_states = {k: v.copy(zero=True) for k, v in self.apg_states.items()}
+        emulate(segs, apg_states=test_states)
+
+        delta = 1 / apg_s.spm
+        for i, (apg, k) in enumerate(all_apgs):
+            test_x = test_states[apg].x_float()
+            print("delta_x:", apg, test_x - dxes[i], delta)
+            assert abs(test_x - dxes[i]) < delta
+
+        return segs
+
+    def axe_params(self, axe, speed=None):
         if axe in ("E", 'E1'):
+            assert self.spms == self.print_spms
             apg = 4
             max_a = self.max_ea
             default_speed = 6
         elif axe in ('E2'):
+            assert self.spms == self.print_spms
             apg = 5
             max_a = self.max_ea
             default_speed = 2
@@ -1337,56 +1421,52 @@ class PathPlanner:
             max_a = self.max_xa
             default_speed = 150
         elif axe in ('Y'):
+            assert self.spms == self.print_spms
             apg = 2
             max_a = self.max_ya
             default_speed = 150
         elif axe in ('Z'):
+            assert self.spms == self.print_spms
             apg = 3
             max_a = self.max_za
-            default_speed = 4
+            default_speed = 5
+        elif axe in ('YL'):
+            assert self.spms == self.home_spms
+            apg = 2
+            max_a = self.max_ya
+            default_speed = 150
+        elif axe in ('YR'):
+            assert self.spms == self.home_spms
+            apg = 3
+            max_a = self.max_ya
+            default_speed = 150
+        elif axe in ('ZBR'):
+            assert self.spms == self.home_spms
+            apg = 4
+            max_a = self.max_za
+            default_speed = 5
+        elif axe in ('ZBL'):
+            assert self.spms == self.home_spms
+            apg = 5
+            max_a = self.max_za
+            default_speed = 5
+        elif axe in ('ZFR'):
+            assert self.spms == self.home_spms
+            apg = 6
+            max_a = self.max_za
+            default_speed = 5
+        elif axe in ('ZFL'):
+            assert self.spms == self.home_spms
+            apg = 7
+            max_a = self.max_za
+            default_speed = 5
         else:
             raise RuntimeError("Unknown axe: {}".format(axe))
 
         if speed is None:
             speed = default_speed
 
-        apg_s = self.apg_states[apg]
-
-        segs = []
-        abs_dx = abs(dx)
-        acc_dt = speed / max_a
-        full_dx = max_a * acc_dt * acc_dt  # / 2 * 2
-        if abs_dx > full_dx:
-            plato_de = abs_dx - full_dx
-            plato_dt = plato_de / speed
-            plato_v = speed
-        else:
-            acc_dt = sqrt(abs_dx / max_a)
-            plato_v = max_a * acc_dt
-            plato_dt = 0
-
-        int_acc_dt = apg_s.dt_int(acc_dt)
-        int_plato_dt = apg_s.dt_int(plato_dt)
-        int_v = apg_s.v_int(plato_v)
-        int_a = int(int_v/int_acc_dt)
-
-        if dx < 0:
-            int_v = -int_v
-            int_a = -int_a
-
-        segs.append([int_acc_dt + int_plato_dt, [ProfileSegment(apg=apg, v=0, a=int_a, target_v=int_v)]])
-        segs.append([int_acc_dt, [ProfileSegment(apg=apg, a=-int_a, target_v=0)]])
-        segs.append([5, [ProfileSegment(apg=apg, v=0, a=0)]])
-
-        test_states = {k: v.copy(zero=True) for k, v in self.apg_states.items()}
-        emulate(segs, apg_states=test_states)
-
-        test_x = test_states[apg].x_float()
-
-        delta = 1 / apg_s.spm
-        print("delta_x:", test_x - dx, delta)
-        assert abs(test_x - dx) < delta
-        return segs
+        return apg, speed, max_a
 
     def segment_to_code(self, seg, speed_k=1.0, restart=False, extruder="E1"):
         if restart:
