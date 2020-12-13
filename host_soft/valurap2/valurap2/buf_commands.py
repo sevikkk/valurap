@@ -121,6 +121,7 @@ class CommandBuffer(object):
     def reset(self):
         self.buffer = deque()
         self.last_addr = None
+        self.segments_state = "init"
 
     def format_field(self, field_descr, val):
         if len(field_descr) == 2:
@@ -304,7 +305,6 @@ class CommandBuffer(object):
 
     def hw_reset(self):
         self.BUF_STB(self.STB_ASG_ABORT)
-        self.BUF_CLEAR(-1)
 
         self.BUF_OUTPUT(self.OUT_SP_CONFIG, 40)           # step_bit = 40
         self.BUF_OUTPUT(self.OUT_MSG_ALL_PRE_N, 100)          # pre_n
@@ -327,6 +327,8 @@ class CommandBuffer(object):
             self.write_param(i, self.PARAM_J, 0)
             self.write_param(i, self.PARAM_JJ, 0)
 
+        self.BUF_CLEAR(-1)   # clear all ending ints just in case
+
         self.BUF_STB(self.STB_ASG_START)  # Start ASG cycles
         self.BUF_WAIT_ALL(self.INT_ASG_LOAD)  # Wait for APG ready for new segment
         self.BUF_CLEAR(self.INT_ASG_LOAD)  # Clear pending int
@@ -346,7 +348,19 @@ class CommandBuffer(object):
 
         self.BUF_CLEAR(-1)   # clear all ending ints just in case
 
+    def add_segments_head(self, pp):
+        assert self.segments_state == "init"
+        self.BUF_CLEAR(-1)   # clear all ending ints just in case
+        self.BUF_STB(self.STB_ES_UNLOCK)
+        self.BUF_OUTPUT(self.OUT_ASG_DT_VAL, pp.apg_states[0].accel_step)
+        self.segments_state = "body"
+
+    def add_segments_tail(self, pp):
+        assert self.segments_state == "body"
+        self.segments_state = "init"
+
     def add_segments(self, segments):
+        assert self.segments_state == "body"
         first = True
         j_set = {}
         jj_set = {}
@@ -406,3 +420,96 @@ class CommandBuffer(object):
             self.BUF_STB(self.STB_ASG_LOAD_DONE)
             self.BUF_WAIT_ALL(self.INT_ASG_DONE)  # Wait for ASG done
             self.BUF_CLEAR(self.INT_ASG_DONE)
+
+    def enable_axes(self, modes=None):
+        if modes is None:
+            modes = ["print", "e1", "e2"]
+
+        # Home configuration
+        # SG:   X1  X2  YL  YR  ZFL ZFR ZBL ZBR
+        #        0   1   2   3   4   5   6   7
+        #
+        # Print configuration
+        # SG:   X1  X2   Y   Z  E1  E2  --  --
+        #        0   1   2   3   4   5   6   7
+        #
+        # EndStops: X2  X1  YL  YR  ZBR ZBL ZFR ZFL
+        #            0   1   2   3   4   5   6   7
+        #
+        # Motor  Axe  ES Invert HomeSG PrintSG HomeCFG PrintCFG
+        #   1    ZFL   7    -      4     3      80cf     80b0
+        #   2    ZBR   4    -      7     3      80fc     80b0
+        #   3    ZBL   5    -      6     3      80ed     80b0
+        #   4    E1    -    -      -     4      0000     80c0
+        #   5    E2    -    -      -     5      0000     80d0
+        #   6    ZFR   6    -      5     3      80de     80b0
+        #   7    X1    1    I      0     0      8189     8180
+        #   8    X2    0    -      1     1      8098     8090
+        #   9    --                             0000     0000
+        #  10    --                             0000     0000
+        #  11    YR    3    -      3     2      80bb     80a0
+        #  12    YL    2    I      2     2      81aa     81a0
+        cfgs = {
+            "home": [
+                0x80f080c0,   # ZBR   ZFL
+                0x000080e0,   # E1    ZBL
+                0x80d00000,   # ZFR   E2
+                0x80908180,   # X2    X1
+                0x00000000,   # --    --
+                0x81a080b0,   # YL    YR
+            ],
+
+            "es_z": [
+                0x000c000f,   # ZBR   ZFL
+                0x0000000d,   # E1    ZBL
+                0x000e0000,   # ZFR   E2
+                0x00000000,   # X2    X1
+                0x00000000,   # --    --
+                0x00000000,   # YL    YR
+            ],
+
+            "es_xy": [
+                0x00000000,   # ZBR   ZFL
+                0x00000000,   # E1    ZBL
+                0x00000000,   # ZFR   E2
+                0x00080009,   # X2    X1
+                0x00000000,   # --    --
+                0x000a000b,   # YL    YR
+            ],
+
+            "e1": [
+                0x00000000,  # ZBR   ZFL
+                0x80000000,  # E1    ZBL
+                0x00000000,  # ZFR   E2
+                0x00000000,  # X2    X1
+                0x00000000,  # --    --
+                0x00000000,  # YL    YR
+            ],
+
+            "e2": [
+                0x00000000,  # ZBR   ZFL
+                0x00000000,  # E1    ZBL
+                0x00008000,  # ZFR   E2
+                0x00000000,  # X2    X1
+                0x00000000,  # --    --
+                0x00000000,  # YL    YR
+            ],
+
+            "print": [
+                0x80b080b0,  # ZBR   ZFL
+                0x00c080b0,  # E1    ZBL
+                0x80b000d0,  # ZFR   E2
+                0x80908180,  # X2    X1
+                0x00000000,  # --    --
+                0x81a080a0,  # YL    YR
+            ],
+        }
+
+        cfg = [0, 0, 0, 0, 0, 0]
+        for mode in modes:
+            assert mode in cfgs
+            for k in range(6):
+                cfg[k] |= cfgs[mode][k]
+
+        for i in range(6):
+            self.BUF_OUTPUT(self.OUT_MSG_CONFIG0 + i, cfg[i])
