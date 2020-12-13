@@ -16,7 +16,7 @@ class PathPlanner:
     max_xa = 1000
     max_ya = 1000
     max_ea = 1000
-    max_za = 100
+    max_za = 50
 
     max_xv = 1000
     max_yv = 1000
