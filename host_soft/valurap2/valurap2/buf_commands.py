@@ -62,6 +62,7 @@ class CommandBuffer(object):
     IN_MOTOR10_X = 26
     IN_MOTOR11_X = 27
     IN_MOTOR12_X = 28
+    IN_MOTOR_X = (IN_MOTOR1_X, 0, -20)
     # Unused
     IN_PENDING_INTS = 62
     IN_SE_REG_LB = 63
@@ -121,9 +122,14 @@ class CommandBuffer(object):
     def reset(self):
         self.buffer = deque()
         self.last_addr = None
+        self.pp = None
         self.segments_state = "init"
 
-    def format_field(self, field_descr, val):
+    def len(self):
+        return len(self.buffer)
+
+    @staticmethod
+    def format_field(field_descr, val):
         if len(field_descr) == 2:
             reg, bit_num = field_descr
             bit_len = 1
@@ -132,14 +138,27 @@ class CommandBuffer(object):
         mask = 2 ** bit_len - 1
         return (val & mask) << bit_num
 
-    def extract_field(self, field_descr, val):
+    @staticmethod
+    def extract_field(field_descr, val):
         if len(field_descr) == 2:
             reg, bit_num = field_descr
             bit_len = 1
         else:
             reg, bit_num, bit_len = field_descr
+
+        sign_expand = False
+        if bit_len < 0:
+            bit_len = - bit_len
+            sign_expand = True
+
         mask = 2 ** bit_len - 1
-        return (val >> bit_num) & mask
+        val = (val >> bit_num) & mask
+        if sign_expand:
+            sign_mask = 2 ** (bit_len - 1)
+            if val & sign_mask:
+                val -= 2 ** bit_len
+
+        return val
 
     def BUF_OUTPUT(self, reg, val):
         """
@@ -354,8 +373,9 @@ class CommandBuffer(object):
         self.BUF_STB(self.STB_ES_UNLOCK)
         self.BUF_OUTPUT(self.OUT_ASG_DT_VAL, pp.apg_states[0].accel_step)
         self.segments_state = "body"
+        self.pp = pp
 
-    def add_segments_tail(self, pp):
+    def add_segments_tail(self):
         assert self.segments_state == "body"
         self.segments_state = "init"
 
@@ -421,7 +441,7 @@ class CommandBuffer(object):
             self.BUF_WAIT_ALL(self.INT_ASG_DONE)  # Wait for ASG done
             self.BUF_CLEAR(self.INT_ASG_DONE)
 
-    def enable_axes(self, modes=None):
+    def enable_axes(self, modes=None, pp=None):
         if modes is None:
             modes = ["print", "e1", "e2"]
 
@@ -513,3 +533,21 @@ class CommandBuffer(object):
 
         for i in range(6):
             self.BUF_OUTPUT(self.OUT_MSG_CONFIG0 + i, cfg[i])
+
+        if pp:
+            abort_as = []
+            if "print" in modes:
+                abort_as = [
+                    pp.max_xa, pp.max_xa, pp.max_ya, pp.max_za, pp.max_ea, pp.max_ea, pp.max_ea, pp.max_ea
+                ]
+            elif "home" in modes:
+                abort_as = [
+                    pp.max_xa, pp.max_xa, pp.max_ya, pp.max_ya, pp.max_za, pp.max_za, pp.max_za, pp.max_za
+                ]
+
+            for i in range(8):
+                abort_as[i] = pp.apg_states[i].a_int(abort_as[i])
+
+            if abort_as:
+                for i, a in enumerate(abort_as):
+                    self.write_param(i, self.PARAM_ABORT_A, a)
