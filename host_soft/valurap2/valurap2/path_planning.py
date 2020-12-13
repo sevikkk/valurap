@@ -21,6 +21,7 @@ class PathPlanner:
     max_xv = 1000
     max_yv = 1000
     max_ev = 1000
+    max_zv = 20
 
     min_seg = 0.1
     max_delta = 0.1
@@ -38,22 +39,34 @@ class PathPlanner:
 
     max_a_extra = 1.2
     max_a_extra2 = 1.5
-    emu_in_loop = False
+    emu_in_loop = True
     espeed_by_de = False
 
     delta_err = 1.0
     delta_v_err = 1.0
     delta_e_err = 1.0
     delta_ve_err = 1.0
+
     home_spms = [spm, spm, spm, spm, spmz, spmz, spmz, spmz]
     print_spms = [spm, spm, spm, spmz, spme1, spme2, 1.0, 1.0]
     spms = print_spms
 
-    def __init__(self):
+    def __init__(self, mode=None):
         self.apg_states = {}
         self.emu_t = 0
         self.last_x = None
         self.last_y = None
+        if mode:
+            self.set_mode(mode)
+
+    def set_mode(self, mode):
+        if mode == "print":
+            self.spms = self.print_spms
+        elif mode == "home":
+            self.spms = self.home_spms
+        else:
+            raise RuntimeError("Wrong mode: {}".format(mode))
+        self.init_apgs()
 
     def init_apgs(self):
         if not self.apg_states:
