@@ -75,7 +75,6 @@ class PathPlanner:
                 [],
                 apg_states=self.apg_states,
                 accel_step=self.accel_step,
-                #        X1         X2        Y         Z           E1         E2
                 spms=self.spms
             )
 
@@ -1349,51 +1348,72 @@ class PathPlanner:
 
         assert len(dxes) == len(axes)
 
-        main_axe = None
-        main_k = 1
-        all_apgs = []
+        if type(speed) not in (list, tuple):
+            speeds = [speed] * len(axes)
+        else:
+            speeds = list(speed)
 
-        max_dx = max([abs(dx) for dx in dxes])
+        assert len(speeds) == len(axes)
+
+        max_plato_dt = 0
+        max_acc_dt = 0
         for i in range(len(axes)):
             axe = axes[i]
             dx = dxes[i]
+            speed = speeds[i]
+
             if axe[0] == "-":
                 axe = axe[1:]
                 dx = -dx
                 dxes[i] = dx
+                axes[i] =  axe
 
-            k = dx / max_dx
-            if not main_axe or (abs(k) > abs(main_k)):
-                main_axe = axe
-                main_k = k
-            all_apgs.append((self.axe_params(axe)[0], k))
+            apg, speed, max_a = self.axe_params(axe, speed)
+            apg_s = self.apg_states[apg]
+            delta = 1 / apg_s.spm
 
-        apg, speed, max_a = self.axe_params(main_axe, speed)
+            dx = abs(dx)
+            if dx < delta:
+                continue
 
-        apg_s = self.apg_states[apg]
+            acc_dt = speed / max_a
+            full_dx = max_a * acc_dt * acc_dt  # / 2 * 2
+
+            if dx < full_dx:
+                acc_dt = sqrt(dx / max_a)
+                speed = max_a * acc_dt * 0.9
+
+                acc_dt = speed / max_a
+                full_dx = max_a * acc_dt * acc_dt  # / 2 * 2
+
+            plato_de = dx - full_dx
+            plato_dt = plato_de / speed
+
+            max_plato_dt = max(max_plato_dt, plato_dt)
+            max_acc_dt = max(max_acc_dt, acc_dt)
+
+        apg_s = self.apg_states[0]
+        int_acc_dt = max(5, apg_s.dt_int(max_acc_dt))
+        int_plato_dt = max(5, apg_s.dt_int(max_plato_dt))
+        acc_dt = apg_s.dt_float(int_acc_dt)
+        plato_dt = apg_s.dt_float(int_plato_dt)
 
         segs = []
-
-        acc_dt = speed / max_a
-        full_dx = max_a * acc_dt * acc_dt  # / 2 * 2
-        if max_dx > full_dx:
-            plato_de = max_dx - full_dx
-            plato_dt = plato_de / speed
-            plato_v = speed
-        else:
-            acc_dt = sqrt(max_dx / max_a)
-            plato_v = max_a * acc_dt
-            plato_dt = 0
-
-        int_acc_dt = apg_s.dt_int(acc_dt)
-        int_plato_dt = apg_s.dt_int(plato_dt)
         segs_acc = []
         segs_dec = []
         segs_stop = []
-        for apg, k in all_apgs:
-            apg_2 = self.apg_states[apg]
-            assert apg_2.spm == apg_s.spm
-            int_v = apg_s.v_int(plato_v * k)
+
+        for i in range(len(axes)):
+            axe = axes[i]
+            dx = dxes[i]
+            speed = speeds[i]
+
+            apg, speed, max_a = self.axe_params(axe, speed)
+            apg_s = self.apg_states[apg]
+
+            plato_v = dx / (acc_dt + plato_dt)
+
+            int_v = apg_s.v_int(plato_v)
             int_a = int(int_v/int_acc_dt)
             segs_acc.append(ProfileSegment(apg=apg, v=0, a=int_a, target_v=int_v))
             segs_dec.append(ProfileSegment(apg=apg, a=-int_a, target_v=0))
@@ -1406,11 +1426,16 @@ class PathPlanner:
         test_states = {k: v.copy(zero=True) for k, v in self.apg_states.items()}
         emulate(segs, apg_states=test_states)
 
-        delta = 1 / apg_s.spm
-        for i, (apg, k) in enumerate(all_apgs):
+        for i in range(len(axes)):
+            axe = axes[i]
+            dx = dxes[i]
+            apg, speed, max_a = self.axe_params(axe, speed)
+
+            delta = 1 / test_states[apg].spm
             test_x = test_states[apg].x_float()
-            print("delta_x:", apg, test_x - dxes[i], delta)
-            assert abs(test_x - dxes[i]) < delta
+
+            print("delta_x:", apg, test_x - dx, delta)
+            assert abs(test_x - dx) < delta
 
         return segs
 
