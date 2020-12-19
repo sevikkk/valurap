@@ -323,8 +323,6 @@ class CommandBuffer(object):
             self.BUF_PARAM_WRITE_HI(0, value_hi)
 
     def hw_reset(self):
-        self.BUF_STB(self.STB_ASG_ABORT)
-
         self.BUF_OUTPUT(self.OUT_SP_CONFIG, 40)           # step_bit = 40
         self.BUF_OUTPUT(self.OUT_MSG_ALL_PRE_N, 100)          # pre_n
         self.BUF_OUTPUT(self.OUT_MSG_ALL_PULSE_N, 400)          # pulse_n
@@ -336,6 +334,12 @@ class CommandBuffer(object):
 
         self.BUF_OUTPUT(self.OUT_ASG_DT_VAL, 50000)  # 1ms accel steps
         self.BUF_OUTPUT(self.OUT_ASG_STEPS_VAL, 5)  # 5 steps
+        for i in range(8):
+            self.write_param(i, self.PARAM_STATUS, 0)
+
+        self.BUF_CLEAR(-1)   # clear all ending ints just in case
+        self.BUF_STB(self.STB_ASG_ABORT)
+        self.BUF_WAIT_ALL(self.INT_ASG_DONE)  # Wait for ASG done
 
         # set zeroes
         for i in range(8):
