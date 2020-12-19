@@ -101,6 +101,8 @@ class Valurap(object):
     def wait_done(self, verbose=True):
         s3g = self.s3g
         while True:
+            if self.abort:
+                raise ExecutionAborted
             # a = p.S3G_INPUT(cb.IN_APG_STATUS)
             # print("APG_STATUS", a)
             a = s3g.S3G_INPUT(CB.IN_BE_STATUS)
@@ -126,6 +128,8 @@ class Valurap(object):
         last_stops = 0
 
         while True:
+            if self.abort:
+                raise ExecutionAborted
             b = s3g.S3G_INPUT(CB.IN_BE_STATUS)
             # print("BE_STATUS", b)
             ints = s3g.S3G_INPUT(CB.IN_PENDING_INTS)
@@ -152,6 +156,8 @@ class Valurap(object):
             self.s3g.S3G_STB(CB.STB_BE_START)  # Start execution
 
         while cb.len() > 0:
+            if self.abort:
+                raise ExecutionAborted
             free_space, status = self.s3g.S3G_WRITE_FIFO(cb, until_free=500)  # Send program into FIFO
             if verbose:
                 self.report_status("pushing code", fifo_space=free_space, fifo_status=status)
