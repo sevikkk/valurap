@@ -270,9 +270,10 @@ async def api(request):
     return web.json_response(data=result, status=status)
 
 app.router.add_get("/", index)
-app.router.add_get("/favicon.ico", favicon)
-app.router.add_static("/js", UI_ROOT + "/js")
-app.router.add_static("/css", UI_ROOT + "/css")
+if 0:
+    app.router.add_get("/favicon.ico", favicon)
+    app.router.add_static("/js", UI_ROOT + "/js")
+    app.router.add_static("/css", UI_ROOT + "/css")
 app.router.add_get("/api", api)
 app.router.add_post("/api", api)
 
