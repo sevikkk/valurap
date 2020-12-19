@@ -458,3 +458,10 @@ class Valurap(object):
         kw["absolute"] = True
         return self.move(**kw)
 
+
+    def enable_axes(self, modes):
+        cb = self.cb
+        cb.reset()
+        cb.enable_axes(modes)
+        cb.BUF_DONE()
+        return self.exec_code(cb)
