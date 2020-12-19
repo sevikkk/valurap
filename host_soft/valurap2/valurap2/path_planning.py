@@ -68,8 +68,8 @@ class PathPlanner:
             raise RuntimeError("Wrong mode: {}".format(mode))
         self.init_apgs()
 
-    def init_apgs(self):
-        if not self.apg_states:
+    def init_apgs(self, reset=False):
+        if reset or not self.apg_states:
             self.apg_states = {}
             emulate(
                 [],
