@@ -1604,7 +1604,6 @@ class PathPlanner:
                 tupled_segment.append((dt, tuple([s.to_tuple() for s in segs])))
 
             layer_data.append(("segment", {
-                "map": {current_extruder.replace("E", "X"): "X", "Y": "Y", current_extruder: "Z"},
                 "acc_step": self.acc_step,
                 "extruder": current_extruder
             }, tupled_segment))
@@ -1646,22 +1645,13 @@ class PathPlanner:
 
         if self.last_x is not None:
             print("reusing old layer", layer_num, self.last_x - last_x, self.last_y - last_y, self.emu_t - emu_t)
+            assert abs(self.last_x - last_x) < 0.01
+            assert abs(self.last_y - last_y) < 0.01
         else:
             print("reusing old first layer", layer_num)
 
-        segs = [
-            ProfileSegment(apg=self.apg_x, x=n_last_x * self.spm, v=0, a=0),
-            ProfileSegment(apg=self.apg_y, x=n_last_y * self.spm, v=0, a=0),
-        ]
-        sub_profile = [[5, segs]]
-        emulate(
-            sub_profile,
-            apg_states=self.apg_states,
-            accel_step=self.accel_step,
-            no_tracking=True,
-        )
-        self.last_x = self.apg_states["X"].x / self.k_xxy
-        self.last_y = self.apg_states["Y"].x / self.k_xxy
+        self.last_x = n_last_x
+        self.last_y = n_last_y
         self.emu_t = n_emu_t
 
         return True

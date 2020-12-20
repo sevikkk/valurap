@@ -521,8 +521,8 @@ class CommandBuffer(object):
 
             "print": [
                 0x80b080b0,  # ZBR   ZFL
-                0x00c080b0,  # E1    ZBL
-                0x80b000d0,  # ZFR   E2
+                0x01c080b0,  # E1    ZBL
+                0x80b001d0,  # ZFR   E2
                 0x80908180,  # X2    X1
                 0x00000000,  # --    --
                 0x81a080a0,  # YL    YR

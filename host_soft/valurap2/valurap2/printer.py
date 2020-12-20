@@ -194,6 +194,11 @@ class Valurap(object):
         hw_state = {"motors_x": motors_x}
         for m in range(12):
             motors_x.append(CB.extract_field(CB.IN_MOTOR_X, self.s3g.S3G_INPUT(CB.IN_MOTOR1_X + m)))
+
+        lb = self.s3g.S3G_INPUT(CB.IN_SE_REG_LB)
+        hw_state["lb"] = lb
+
+        self.hw_state = hw_state
         return hw_state
 
     def report_status(self, state, **kw):
