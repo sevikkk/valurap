@@ -26,20 +26,24 @@ class Valurap(object):
         "X2": -14000,
         "YL": -22500,
         "YR": -22500,
-        "ZBL": -312,
-        "ZBR": -4050,
-        "ZFL": -1645,
-        "ZFR": -4297
+        "ZFR":  -312  +6.00*1600,
+        "ZFL": -4050  +8.35*1600,
+        "ZBR": -1645  +5.55*1600,
+        "ZBL": -4297  +8.55*1600,
+        #"ZBL": -312,
+        #"ZBR": -4050,
+        #"ZFL": -1645,
+        #"ZFR": -4297
     }
     home_target = {
         "X1": 155,
         "X2": -170,
         "YL": -250,
         "YR": -250,
-        "ZBL": 20,
-        "ZBR": 20,
-        "ZFL": 20,
-        "ZFR": 20
+        "ZBL": 30,
+        "ZBR": 30,
+        "ZFL": 30,
+        "ZFR": 30
     }
 
     axes = {
@@ -111,9 +115,13 @@ class Valurap(object):
                 break
 
             if verbose:
-                self.report_status("wait done", be_status=a)
+                hw_state = self.get_hw_state()
+                self.report_status("wait done", be_status=a, hw_state=hw_state)
             time.sleep(0.1)
 
+        if verbose:
+            hw_state = self.get_hw_state()
+            self.report_status("idle", hw_state=hw_state)
         return a
 
     def wait_stops(self, stops, verbose=True):
@@ -134,6 +142,9 @@ class Valurap(object):
             # print("BE_STATUS", b)
             ints = s3g.S3G_INPUT(CB.IN_PENDING_INTS)
             if CB.extract_field(CB.IN_BE_STATUS_BUSY, b) == 0:
+                if verbose:
+                    hw_state = self.get_hw_state()
+                    self.report_status("idle", hw_state=hw_state)
                 print("Stops not reached: {:X} != {:X}".format(ints & mask, mask))
                 return False
             if ints & mask != last_stops:
@@ -141,11 +152,15 @@ class Valurap(object):
                 last_stops = ints & mask
 
             if ints & mask == mask:
+                if verbose:
+                    hw_state = self.get_hw_state()
+                    self.report_status("idle", hw_state=hw_state)
                 print("All stops done")
                 return True
             # print("ints: {:X}".format(ints))
             if verbose:
-                self.report_status("wait stops", be_status=b, stops=ints & mask, expected_stops=mask)
+                hw_state = self.get_hw_state()
+                self.report_status("wait stops", be_status=b, stops=ints & mask, expected_stops=mask, hw_state=hw_state)
             time.sleep(0.1)
 
     def exec_code(self, cb, wait=True, stops=None, verbose=True):
@@ -160,7 +175,10 @@ class Valurap(object):
                 raise ExecutionAborted
             free_space, status = self.s3g.S3G_WRITE_FIFO(cb, until_free=500)  # Send program into FIFO
             if verbose:
-                self.report_status("pushing code", fifo_space=free_space, fifo_status=status)
+                hw_state = None
+                if free_space < 1000:
+                    hw_state = self.get_hw_state()
+                self.report_status("pushing code", fifo_space=free_space, fifo_status=status, hw_state=hw_state)
 
         if wait:
             if stops is None:
@@ -171,9 +189,45 @@ class Valurap(object):
                 self.s3g.S3G_STB(cb.STB_ASG_ABORT)
                 return res
 
+    def get_hw_state(self):
+        motors_x = []
+        hw_state = {"motors_x": motors_x}
+        for m in range(12):
+            motors_x.append(CB.extract_field(CB.IN_MOTOR_X, self.s3g.S3G_INPUT(CB.IN_MOTOR1_X + m)))
+        return hw_state
+
     def report_status(self, state, **kw):
-        print("Status: {} {}".format(state, kw))
-        pass
+        try:
+            lines = []
+            fs = kw.get("fifo_space", 0)
+            ts = kw.get("fifo_status", 0)
+            sl = []
+            if fs != 0:
+                sl.append("f: {}".format(fs))
+            if ts != 0:
+                sl.append("s: {}".format(ts))
+            sl.append(state)
+            lines.append(" ".join(sl))
+
+            print("Status: {} {}".format(state, kw))
+            if "hw_state" in kw:
+                motors = kw["hw_state"]["motors_x"]
+                x1 = motors[6] / 80.0
+                x2 = motors[7] / 80.0
+                e1 = motors[3] / 847.0
+                e2 = motors[4] / 847.0 * 2
+                y = motors[10] / 1600.0
+                z = motors[0] / 1600.0
+                lines.append("X1: {:6.1f} X2: {:6.2f}".format(x1, x2))
+                lines.append("E1: {:6.1f} E2: {:6.2f}".format(e1, e2))
+                lines.append("Y: {:7.1f} Z: {:7.2f}".format(y, z))
+
+                with self.oled.draw() as draw:
+                    draw.rectangle(self.oled.bounding_box, outline="white", fill="black")
+                    draw.multiline_text((5, 3), "\n".join(lines), fill="white")
+        except Exception:
+            pass
+
 
     # noinspection PyUnreachableCode
     def home(self):
@@ -365,7 +419,7 @@ class Valurap(object):
                 else:
                     cb.BUF_OUTPUT(addr, 0x80008000)
 
-            x_v = x_c - x_h + self.home_positions[axe]
+            x_v = x_c - x_h + int(self.home_positions[axe])
             cb.BUF_OUTPUT(CB.OUT_MSG_X_VAL, x_v)
             cb.BUF_STB(CB.STB_MSG_SET_X)
         cb.BUF_STB(CB.STB_SP_ZERO)
