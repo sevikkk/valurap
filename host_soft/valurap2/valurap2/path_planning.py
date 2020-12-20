@@ -1423,6 +1423,8 @@ class PathPlanner:
         segs.append([int_acc_dt, segs_dec])
         segs.append([5, segs_stop])
 
+        print(segs)
+
         test_states = {k: v.copy(zero=True) for k, v in self.apg_states.items()}
         emulate(segs, apg_states=test_states)
 
@@ -1478,22 +1480,22 @@ class PathPlanner:
             apg = 3
             max_a = self.max_ya
             default_speed = 150
-        elif axe in ('ZBR'):
+        elif axe in ('ZFL'):
             assert self.spms == self.home_spms
             apg = 4
             max_a = self.max_za
             default_speed = 5
-        elif axe in ('ZBL'):
+        elif axe in ('ZFR'):
             assert self.spms == self.home_spms
             apg = 5
             max_a = self.max_za
             default_speed = 5
-        elif axe in ('ZFR'):
+        elif axe in ('ZBL'):
             assert self.spms == self.home_spms
             apg = 6
             max_a = self.max_za
             default_speed = 5
-        elif axe in ('ZFL'):
+        elif axe in ('ZBR'):
             assert self.spms == self.home_spms
             apg = 7
             max_a = self.max_za
