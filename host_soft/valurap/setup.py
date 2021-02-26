@@ -9,7 +9,7 @@ setup(
     description = 'Valurap host software',
     packages = find_packages(),    
     install_requires = [
-        'aiohttp==3.5.4',
+        'aiohttp==3.7.4',
         'aiomonitor==0.4.3',
         'requests'
     ],
