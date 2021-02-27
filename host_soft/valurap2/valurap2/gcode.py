@@ -1,8 +1,8 @@
 from collections import namedtuple
 
 
-do_home = namedtuple("do_home", "cur_pos")
-do_extruder = namedtuple("do_extruder", "ext")
+do_home = namedtuple("do_home", "cur_pos line_number")
+do_extruder = namedtuple("do_extruder", "ext line_number")
 do_path = namedtuple("do_path", "mode path")
 
 do_segment = namedtuple("do_segment", "path")
@@ -80,7 +80,7 @@ def path_gen(lines):
                 path = []
                 print("Do Home")
                 current = home_position.copy()
-                yield do_home(current.copy())
+                yield do_home(current.copy(), line_number)
                 continue
             elif code == 92:
                 print("Set current", parts[1:])
@@ -142,7 +142,7 @@ def path_gen(lines):
                     yield do_path(current_mode, path)
                 current_mode = None
                 path = []
-                yield do_extruder(code)
+                yield do_extruder(code, line_number)
                 continue
 
         print("{}: Unknown command: {}".format(line_number, line))
@@ -159,11 +159,16 @@ def gen_segments(pg, split_len=None):
 
     for gc_path in pg:
         if isinstance(gc_path, do_home):
+            if len(path) > 1:
+                print("flush current path", len(path))
+                path.append([x, y, 0, ext, path[-1][4]])
+                yield do_segment(path)
             print("do_home")
-            yield do_home(gc_path.cur_pos)
+            yield do_home(gc_path.cur_pos, gc_path.line_number)
             x = gc_path.cur_pos["X"]
             y = gc_path.cur_pos["Y"]
             z = gc_path.cur_pos["Z"]
+            path = [[x, y, 0, ext, gc_path.line_number]]
         elif isinstance(gc_path, do_path):
             if verify:
                 print("do_path", gc_path.mode, len(gc_path.path))
@@ -202,6 +207,7 @@ def gen_segments(pg, split_len=None):
                         deltas_ext["E"] = de
 
                     if deltas:
+                        assert not deltas_ext
                         if "F" in p:
                             deltas["F"] = p["F"]
                         if "line" in p:
@@ -236,13 +242,19 @@ def gen_segments(pg, split_len=None):
 
                         path = [[x, y, 0, ext, path[-1][4]]]
         elif isinstance(gc_path, do_extruder):
+            if len(path) > 1:
+                print("flush current path", len(path))
+                path.append([x, y, 0, ext, path[-1][4]])
+                yield do_segment(path)
+            path = [[x, y, 0, ext, gc_path.line_number]]
             print("do_extruder")
-            yield do_extruder(gc_path.ext)
+            yield do_extruder(gc_path.ext, gc_path.line_number)
         else:
             print("unexpected event", gc_path)
             raise RuntimeError
 
     if len(path) > 1:
+        print("flush remaining path", len(path))
         path.append([x, y, 0, ext, path[-1][4]])
 
         yield do_segment(path)
