@@ -221,7 +221,7 @@ class Valurap(object):
                 x2 = motors[7] / 80.0
                 e1 = motors[3] / 847.0
                 e2 = motors[4] / 847.0 * 2
-                y = motors[10] / 1600.0
+                y = motors[10] / 80.0
                 z = motors[0] / 1600.0
                 lines.append("X1: {:6.1f} X2: {:6.2f}".format(x1, x2))
                 lines.append("E1: {:6.1f} E2: {:6.2f}".format(e1, e2))
@@ -456,10 +456,16 @@ class Valurap(object):
 
     def move(self, pp=None, targets=None, absolute=False, speed=None, modes=None, **kw):
         if pp is None:
-            if modes:
-                mode = modes[0]
+            if not modes:
+                modes = ["print"]
+
+            if "print" in modes:
+                mode = "print"
+            elif "home" in modes:
+                mode = "home"
             else:
-                mode = None
+                raise ValueError("primary mode is not specified. Modes: {}".format(modes))
+
             pp = path_planning.PathPlanner(mode=mode)
             pp.init_apgs()
 
@@ -471,17 +477,18 @@ class Valurap(object):
         if kw:
             targets.update(kw)
 
+        if speed is None:
+            speed = 1.0
+
         axes = []
         dxes = []
         speeds = []
-        if speed is not None:
-            speeds.append(speed)
 
         cb = self.cb
 
         for axe, dx in targets.items():
             apg, default_speed, _ = pp.axe_params(axe)
-            speeds.append(default_speed)
+            speeds.append(default_speed * speed)
 
             maxe = axe
             if axe == "Y":
@@ -503,8 +510,7 @@ class Valurap(object):
             dxes.append(dx)
 
         cb.reset()
-        if modes:
-            cb.enable_axes(modes)
+        cb.enable_axes(modes)
 
         cb.add_segments_head(pp)
         print("segments: dxes: {} axes: {} speed: {}".format(dxes, axes, min(speeds)))

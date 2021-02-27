@@ -60,15 +60,12 @@ def valurap_processing_loop():
             elif q[0] == "home":
                 prn.home()
                 abs_safe = True
-            elif q[0] == "move":
+            elif q[0] in ("move", "moveto"):
                 modes = q[1]
                 deltas = q[2]
-                prn.move(modes=modes, **deltas)
-            elif q[0] == "moveto":
-                assert abs_safe
-                modes = q[1]
-                pos = q[2]
-                prn.moveto(modes=modes, **pos)
+                speed = q[2]
+                absolute = (q[0] == "moveto")
+                prn.move(modes=modes, speed=speed, targets=deltas, absolute=absolute)
             elif q[0] == "enable":
                 modes = q[1]
                 prn.enable_axes(modes)
@@ -237,36 +234,45 @@ async def api(request):
         await prn_queue.put(["abort"])
     elif cmd == "move" or cmd == "moveto":
         deltas = {}
-        mode = None
+        mode: Set[str] = set()
+        if "mode" in q:
+            mode = set(q["mode"].split(","))
+
         for axe in ["X1", "X2"]:
             if axe in q:
                 deltas[axe] = float(q[axe])
+
         for axe in ["Y", "Z", "E1", "E2"]:
             if axe in q:
                 deltas[axe] = float(q[axe])
-                assert mode is None or mode == "print"
-                mode = "print"
+                if not mode:
+                    mode = {"print"}
+
+                assert "print" in mode
+
         for axe in ["YL", "YR", "ZFR", "ZFL", "ZBR", "ZBL"]:
             if axe in q:
                 deltas[axe] = float(q[axe])
-                assert mode is None or mode == "home"
-                mode = "home"
+                if not mode:
+                    mode = {"home"}
+
+                assert "home" in mode
 
         if not mode:
-            mode = "print"
-
-        modes = [mode]
+            mode = {"print"}
 
         if "E1" in deltas:
-            modes.append("e1")
+            mode.add("e1")
 
         if "E2" in deltas:
-            modes.append("e2")
+            mode.add("e2")
 
-        if cmd == "moveto":
-            await prn_queue.put(["moveto", modes, deltas])
-        else:
-            await prn_queue.put(["move", modes, deltas])
+        speed = None
+        if "speed" in q:
+            speed = float(q["speed"])
+
+        await prn_queue.put([cmd, list(mode), deltas, speed])
+
     elif cmd == "enable":
         mode = q.get("mode", "print")
         assert mode in ("print", "home")
