@@ -63,8 +63,9 @@ def valurap_processing_loop():
             elif q[0] in ("move", "moveto"):
                 modes = q[1]
                 deltas = q[2]
-                speed = q[2]
+                speed = q[3]
                 absolute = (q[0] == "moveto")
+                print("  move", modes, deltas, speed, absolute)
                 prn.move(modes=modes, speed=speed, targets=deltas, absolute=absolute)
             elif q[0] == "enable":
                 modes = q[1]
