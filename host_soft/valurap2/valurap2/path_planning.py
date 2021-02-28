@@ -56,6 +56,8 @@ class PathPlanner:
         self.emu_t = 0
         self.last_x = None
         self.last_y = None
+        self.last_z = None
+        self.last_extruder = None
         self.mode = None
         if mode:
             self.set_mode(mode)
@@ -1610,7 +1612,7 @@ class PathPlanner:
         return profile
 
 
-    def gen_layers(self, input_fn, output_prefix=None, speed_k=1.0):
+    def gen_layers(self, input_fn, output_prefix=None, speed_k=1.0, max_layers=None):
         self.init_apgs()
         if output_prefix is None:
             output_prefix = os.path.splitext(input_fn)[0]
@@ -1622,44 +1624,132 @@ class PathPlanner:
         layer_data = []
         current_segment = []
         restart = False
-        current_extruder = "E1"
         extruder_changed = False
+        self.last_x = None
+        self.last_y = None
+        self.last_z = None
+        self.last_extruder = "E1"
 
         fn_tpl = "{}_{:05d}.layer"
         for i, s in enumerate(sg):
             # print(str(s)[:100])
             if isinstance(s, gcode.do_move):
                 print(i, s)
-                if "Z" in s.deltas or extruder_changed:
+                dx = s.deltas.get("X", 0)
+                dy = s.deltas.get("Y", 0)
+                dz = s.deltas.get("Z", 0)
 
-                    if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart, current_extruder):
+                if abs(dz) > 0 or extruder_changed:
+                    if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart, self.last_extruder):
                         layer_num += 1
 
-                    if extruder_changed:
-                        extruder_changed = False
+                    current_segment = []
+                    ok = True
 
-                    self.last_x = None
-                    self.last_y = None
+                    if extruder_changed:
+                        ok = False
+
+                    if abs(dz) > 0:
+                        if self.last_z is None:
+                            ok = False
+                        else:
+                            dz = s.target["Z"] - self.last_z
+
+                    if (abs(dx) > 0) or (abs(dy) > 0):
+                        if self.last_x is None or self.last_y is None:
+                            ok = False
+                        else:
+                            dx = s.target["X"] - self.last_x
+                            dy = s.target["Y"] - self.last_y
+
+                    if ok:
+                        if self.last_extruder == "E1":
+                            x_axe = "X1"
+                            x_apg = 0
+                        else:
+                            x_axe = "X2"
+                            x_apg = 1
+
+                        if (abs(dz) > 0):
+                            cur_z = self.apg_states[3].to_floats()["x"]
+                            assert abs(self.last_z - cur_z) < 0.01
+                            print("generating dz={} movement".format(dz))
+                            current_segment.extend(
+                                self.ext_to_code(dx=dz, axe="Z")
+                            )
+
+                        if (abs(dx) > 0) or (abs(dy) > 0):
+                            cur_x = self.apg_states[x_apg].to_floats()["x"]
+                            cur_y = self.apg_states[2].to_floats()["x"]
+                            assert abs(self.last_x - cur_x) < 0.01
+                            assert abs(self.last_y - cur_y) < 0.01
+                            print("generating dx={}, dy={} movement".format(dx, dy))
+                            current_segment.extend(
+                                self.ext_to_code(
+                                    dx=[dx, dy],
+                                    axes=[x_axe, "Y"]
+                                )
+                            )
+                        emulate(
+                            current_segment,
+                            apg_states=self.apg_states,
+                            accel_step=self.accel_step,
+                            no_tracking=True,
+                        )
+
+                        tdt = 0
+                        tupled_segment = []
+                        for dt, segs in current_segment:
+                            tupled_segment.append((dt, tuple([s.to_tuple() for s in segs])))
+                            self.emu_t += dt
+
+                        move_data = {
+                            "accel_step": self.accel_step,
+                            "start_state": (self.last_x, self.last_y, self.last_z),
+                            "segment": tupled_segment,
+                        }
+
+                        if (abs(dx) > 0) or (abs(dy) > 0):
+                            self.last_x = self.apg_states[x_apg].to_floats()["x"]
+                            self.last_y = self.apg_states[2].to_floats()["x"]
+
+                        if (abs(dz) > 0):
+                            self.last_z = self.apg_states[3].to_floats()["x"]
+                    else:
+                        self.last_x = None
+                        self.last_y = None
+                        self.last_z = None
+                        move_data = None
+
+                    extruder_changed = False
 
                     restart = self.check_layer(fn_tpl, output_prefix, layer_num)
 
                     layer_data = [
-                        ("start", s.target, s.deltas, (self.last_x, self.last_y, self.emu_t), current_extruder)
+                        ("start", s.target, s.deltas, (self.last_x, self.last_y, self.last_z, self.emu_t), self.last_extruder, move_data)
                     ]
                     current_segment = []
+
+                    if self.last_z is None:
+                        self.last_z = s.target["Z"]
+                        self.apg_states[3].x = self.apg_states[3].x_int(self.last_z)
+
+                    if max_layers and layer_num > max_layers:
+                        print("max_layers reached")
+                        return
                 else:
                     assert (False)
             elif isinstance(s, gcode.do_ext):
                 print(i, s)
-                current_segment.extend(self.ext_to_code(dx=s.deltas["E"], speed=s.deltas["F"] / 60.0, axe=current_extruder))
+                current_segment.extend(self.ext_to_code(dx=s.deltas["E"], speed=s.deltas["F"] / 60.0, axe=self.last_extruder))
             elif isinstance(s, gcode.do_home) or isinstance(s, gcode.do_extruder):
                 print(i, s)
-                if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart, current_extruder):
+                if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart, self.last_extruder):
                     layer_num += 1
                 restart = False
                 current_segment = []
                 if isinstance(s, gcode.do_extruder):
-                    current_extruder = "E{}".format(s.ext + 1)
+                    self.last_extruder = "E{}".format(s.ext + 1)
                     extruder_changed = True
                     layer_data = [("extruder_switch", s.ext)]
                 else:
@@ -1667,15 +1757,16 @@ class PathPlanner:
 
                 self.last_x = None
                 self.last_y = None
+                self.last_z = None
 
             elif isinstance(s, gcode.do_segment):
-                current_segment.extend(self.segment_to_code(s.path, speed_k, restart, current_extruder))
+                current_segment.extend(self.segment_to_code(s.path, speed_k, restart, self.last_extruder))
 
                 print("segment", i, len(s.path))
             else:
                 assert (False)
 
-        self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart, current_extruder)
+        self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart, self.last_extruder)
 
 
     def save_layer(self, current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart, current_extruder):
@@ -1689,10 +1780,10 @@ class PathPlanner:
 
             layer_data.append(("segment", {
                 "acc_step": self.accel_step,
-                "extruder": current_extruder
+                "extruder": current_extruder,
             }, tupled_segment))
         if layer_data:
-            layer_data.append(("end_state", (self.last_x, self.last_y, self.emu_t)))
+            layer_data.append(("end_state", (self.last_x, self.last_y, self.last_z, self.emu_t)))
             with open(fn_tpl.format(output_prefix, layer_num) + ".tmp", "wb") as f:
                 pickle.dump(layer_data, f)
             os.rename(fn_tpl.format(output_prefix, layer_num) + ".tmp", fn_tpl.format(output_prefix, layer_num))
@@ -1724,18 +1815,33 @@ class PathPlanner:
             print("end_state record missing")
             return False
 
-        last_x, last_y, emu_t = layer_data[0][3]
-        n_last_x, n_last_y, n_emu_t = layer_data[-1][1]
+        last_x, last_y, last_z, emu_t = layer_data[0][3]
+        current_extruder = layer_data[0][4]
+        n_last_x, n_last_y, n_last_z, n_emu_t = layer_data[-1][1]
 
         if self.last_x is not None:
-            print("reusing old layer", layer_num, self.last_x - last_x, self.last_y - last_y, self.emu_t - emu_t)
+            print("reusing old layer", layer_num,
+                  self.last_x - last_x,
+                  self.last_y - last_y,
+                  self.last_z - last_z,
+                  self.emu_t - emu_t)
             assert abs(self.last_x - last_x) < 0.01
             assert abs(self.last_y - last_y) < 0.01
+            assert abs(self.last_z - last_z) < 0.01
+            assert self.last_extruder == current_extruder
         else:
             print("reusing old first layer", layer_num)
 
         self.last_x = n_last_x
         self.last_y = n_last_y
+        self.last_z = n_last_z
+        print("current_extruder:", current_extruder)
+        if current_extruder ==  "E1":
+            self.apg_states[0].x = self.apg_states[0].x_int(self.last_x)
+        else:
+            self.apg_states[1].x = self.apg_states[1].x_int(self.last_x)
+        self.apg_states[2].x = self.apg_states[2].x_int(self.last_y)
+        self.apg_states[3].x = self.apg_states[3].x_int(self.last_z)
         self.emu_t = n_emu_t
 
         return True
