@@ -24,6 +24,8 @@ class Client:
 
         if self.emu:
             print("url:", url)
+            if cmd == "query":
+                return {'idle': True, 'state': {'motors_x': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'lb': 0}, 'buf_len': 0}
             return {}
 
         r = requests.get(url)
@@ -61,7 +63,7 @@ class Client:
 
     def wait_idle(self, timeout=None):
         if self.emu:
-            return {}
+            return {'idle': True, 'state': {'motors_x': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'lb': 0}, 'buf_len': 0}
 
         t0 = time.time()
         while True:
