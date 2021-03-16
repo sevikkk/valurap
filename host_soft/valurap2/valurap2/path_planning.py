@@ -1440,6 +1440,7 @@ class PathPlanner:
 
         max_plato_dt = 0
         max_acc_dt = 0
+        no_work = True
         for i in range(len(axes)):
             axe = axes[i]
             dx = dxes[i]
@@ -1459,6 +1460,8 @@ class PathPlanner:
             if dx < delta:
                 continue
 
+            no_work = False
+
             acc_dt = speed / max_a
             full_dx = max_a * acc_dt * acc_dt  # / 2 * 2
 
@@ -1474,6 +1477,9 @@ class PathPlanner:
 
             max_plato_dt = max(max_plato_dt, plato_dt)
             max_acc_dt = max(max_acc_dt, acc_dt)
+
+        if no_work:
+            return []
 
         apg_s = self.apg_states[0]
         int_acc_dt = max(5, apg_s.dt_int(max_acc_dt))
@@ -1779,7 +1785,7 @@ class PathPlanner:
                 tupled_segment.append((dt, tuple([s.to_tuple() for s in segs])))
 
             layer_data.append(("segment", {
-                "acc_step": self.accel_step,
+                "accel_step": self.accel_step,
                 "extruder": current_extruder,
             }, tupled_segment))
         if layer_data:
