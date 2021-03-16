@@ -371,11 +371,17 @@ class CommandBuffer(object):
 
         self.BUF_CLEAR(-1)   # clear all ending ints just in case
 
-    def add_segments_head(self, pp):
+    def add_segments_head(self, pp=None, accel_step=None):
+        if accel_step is None:
+            if pp:
+                accel_step = pp.accel_step
+            else:
+                accel_step = 5000
+
         assert self.segments_state == "init"
         self.BUF_CLEAR(-1)   # clear all ending ints just in case
         self.BUF_STB(self.STB_ES_UNLOCK)
-        self.BUF_OUTPUT(self.OUT_ASG_DT_VAL, pp.apg_states[0].accel_step)
+        self.BUF_OUTPUT(self.OUT_ASG_DT_VAL, accel_step)
         self.segments_state = "body"
         self.pp = pp
 
