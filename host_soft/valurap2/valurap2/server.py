@@ -293,9 +293,14 @@ async def api(request):
         print("binary len: {} {}".format(len(layer), type(layer)))
         status, result = await loop.run_in_executor(None, load_binary, layer)
     elif cmd == "query":
+        if prns[0].cb:
+            buf_len = len(prns[0].cb.buffer)
+        else:
+            buf_len = None
         result = {
             "idle": prns[0].idle,
-            "state": prns[0].hw_state
+            "state": prns[0].hw_state,
+            "buf_len": buf_len
         }
     else:
         result = {"ok": 0, "err": "unknown command"}
