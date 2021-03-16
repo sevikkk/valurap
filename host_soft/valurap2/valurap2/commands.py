@@ -3,7 +3,7 @@ from collections import deque
 
 from valurap2.buf_commands import CommandBuffer
 
-from valurap.s3g import S3GPortBase
+from valurap2.s3g import S3GPortBase
 
 class S3GPort(S3GPortBase):
     default_baudrate = 1500000
@@ -83,6 +83,9 @@ class S3GPort(S3GPortBase):
         while data:
             l = min(40, len(data))
 
+            if until_free and self.last_free_space and self.last_free_space < until_free:
+                l = 1
+
             if max_cmds is not None:
                 l = min(l, max_cmds)
                 max_cmds -= l
@@ -99,6 +102,7 @@ class S3GPort(S3GPortBase):
             if reply[0] != 0x81:
                 raise RuntimeError("Unexpected reply code: {}".format(reply[0]))
             free_space, status = struct.unpack("<ii", reply[1:9])
+            self.last_free_space = free_space
             if until_free is not None:
                 if free_space < until_free:
                     break

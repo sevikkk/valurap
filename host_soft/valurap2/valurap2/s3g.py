@@ -16,6 +16,7 @@ class S3GPortBase(object):
         self.port = self.open_port(port, baudrate)
         self.data = bytearray()
         self.unexpected_packets = []
+        self.last_free_space = None
 
     def open_port(self, port, baudrate):
         if port is None:
