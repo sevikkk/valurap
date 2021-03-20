@@ -85,6 +85,7 @@ class Prn():
     def process_home(self):
         assert not self.accumulated_segments
         print("[PRN] HOME")
+        self.planner.max_za = 30
         c = self.c
         c.abort()
         time.sleep(2)
@@ -101,6 +102,7 @@ class Prn():
         rr = c.wait_idle()
 
         prn.set_state(rr)
+        self.planner.max_za = 10
 
     def process_move(self, x=None, y=None, z=None, e=None):
         c_e = self.current_extruder
