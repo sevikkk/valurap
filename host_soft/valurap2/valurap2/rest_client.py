@@ -52,6 +52,7 @@ class Client:
 
         data = pickle.dumps(codes)
         r = requests.post(self.motion_base + "?cmd=exec_binary", files={"code": data})
+        r.raise_for_status()
         return r
 
 
