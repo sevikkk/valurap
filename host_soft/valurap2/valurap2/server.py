@@ -24,6 +24,7 @@ current_speeds = {"X": 0, "Y": 0, "Z": 0}
 prn_queue = asyncio.Queue()
 prns = [None]
 stopping = False
+safety_stop = False
 
 loop = asyncio.get_event_loop()
 sio = socketio.AsyncServer(async_mode="aiohttp")
@@ -34,11 +35,12 @@ oled = OLED()
 
 
 def valurap_processing_loop():
+    global safety_stop
     prn = Valurap(oled=oled)
     prns[0] = prn
+    safety_stop = True
     try:
         prn.setup()
-        abs_safe = False
         while True:
             print("Waiting for command...")
             prn.idle = True
@@ -57,24 +59,35 @@ def valurap_processing_loop():
             print("Got item:", q[0], )
             if q[0] == "exit":
                 break
+            elif q[0] == "abort":
+                safety_stop = False
             elif q[0] == "home":
                 prn.home()
-                abs_safe = True
+                safety_stop = False
             elif q[0] in ("move", "moveto"):
-                modes = q[1]
-                deltas = q[2]
-                speed = q[3]
-                absolute = (q[0] == "moveto")
-                print("  move", modes, deltas, speed, absolute)
-                prn.move(modes=modes, speed=speed, targets=deltas, absolute=absolute)
+                if not safety_stop:
+                    modes = q[1]
+                    deltas = q[2]
+                    speed = q[3]
+                    absolute = (q[0] == "moveto")
+                    print("  move", modes, deltas, speed, absolute)
+                    prn.move(modes=modes, speed=speed, targets=deltas, absolute=absolute)
+                else:
+                    print("safety stop active, ignoring")
             elif q[0] == "enable":
-                modes = q[1]
-                prn.enable_axes(modes)
+                if not safety_stop:
+                    modes = q[1]
+                    prn.enable_axes(modes)
+                else:
+                    print("safety stop active, ignoring")
             elif q[0] == "exec_code":
-                code = q[1]
-                prn.cb.reset()
-                prn.cb.buffer.extend(code)
-                prn.exec_code(prn.cb)
+                if not safety_stop:
+                    code = q[1]
+                    prn.cb.reset()
+                    prn.cb.buffer.extend(code)
+                    prn.exec_code(prn.cb)
+                else:
+                    print("safety stop active, ignoring")
             else:
                 print("Unknown command", q[0])
     except CancelledError:
@@ -234,6 +247,7 @@ async def api(request):
         prns[0].abort = True
         await prn_queue.put(["abort"])
     elif cmd == "move" or cmd == "moveto":
+        assert not safety_stop
         deltas = {}
         mode: Set[str] = set()
         if "mode" in q:
@@ -275,6 +289,7 @@ async def api(request):
         await prn_queue.put([cmd, list(mode), deltas, speed])
 
     elif cmd == "enable":
+        assert not safety_stop
         mode = q.get("mode", "print")
         assert mode in ("print", "home")
         modes = [mode]
@@ -288,6 +303,7 @@ async def api(request):
             modes.append(axe)
         await prn_queue.put(["enable", modes])
     elif cmd == "exec_binary":
+        assert not safety_stop
         data = await request.post()
         layer = data["code"].file.read()
         print("binary len: {} {}".format(len(layer), type(layer)))
@@ -300,6 +316,7 @@ async def api(request):
         result = {
             "idle": prns[0].idle,
             "state": prns[0].hw_state,
+            "safety_stop": safety_stop,
             "buf_len": buf_len
         }
     else:
