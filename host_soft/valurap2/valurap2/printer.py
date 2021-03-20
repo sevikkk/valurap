@@ -178,6 +178,12 @@ class Valurap(object):
                 hw_state = None
                 if free_space < 1000:
                     hw_state = self.get_hw_state()
+                    be_status = hw_state["be_status"]
+                    aborted = CB.extract_field(CB.IN_BE_STATUS_ABORTED, be_status)
+                    underrun = CB.extract_field(CB.IN_BE_STATUS_BUFFER_UNDERRUN, be_status)
+                    bad_code = CB.extract_field(CB.IN_BE_STATUS_BAD_CODE, be_status)
+                    if aborted or underrun or bad_code:
+                        raise RuntimeError("bad be_state: {} aborted: {}, underrun: {} bad_code: {}".format(be_status, aborted, underrun, bad_code))
                 self.report_status("pushing code", fifo_space=free_space, fifo_status=status, hw_state=hw_state)
 
         if wait:
@@ -197,6 +203,12 @@ class Valurap(object):
 
         lb = self.s3g.S3G_INPUT(CB.IN_SE_REG_LB)
         hw_state["lb"] = lb
+
+        be_status = self.s3g.S3G_INPUT(CB.IN_BE_STATUS)
+        hw_state["be_status"] = be_status
+
+        apg_status = self.s3g.S3G_INPUT(CB.IN_APG_STATUS)
+        hw_state["apg_status"] = apg_status
 
         self.hw_state = hw_state
         return hw_state
