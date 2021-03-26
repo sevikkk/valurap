@@ -57,7 +57,8 @@ set(SOURCES Src/main.c Src/freertos.c Src/stm32f1xx_it.c Src/stm32f1xx_hal_msp.c
 
 include_directories(Inc Drivers/STM32F1xx_HAL_Driver/Inc Drivers/STM32F1xx_HAL_Driver/Inc/Legacy Middlewares/Third_Party/FreeRTOS/Source/include Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3 Drivers/CMSIS/Device/ST/STM32F1xx/Include Drivers/CMSIS/Include code)
 
-add_custom_command(OUTPUT timestamp.c COMMAND ${CMAKE_SOURCE_DIR}/gen_timestamp.sh DEPENDS code/*.* ${CMAKE_SOURCE_DIR}/gen_timestamp.sh)
+file(GLOB my_sources "code/*.[ch]")
+add_custom_command(OUTPUT timestamp.c COMMAND ${CMAKE_SOURCE_DIR}/gen_timestamp.sh DEPENDS ${my_sources} ${CMAKE_SOURCE_DIR}/gen_timestamp.sh)
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/timestamp.c ${LINKER_SCRIPT})
 
