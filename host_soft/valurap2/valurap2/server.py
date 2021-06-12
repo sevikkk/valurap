@@ -65,11 +65,17 @@ def valurap_processing_loop():
                 prn.home()
                 safety_stop = False
             elif q[0] in ("move", "moveto"):
-                if not safety_stop:
-                    modes = q[1]
-                    deltas = q[2]
-                    speed = q[3]
-                    absolute = (q[0] == "moveto")
+                modes = q[1]
+                deltas = q[2]
+                speed = q[3]
+                absolute = (q[0] == "moveto")
+
+                ok = not safety_stop
+                bad_axes = set(deltas.keys()) - {"E1", "E2"}
+                if not bad_axes and not absolute:
+                    ok = True
+
+                if ok:
                     print("  move", modes, deltas, speed, absolute)
                     prn.move(modes=modes, speed=speed, targets=deltas, absolute=absolute)
                 else:
@@ -247,15 +253,16 @@ async def api(request):
         prns[0].abort = True
         await prn_queue.put(["abort"])
     elif cmd == "move" or cmd == "moveto":
-        assert not safety_stop
         deltas = {}
         mode: Set[str] = set()
+        extruders_only = True
         if "mode" in q:
             mode = set(q["mode"].split(","))
 
         for axe in ["X1", "X2"]:
             if axe in q:
                 deltas[axe] = float(q[axe])
+                extruders_only = False
 
         for axe in ["Y", "Z", "E1", "E2"]:
             if axe in q:
@@ -264,6 +271,8 @@ async def api(request):
                     mode = {"print"}
 
                 assert "print" in mode
+                if axe in ["Y", "Z"]:
+                    extruders_only = False
 
         for axe in ["YL", "YR", "ZFR", "ZFL", "ZBR", "ZBL"]:
             if axe in q:
@@ -272,6 +281,7 @@ async def api(request):
                     mode = {"home"}
 
                 assert "home" in mode
+                extruders_only = False
 
         if not mode:
             mode = {"print"}
@@ -286,6 +296,7 @@ async def api(request):
         if "speed" in q:
             speed = float(q["speed"])
 
+        assert extruders_only or not safety_stop
         await prn_queue.put([cmd, list(mode), deltas, speed])
 
     elif cmd == "enable":
