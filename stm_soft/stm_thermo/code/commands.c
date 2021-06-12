@@ -48,6 +48,7 @@ void clearFunction(void) {
 }
 
 void setup_commands() {
+    cmdlineAddCommand("?", helpFunction);
     cmdlineAddCommand("help", helpFunction);
     cmdlineAddCommand("clear", clearFunction);
     cmdlineAddCommand("exttest", exttestFunction);
