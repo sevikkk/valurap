@@ -1,5 +1,5 @@
 aioconsole==0.1.11
-aiohttp==3.5.4
+aiohttp==3.7.4
 aiomonitor==0.4.3
 aioserial==1.1.1
 appnope==0.1.0
