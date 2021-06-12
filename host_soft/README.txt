@@ -6,11 +6,46 @@ UART1 - FPGA UART
 
 Ext header:
 
-PA02/UART2_RTS PA10
-PA03/UART2_CTS PA18/TWI1_SCK
-PA00/UART2_TX  PA19/TWI1_SDA
-PA01/UART2_RX  PA07
-GND            PA06
+     OPi        STM        OPi
+PA02/UART2_RTS (RST)   |  PA10
+PA03/UART2_CTS (BOOT0) |  PA18/TWI1_SCK
+PA00/UART2_TX  (A10)   |  PA19/TWI1_SDA
+PA01/UART2_RX  (A9)    |  PA07
+GND                    |  PA06
+
+EXT1:  EndStops
+                             net
+#NET "ext1_1" LOC = P58 | endstop_z1
+#NET "ext1_2" LOC = P57 | endstop_z2
+#NET "ext1_3" LOC = P67 | endstop_x1
+#NET "ext1_4" LOC = P66 | endstop_y1
+#NET "ext1_5" LOC = P75 | endstop_x2
+#NET "ext1_6" LOC = P74 | endstop_y2
+#NET "ext1_7" LOC = P79 | endstop_z3
+#NET "ext1_8" LOC = P78 | endstop_z4
+
+EXT2:
+                         STM
+NET "ext2_1" LOC = P81 | B9
+NET "ext2_2" LOC = P80 | B8
+NET "ext2_3" LOC = P83 | B7
+NET "ext2_4" LOC = P82 | B6
+NET "ext2_5" LOC = P85 | B5
+NET "ext2_6" LOC = P84 | B4
+NET "ext2_7" LOC = P88 | B3
+NET "ext2_8" LOC = P87 | A15
+
+EXT3:
+                              net         STM
+#NET "ext3_1" LOC = P93  |  stm_mosi  |  B15 (SPI2 MOSI)
+#NET "ext3_2" LOC = P92  |  stm_rx    |  A3  (Serial2 RX)
+#NET "ext3_3" LOC = P95  |  stm_miso  |  B14 (SPI2 MISO)
+#NET "ext3_4" LOC = P94  |  stm_tx    |  A2  (Serial2 TX)
+#NET "ext3_5" LOC = P98  |  stm_sck   |  B13 (SPI2 SCK)
+#NET "ext3_6" LOC = P97  |  stm_int   |  A8
+#NET "ext3_7" LOC = P100 |  stm_ss    |  B12 (SPI2 NSS)
+#NET "ext3_8" LOC = P99  |  stm_alive |  C13 (LED1)
+
 
 
 Disable wlan:
