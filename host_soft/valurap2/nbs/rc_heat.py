@@ -96,14 +96,7 @@ while True:
 print("temps ok")
 print("prime extruders")
 
-axes = []
-if tgt1 > 0:
-    axes.append("E1")
-if tgt2 > 0:
-    axes.append("E2")
-
-c.enable(axes=",".join(axes))
-
+c.abort()
 c.move(E1=-40, E2=-40)
 r = c.wait_idle()
 print("all done")
