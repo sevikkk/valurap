@@ -325,7 +325,7 @@ class CommandBuffer(object):
             self.BUF_PARAM_WRITE_LO(0, value_lo)
 
         if value_hi is not None:
-            self.BUF_PARAM_WRITE_HI(0, value_hi)
+            self.BUF_PARAM_WRITE_HI(value_hi)
 
     def hw_reset(self):
         self.BUF_OUTPUT(self.OUT_SP_CONFIG, 40)           # step_bit = 40
