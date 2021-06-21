@@ -28,7 +28,7 @@ cdef class ApgState(object):
     cdef public float jj_k
     cdef public float t_k
 
-    def __init__(self, accel_step=50000, step_freq=50000000, step_bit=40, spm=1.0):
+    def __init__(self, accel_step=50000, step_freq=50000000, step_bit=48, spm=1.0):
         self.x = 0
         self.v_in = 0
         self.v_out = 0
@@ -178,7 +178,7 @@ cdef class ApgState(object):
 
 
 NUM_APGS = 8
-def emulate(profile, verbose=0, apg_states=None, accel_step=50000, no_tracking=True, step_freq=50000000, step_bit=40, spms=None):
+def emulate(profile, verbose=0, apg_states=None, accel_step=50000, no_tracking=True, step_freq=50000000, step_bit=48, spms=None):
     cdef int int_verbose = verbose
     cdef int int_tracking = not no_tracking
     cdef int i

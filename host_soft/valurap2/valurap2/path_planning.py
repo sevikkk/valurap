@@ -36,11 +36,14 @@ class PathPlanner:
     spme2 = 837/2
     spmz = 1600
     accel_step = 5000
-
+    step_bit = 48
     max_a_extra = 1.2
     max_a_extra2 = 1.5
     emu_in_loop = True
-    espeed_by_de = False
+    espeed_by_de_corner = True
+    espeed_by_de_accel = False
+    espeed_by_de_plato = False
+    espeed_by_de_decel = True
 
     delta_err = 1.0
     delta_v_err = 1.0
@@ -82,7 +85,8 @@ class PathPlanner:
                 [],
                 apg_states=self.apg_states,
                 accel_step=self.accel_step,
-                spms=self.spms
+                spms=self.spms,
+                step_bit=self.step_bit
             )
 
     def make_path(self, gcode_path, speed_k=1.0):
@@ -239,6 +243,7 @@ class PathPlanner:
 
         speeds["unit_x"] = (path["dx"] / path["l"]).fillna(1.0)
         speeds["unit_y"] = (path["dy"] / path["l"]).fillna(0.0)
+        speeds["unit_e"] = (path["de"] / path["l"]).fillna(0.0)
 
         for k in ["entry", "exit", "plato", "path"]:
             speeds[k + "_x"] = speeds[k] * speeds["unit_x"]
@@ -250,7 +255,7 @@ class PathPlanner:
         speeds["max_a"] = max_a  # max accell for not componentized move
 
         speeds["p_unit_x"] = speeds["unit_x"].shift(1).fillna(1.0)
-        speeds["p_unit_y"] = speeds["unit_x"].shift(1).fillna(1.0)
+        speeds["p_unit_y"] = speeds["unit_y"].shift(1).fillna(1.0)
 
         speeds["p_exit"] = speeds["exit"].shift(1).fillna(0)
         speeds["p_exit_x"] = speeds["exit_x"].shift(1).fillna(0)
@@ -291,6 +296,8 @@ class PathPlanner:
 
         cc["mdx"] = cc["entry_ax"] * np.square(cc["entry_dt"]) / 2
         cc["mdy"] = cc["entry_ay"] * np.square(cc["entry_dt"]) / 2
+        cc["mdx"][0] = 0
+        cc["mdy"][0] = 0
         cc["mvx"] = speeds["entry_x"] - cc["entry_ax"] * cc["entry_dt"]
         cc["mvy"] = speeds["entry_y"] - cc["entry_ay"] * cc["entry_dt"]
         cc["md"] = norm(cc[["mdx", "mdy"]].values, axis=1)
@@ -580,6 +587,7 @@ class PathPlanner:
         plato = pd.DataFrame()
         plato["start_x"] = path["px"] + speeds["unit_x"] * cc["l_entry"]
         plato["start_y"] = path["py"] + speeds["unit_y"] * cc["l_entry"]
+        plato["start_e"] = path["pe"] + speeds["unit_e"] * cc["l_entry"]
         plato["start_vx"] = speeds["entry_x"]
         plato["start_vy"] = speeds["entry_y"]
         plato["start_v"] = speeds["entry"]
@@ -588,12 +596,10 @@ class PathPlanner:
         plato["top_v"] = speeds["plato"]
         plato["end_x"] = path["x"] - speeds["unit_x"] * cc["l_exit"]
         plato["end_y"] = path["y"] - speeds["unit_y"] * cc["l_exit"]
+        plato["end_e"] = path["e"] - speeds["unit_e"] * cc["l_exit"]
         plato["end_vx"] = speeds["exit_x"]
         plato["end_vy"] = speeds["exit_y"]
         plato["end_v"] = speeds["exit"]
-        plato["unit_e"] = (path["de"] / path["l"]).fillna(0)
-        plato["start_e"] = path["pe"] + plato["unit_e"] * cc["l_entry"]
-        plato["end_e"] = path["pe"] + plato["unit_e"] * (path["l"] - cc["l_exit"])
 
         emu_in_loop = self.emu_in_loop
 
@@ -649,7 +655,7 @@ class PathPlanner:
 
             unit_x = s_speeds["unit_x"]
             unit_y = s_speeds["unit_y"]
-            unit_e = s_plato["unit_e"]
+            unit_e = s_speeds["unit_e"]
             target_x = s_plato["start_x"]
             target_y = s_plato["start_y"]
             target_e = s_plato["start_e"]
@@ -674,9 +680,9 @@ class PathPlanner:
             ax = dvx / dt
             ay = dvy / dt
 
-            if self.espeed_by_de:
+            if self.espeed_by_de_corner:
                 # eq: [
-                #     v_1 = v_0 + a * dt,
+                #     v_1 = v_0 + a *  dt,
                 #     v_avg = (v_0 + v_1)/2,
                 #     dt = (x_1 - x_0)/v_avg
                 # ];
@@ -910,7 +916,7 @@ class PathPlanner:
                 accel_x = s_plato["start_x"] + unit_x * l1
                 accel_y = s_plato["start_y"] + unit_y * l1
                 accel_e = s_plato["start_e"] + unit_e * l1
-                if self.espeed_by_de:
+                if self.espeed_by_de_accel:
                     if dt1 > 0:
                         accel_ve = (accel_e - last_e) * 2 / dt1 - last_ve
                     else:
@@ -972,7 +978,7 @@ class PathPlanner:
                 decel_x = s_plato["end_x"] - unit_x * l2
                 decel_y = s_plato["end_y"] - unit_y * l2
                 decel_e = s_plato["end_e"] - unit_e * l2
-                if self.espeed_by_de:
+                if self.espeed_by_de_plato:
                     if dtl > 0:
                         decel_ve = (decel_e - last_e) * 2 / dtl - last_ve
                     else:
@@ -1029,7 +1035,7 @@ class PathPlanner:
                     last_v = hypot(last_vx, last_vy)
 
                 if dt2 > 0:
-                    if self.espeed_by_de:
+                    if self.espeed_by_de_decel:
                         target_ve = (target_e - last_e) * 2 / dt2 - last_ve
                     else:
                         target_ve = s_plato["end_v"] * s_speeds["v_to_ve"]
@@ -1267,8 +1273,8 @@ class PathPlanner:
                     abs(test_ve - target_ve),
                     tests
                 ))
+                self.print_msg_buf()
                 raise RuntimeError("target prcision: {}".format(tests))
-
 
         if 1:
             self.dp("int_v:", int_last_vx, int_tvx, int_last_vy, int_tvy, int_last_ve, int_tve)
