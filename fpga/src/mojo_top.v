@@ -2,8 +2,8 @@ module mojo_top#(
     parameter CLK_RATE=50000000,
     parameter EXT_BAUD_RATE=1500000,
     parameter FIFO_ADDRESS_WIDTH=13,
-    parameter STEP_BIT=40,
-    parameter SPEED_BITS=42,
+    parameter STEP_BIT=48,
+    parameter SPEED_BITS=50,
     parameter X_BITS=20
 )(
     // 50MHz clock input

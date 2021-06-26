@@ -1,5 +1,7 @@
+import logging
 import os
 import pickle
+import sys
 import time
 from math import sqrt, ceil, pow, hypot, copysign
 
@@ -10,6 +12,10 @@ from numpy.linalg import norm
 from . import gcode
 from .profile import ProfileSegment
 from .emulate import emulate
+import logging
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 
 class PathPlanner:
@@ -1530,9 +1536,13 @@ class PathPlanner:
 
             delta = 1 / test_states[apg].spm
             test_x = test_states[apg].x_float()
+            exp_int_x = int(test_states[apg].x_int(dx)) % 2**64
+            if exp_int_x >= 2**63:
+                exp_int_x -= 2**64
+            exp_x = test_states[apg].x_float(exp_int_x)
 
-            print("delta_x:", apg, test_x - dx, delta)
-            assert abs(test_x - dx) < delta
+            log.error("delta_x: %s %s %s %s %s %s", apg, test_x - exp_x, delta, test_x, exp_x, dx)
+            assert abs(test_x - exp_x) < delta
 
         return segs
 
