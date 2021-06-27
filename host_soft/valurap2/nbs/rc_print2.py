@@ -298,7 +298,7 @@ while True:
             assert False
         continue
     elif state == "homed":
-        assert start[3] == (None, None, None, 0)
+        assert start[3][:3] == (None, None, None)
         assert segment
         expected_x = start[1]["X"]
         expected_y = start[1]["Y"]
