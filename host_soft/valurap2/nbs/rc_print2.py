@@ -39,12 +39,12 @@ class Prn():
     base_offsets = {
         "E1": {
             "X": 0,
-            "Y": 0,
+            "Y": 0 + 50,
             "Z": 9.3
         },
         "E2": {
             "X": 7.29 - 0.8 - 1,
-            "Y": 122.6 - 0.2,
+            "Y": 122.6 - 0.2 + 50,
             "Z": 12.46
         }
     }
@@ -57,8 +57,8 @@ class Prn():
         self.current_Z = None
         self.current_extruder = "E1"
         self.planner = pp.PathPlanner()
-        self.planner.spms = self.planner.print_spms
-        self.planner.init_apgs()
+        self.planner.set_mode("print")
+
         self.accumulated_segments = deque()
         self.first_send = True
         self.offsets = deepcopy(self.base_offsets)
@@ -157,7 +157,7 @@ class Prn():
             ])
 
         cb = buf_commands.CommandBuffer(debug=False)
-        cb.add_segments_head()
+        cb.add_segments_head(self.planner)
         cb.add_segments(pr_opt)
         cb.add_segments_tail()
 

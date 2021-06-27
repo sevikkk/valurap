@@ -381,7 +381,7 @@ class CommandBuffer(object):
             if pp:
                 accel_step = pp.accel_step
             else:
-                accel_step = 5000
+                accel_step = 1000
 
         assert self.segments_state == "init"
         self.BUF_CLEAR(-1)   # clear all ending ints just in case

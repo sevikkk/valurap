@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 import pickle
 import sys
@@ -8,6 +9,16 @@ from math import sqrt, ceil, pow, hypot, copysign
 import numpy as np
 import pandas as pd
 from numpy.linalg import norm
+
+try:
+    from scipy.interpolate import interp1d
+except ImportError:
+    interp1d = None
+
+try:
+    from splipy import curve_factory
+except ImportError:
+    curve_factory = None
 
 from . import gcode
 from .profile import ProfileSegment
@@ -41,7 +52,7 @@ class PathPlanner:
     spme1 = 837
     spme2 = 837/2
     spmz = 1600
-    accel_step = 5000
+    accel_step = 1000
     step_bit = 48
     max_a_extra = 1.2
     max_a_extra2 = 1.5
@@ -1402,6 +1413,672 @@ class PathPlanner:
 
         return sub_profile
 
+    def gen_all_segments_pandas(self, path, slowdowns):
+
+        speeds = self.gen_speeds(path, slowdowns)
+        _, _, cc = self.process_corner_errors(path, slowdowns)
+
+        plato = pd.DataFrame()
+        plato["middle_x"] = path["px"] + cc["mdx"]
+        plato["middle_y"] = path["py"] + cc["mdy"]
+        plato["middle_e"] = path["pe"]
+        plato["middle_vx"] = cc["mvx"]
+        plato["middle_vy"] = cc["mvy"]
+        plato["middle_v"] = np.linalg.norm(cc[["mvx", "mvy"]], axis=1)
+
+        plato["start_x"] = path["px"] + speeds["unit_x"] * cc["l_entry"]
+        plato["start_y"] = path["py"] + speeds["unit_y"] * cc["l_entry"]
+        plato["start_e"] = path["pe"] + speeds["unit_e"] * cc["l_entry"]
+        plato["start_vx"] = speeds["entry_x"]
+        plato["start_vy"] = speeds["entry_y"]
+        plato["start_v"] = speeds["entry"]
+        plato["top_vx"] = speeds["plato_x"]
+        plato["top_vy"] = speeds["plato_y"]
+        plato["top_v"] = speeds["plato"]
+        plato["end_x"] = path["x"] - speeds["unit_x"] * cc["l_exit"]
+        plato["end_y"] = path["y"] - speeds["unit_y"] * cc["l_exit"]
+        plato["end_e"] = path["e"] - speeds["unit_e"] * cc["l_exit"]
+        plato["end_vx"] = speeds["exit_x"]
+        plato["end_vy"] = speeds["exit_y"]
+        plato["end_v"] = speeds["exit"]
+        plato["v_to_ve"] = speeds["v_to_ve"]
+
+        plato["pre_x"] = plato["end_x"].shift(1).fillna(path["px"][0])
+        plato["pre_y"] = plato["end_y"].shift(1).fillna(path["py"][0])
+        plato["pre_e"] = plato["end_e"].shift(1).fillna(0)
+        plato["pre_vx"] = plato["end_vx"].shift(1).fillna(0)
+        plato["pre_vy"] = plato["end_vy"].shift(1).fillna(0)
+        plato["pre_v"] = plato["end_v"].shift(1).fillna(0)
+        plato["pre_v_to_ve"] = plato["v_to_ve"].shift(1).fillna(0)
+        plato["corner_dt"] = cc["dt"]
+
+        plato["plato_l"] = cc["l_free"]
+        s1 =  (2 * speeds["max_a"] * 0.9 * plato["plato_l"]
+            + plato["start_v"] * plato["start_v"]
+            + plato["end_v"] * plato["end_v"]
+               ) / 2
+
+        max_top_v = np.sqrt(s1)
+        plato["max_top_v"] = np.max([plato["start_v"], max_top_v, plato["end_v"]], axis=0)
+
+        try:
+            assert all(plato["max_top_v"] >= plato["start_v"])
+        except:
+            d1 = plato["max_top_v"] - plato["start_v"]
+            print(plato[["max_top_v", "start_v"]][d1 < 0])
+            raise
+        try:
+            assert all(plato["max_top_v"] >= plato["end_v"])
+        except:
+            d2 = plato["max_top_v"] -plato["end_v"]
+            print(plato[["max_top_v", "end_v"]][d2 < 0])
+            raise
+
+        plato["real_top_v"] = np.min(plato[["top_v", "max_top_v"]], axis=1)
+        plato["real_top_vx"] = plato["real_top_v"] * speeds["unit_x"]
+        plato["real_top_vy"] = plato["real_top_v"] * speeds["unit_y"]
+        plato["accel_dt"] = (plato["real_top_v"] - plato["start_v"]) / speeds["max_a"]
+        plato["decel_dt"] = (plato["real_top_v"] - plato["end_v"]) / speeds["max_a"]
+        plato["accel_l"] = (plato["real_top_v"] + plato["start_v"]) * plato["accel_dt"] / 2
+        plato["decel_l"] = (plato["real_top_v"] + plato["end_v"]) * plato["decel_dt"] / 2
+        plato["top_l"] = plato["plato_l"] - plato["accel_l"] - plato["decel_l"]
+        plato["top_dt"] = (plato["top_l"] / plato["real_top_v"]).fillna(0)
+        plato["dt"] = plato["corner_dt"] + plato["accel_dt"] + plato["top_dt"] + plato["decel_dt"]
+        plato["t"] = np.cumsum(plato["dt"]).shift(1).fillna(0)
+        # display(plato)
+        # display(plato.iloc[0])
+        # display(plato.iloc[1])
+        # display(plato.iloc[-2])
+        # display(plato.iloc[-1])
+
+        pre_corner_segs = pd.DataFrame()
+        pre_corner_segs["idx"] = plato.index.values * 5
+        pre_corner_segs["tp"] = 0
+        pre_corner_segs["line"] = path["line"]
+        pre_corner_segs["t"] = plato["t"]
+
+        dt = plato["corner_dt"] / 2
+        dt[0] = 0
+        dt[len(dt) - 1] *= 2
+        pre_corner_segs["dt"] = dt
+
+        pre_corner_segs["start_x"] = plato["pre_x"]
+        pre_corner_segs["start_y"] = plato["pre_y"]
+        pre_corner_segs["start_e"] = plato["pre_e"]
+        pre_corner_segs["start_vx"] = plato["pre_vx"]
+        pre_corner_segs["start_vy"] = plato["pre_vy"]
+        pre_corner_segs["end_x"] = plato["middle_x"]
+        pre_corner_segs["end_y"] = plato["middle_y"]
+        pre_corner_segs["end_e"] = plato["middle_e"]
+        pre_corner_segs["end_vx"] = plato["middle_vx"]
+        pre_corner_segs["end_vy"] = plato["middle_vy"]
+        pre_corner_segs["v_to_ve"] = plato["pre_v_to_ve"]
+
+        corner_segs = pd.DataFrame()
+        corner_segs["idx"] = pre_corner_segs["idx"] + 1
+        corner_segs["tp"] = 1
+        corner_segs["line"] = path["line"]
+        corner_segs["t"] = pre_corner_segs["t"] + pre_corner_segs["dt"]
+
+        dt = plato["corner_dt"] / 2
+        dt[0] *= 2
+        dt[len(dt) - 1] = 0
+        corner_segs["dt"] = dt
+
+        corner_segs["start_x"] = pre_corner_segs["end_x"]
+        corner_segs["start_y"] = pre_corner_segs["end_y"]
+        corner_segs["start_e"] = pre_corner_segs["end_e"]
+        corner_segs["start_vx"] = pre_corner_segs["end_vx"]
+        corner_segs["start_vy"] = pre_corner_segs["end_vy"]
+        corner_segs["end_x"] = plato["start_x"]
+        corner_segs["end_y"] = plato["start_y"]
+        corner_segs["end_e"] = plato["start_e"]
+        corner_segs["end_vx"] = plato["start_vx"]
+        corner_segs["end_vy"] = plato["start_vy"]
+        corner_segs["v_to_ve"] = plato["v_to_ve"]
+
+        accel_segs = pd.DataFrame()
+        accel_segs["idx"] = corner_segs["idx"] + 1
+        accel_segs["tp"] = 2
+        accel_segs["line"] = path["line"]
+        accel_segs["t"] = corner_segs["t"] + corner_segs["dt"]
+        accel_segs["dt"] = plato["accel_dt"]
+        accel_segs["start_x"] = corner_segs["end_x"]
+        accel_segs["start_y"] = corner_segs["end_y"]
+        accel_segs["start_e"] = corner_segs["end_e"]
+        accel_segs["start_vx"] = corner_segs["end_vx"]
+        accel_segs["start_vy"] = corner_segs["end_vy"]
+        accel_segs["end_x"] = accel_segs["start_x"] + speeds["unit_x"] * plato["accel_l"]
+        accel_segs["end_y"] = accel_segs["start_y"] + speeds["unit_y"] * plato["accel_l"]
+        accel_segs["end_e"] = accel_segs["start_e"] + speeds["unit_e"] * plato["accel_l"]
+        accel_segs["end_vx"] = plato["real_top_vx"]
+        accel_segs["end_vy"] = plato["real_top_vy"]
+        accel_segs["v_to_ve"] = plato["v_to_ve"]
+
+        top_segs = pd.DataFrame()
+        top_segs["idx"] = accel_segs["idx"] + 1
+        top_segs["tp"] = 3
+        top_segs["line"] = path["line"]
+        top_segs["t"] = accel_segs["t"] + accel_segs["dt"]
+        top_segs["dt"] = plato["top_dt"]
+        top_segs["start_x"] = accel_segs["end_x"]
+        top_segs["start_y"] = accel_segs["end_y"]
+        top_segs["start_e"] = accel_segs["end_e"]
+        top_segs["start_vx"] = accel_segs["end_vx"]
+        top_segs["start_vy"] = accel_segs["end_vy"]
+        top_segs["end_x"] = top_segs["start_x"] + speeds["unit_x"] * plato["top_l"]
+        top_segs["end_y"] = top_segs["start_y"] + speeds["unit_y"] * plato["top_l"]
+        top_segs["end_e"] = top_segs["start_e"] + speeds["unit_e"] * plato["top_l"]
+        top_segs["end_vx"] = top_segs["start_vx"]
+        top_segs["end_vy"] = top_segs["start_vy"]
+        top_segs["v_to_ve"] = plato["v_to_ve"]
+
+        decel_segs = pd.DataFrame()
+        decel_segs["idx"] = top_segs["idx"] + 1
+        decel_segs["tp"] = 4
+        decel_segs["line"] = path["line"]
+        decel_segs["t"] = top_segs["t"] + top_segs["dt"]
+        decel_segs["dt"] = plato["decel_dt"]
+        decel_segs["start_x"] = top_segs["end_x"]
+        decel_segs["start_y"] = top_segs["end_y"]
+        decel_segs["start_e"] = top_segs["end_e"]
+        decel_segs["start_vx"] = top_segs["end_vx"]
+        decel_segs["start_vy"] = top_segs["end_vy"]
+        decel_segs["end_x"] = plato["end_x"]
+        decel_segs["end_y"] = plato["end_y"]
+        decel_segs["end_e"] = plato["end_e"]
+        decel_segs["end_vx"] = plato["end_vx"]
+        decel_segs["end_vy"] = plato["end_vy"]
+        decel_segs["v_to_ve"] = plato["v_to_ve"]
+
+        pre_corner_segs = pre_corner_segs.set_index("idx")
+        corner_segs = corner_segs.set_index("idx")
+        accel_segs = accel_segs.set_index("idx")
+        top_segs = top_segs.set_index("idx")
+        decel_segs = decel_segs.set_index("idx")
+
+        all_segs_raw = pd.concat([pre_corner_segs, corner_segs, accel_segs, top_segs, decel_segs]).sort_index()
+        all_segs_filter = (all_segs_raw["dt"] > 1e-5).values
+        all_segs_filter[0] = True
+        all_segs_filter[-1] = True
+        all_segs = all_segs_raw[all_segs_filter][[
+            "tp", "line", "t", "v_to_ve", "start_x", "start_y", "start_e", "start_vx", "start_vy",
+        ]].copy().sort_index()
+
+        all_segs["start_v"] = np.linalg.norm(all_segs[["start_vx", "start_vy"]], axis=1)
+        all_segs["end_x"] = all_segs["start_x"].shift(-1)
+        all_segs["end_y"] = all_segs["start_y"].shift(-1)
+        all_segs["end_e"] = all_segs["start_e"].shift(-1)
+        all_segs["end_vx"] = all_segs["start_vx"].shift(-1)
+        all_segs["end_vy"] = all_segs["start_vy"].shift(-1)
+        all_segs["end_v"] = all_segs["start_v"].shift(-1)
+        all_segs["dt"] = all_segs["t"].shift(-1) - all_segs["t"]
+
+        all_segs = all_segs.iloc[1:-1, :]
+
+        all_segs["avg_v"] = (all_segs["start_v"] + all_segs["end_v"]) / 2
+
+        de = all_segs["end_e"] - all_segs["start_e"]
+        de[np.abs(de) < 1e-5] = 0
+        avg_ve = de / all_segs["dt"]
+
+        all_segs["dx"] = np.abs(80 * (all_segs["end_x"] - all_segs["start_x"]))
+        all_segs["dy"] = np.abs(80 * (all_segs["end_y"] - all_segs["start_y"]))
+        all_segs["de"] = np.abs(837 * de)
+        all_segs["dx_dt"] = all_segs["dt"] / all_segs["dx"] * 1000000
+        all_segs["dy_dt"] = all_segs["dt"] / all_segs["dy"] * 1000000
+        all_segs["de_dt"] = all_segs["dt"] / all_segs["de"] * 1000000
+        all_segs["avg_ve"] = avg_ve
+        all_segs["v_to_ve2"] = (all_segs["avg_ve"] / all_segs["avg_v"]).fillna(0)
+
+        return all_segs
+
+    borders = 100
+    delta_t = 0.001
+
+    def sample_all_segments(self, all_segs):
+        track_t = []
+        track_x = []
+        track_y = []
+        track_e = []
+        track_e_exp = []
+        track_vx = []
+        track_vy = []
+        track_ve = []
+
+        last_e = 0
+        last_ve = 0
+
+        borders = self.borders
+        delta_t = self.delta_t
+
+        # first and last segments require patching, as j-only move takes 1.5x time
+        dt_first = all_segs["dt"].iloc[0]
+        extra_start = int(ceil(dt_first / delta_t)) + borders
+        last_t = -extra_start * delta_t
+
+        t_last = all_segs["t"].iloc[-1]
+        dt_last = all_segs["dt"].iloc[-1]
+        extra_end = int(ceil(dt_last / delta_t)) + borders
+        final_t = t_last + extra_end * delta_t
+
+        last_i = len(all_segs) - 1
+
+        for i, seg in enumerate(all_segs.itertuples()):
+            t = seg.t
+            dt = seg.dt
+            end_t = t + dt
+
+            st_x = seg.start_x
+            st_vx = seg.start_vx
+            tg_x = seg.end_x
+            tg_vx = seg.end_vx
+
+            dvx = tg_vx - st_vx
+            ax = dvx / dt
+            jx = 0
+
+            st_y = seg.start_y
+            st_vy = seg.start_vy
+            tg_y = seg.end_y
+            tg_vy = seg.end_vy
+
+            dvy = tg_vy - st_vy
+            ay = dvy / dt
+            jy = 0
+
+            st_e = seg.start_e
+            tg_e = seg.end_e
+
+            st_v = sqrt(st_vx * st_vx + st_vy * st_vy)
+            tg_v = sqrt(tg_vx * tg_vx + tg_vy * tg_vy)
+            st_ve = st_v * seg.v_to_ve
+            tg_ve = tg_v * seg.v_to_ve
+
+            if seg.tp in (0, 1):
+                st_ve = tg_ve = (tg_e - st_e) / dt
+
+            dve = tg_ve - st_ve
+            ae = dve / dt
+            je = 0
+
+            calc_j = False
+            if i == 0:
+                dt *= 1.5
+                t = end_t - dt
+
+                tg_ve += st_ve
+                st_ve = 0
+                calc_j = True
+            elif i == last_i:
+                dt *= 1.5
+                end_t = t + dt
+
+                st_ve += tg_ve
+                tg_ve = 0
+                calc_j = True
+
+            if calc_j:
+                dx = tg_x - st_x
+                dy = tg_y - st_y
+                de = tg_e - st_e
+
+                jx = -(12 * dx - 6 * dt * tg_vx - 6 * dt * st_vx) / dt / dt / dt
+                ax = (6 * dx - 2 * dt * tg_vx - 4 * dt * st_vx) / dt / dt
+
+                jy = -(12 * dy - 6 * dt * tg_vy - 6 * dt * st_vy) / dt / dt / dt
+                ay = (6 * dy - 2 * dt * tg_vy - 4 * dt * st_vy) / dt / dt
+
+                je = -(12 * de - 6 * dt * tg_ve - 6 * dt * st_ve) / dt / dt / dt
+                ae = (6 * de - 2 * dt * tg_ve - 4 * dt * st_ve) / dt / dt
+
+                print(ax, jx, ay, jy, ae, je)
+
+            dx = st_vx * dt + ax * dt * dt / 2 + jx * dt * dt * dt / 6
+            dx_err = dx - (tg_x - st_x)
+
+            dy = st_vy * dt + ay * dt * dt / 2 + jy * dt * dt * dt / 6
+            dy_err = dy - (tg_y - st_y)
+
+            de = st_ve * dt + ae * dt * dt / 2 + je * dt * dt * dt / 6
+            de_err = de - (tg_e - st_e)
+
+            try:
+                assert abs(dx_err) < 0.01
+                assert abs(dy_err) < 0.01
+                assert abs(de_err) < 0.01
+            except:
+                print(t, seg.tp, seg.line, dx_err, dy_err, de_err)
+                raise
+
+            if i == 0:
+                while last_t < t:
+                    track_t.append(last_t)
+                    track_x.append(st_x)
+                    track_y.append(st_y)
+                    track_vx.append(st_vx)
+                    track_vy.append(st_vy)
+                    track_e.append(st_e)
+                    track_ve.append(st_ve)
+
+                    last_t += delta_t
+
+            while last_t < end_t:
+                ct = last_t - t
+                dx = st_vx * ct + ax * ct * ct / 2 + jx * ct * ct * ct / 6
+                dy = st_vy * ct + ay * ct * ct / 2 + jy * ct * ct * ct / 6
+                de = st_ve * ct + ae * ct * ct / 2 + je * ct * ct * ct / 6
+                x = st_x + dx
+                y = st_y + dy
+                e = st_e + de
+                vx = st_vx + ax * ct + jx * ct * ct / 2
+                vy = st_vy + ay * ct + jy * ct * ct / 2
+                ve = st_ve + ae * ct + je * ct * ct / 2
+
+                track_t.append(last_t)
+                track_x.append(x)
+                track_y.append(y)
+                track_vx.append(vx)
+                track_vy.append(vy)
+                track_e.append(e)
+                track_ve.append(ve)
+
+                last_t += delta_t
+
+        while last_t < final_t:
+            track_t.append(last_t)
+            track_x.append(tg_x)
+            track_y.append(tg_y)
+            track_e.append(tg_e)
+            track_vx.append(tg_vx)
+            track_vy.append(tg_vy)
+            track_ve.append(tg_ve)
+            last_t += delta_t
+
+        df = pd.DataFrame()
+        df["t"] = track_t
+        df["x"] = track_x
+        df["y"] = track_y
+        df["e"] = track_e
+        df["vx"] = track_vx
+        df["vy"] = track_vy
+        df["ve"] = track_ve
+
+        df["v"] = np.linalg.norm(df[["vx", "vy"]], axis=1)
+        df["dx"] = (df["x"] - df["x"].shift(1))
+        df["dy"] = (df["y"] - df["y"].shift(1))
+        df["d"] = np.linalg.norm(df[["dx", "dy"]], axis=1)
+        df["de"] = (df["e"] - df["e"].shift(1))
+
+        return df
+
+    lin_k = 5
+    def smooth_and_lin_advance(self, df):
+        df["de_smooth"] = df["de"].rolling(20, center=True, win_type="hamming").mean()
+        df["e_smooth"] = df["de_smooth"].cumsum()
+
+        df["de_adv"] = df["de_smooth"] * self.lin_k
+
+        df["e_adv"] = df["e_smooth"] + df["de_adv"]
+
+        df["dx_smooth"] = df["dx"].rolling(5, center=True, win_type="hamming").mean()
+        df["dy_smooth"] = df["dy"].rolling(5, center=True, win_type="hamming").mean()
+        df["x_smooth"] = df["dx_smooth"].cumsum() + df["x"].iloc[0]
+        df["y_smooth"] = df["dy_smooth"].cumsum() + df["y"].iloc[0]
+
+    cf_rtol = 1e-4
+    cf_atol = 0.01
+
+    def curve_fit(self, df, all_segs):
+        borders = self.borders
+        t0 = df["t"].iloc[int(borders / 2)]
+        t1 = df["t"].iloc[int(-borders / 2)]
+        length = np.sum(df["d"].iloc[int(borders / 2):int(-borders / 2)])
+
+        xf = interp1d(df["t"], df[["x_smooth", "y_smooth", "e_smooth"]].T)
+        xxf = lambda x: xf(x).T
+
+        c = curve_factory.fit(xxf, t0, t1, rtol=self.cf_rtol, atol=self.cf_atol)
+
+        print("first_curve:", len(c), c)
+        err = c.error(xxf)
+        print("first_err:", err[1])
+
+        knots = c.knots()[0]
+        n_knots = []
+
+        # add first oversample
+        accel_t = all_segs.iloc[1]["t"]
+
+        idx = np.searchsorted(knots, accel_t)
+        print(accel_t)
+        kn_0 = knots[0]
+        kn_1 = knots[idx] + 0.010
+
+        rdt = kn_1 - kn_0
+        rn = int(ceil(rdt / 0.005))
+        rsdt = rdt / rn
+
+        idx2 = np.searchsorted(knots, kn_1) + 3
+
+        for i in range(rn + 1):
+            n_kn = kn_0 + rsdt * i
+            ok = True
+            for kn in knots[:idx2]:
+                if abs(kn - n_kn) < 0.001:
+                    print("{} too close to {}".format(kn, n_kn))
+                    ok = False
+                    break
+            if ok:
+                n_knots.append(n_kn)
+
+        # add last oversample
+        decel_t = all_segs.iloc[-1]["t"]
+
+        idx = np.searchsorted(knots, decel_t) - 1
+        print(decel_t)
+        print(knots[idx - 1])
+        print(knots[idx])
+        print(knots[idx + 1])
+        kn_0 = knots[idx] - 0.010
+        kn_1 = knots[-1]
+
+        rdt = kn_1 - kn_0
+        rn = int(ceil(rdt / 0.005))
+        rsdt = rdt / rn
+
+        idx2 = np.searchsorted(knots, kn_0) - 3
+
+        for i in range(rn + 1):
+            n_kn = kn_1 - rsdt * i
+            ok = True
+            for kn in knots[idx2:]:
+                if abs(kn - n_kn) < 0.002:
+                    print("{} too close to {}".format(kn, n_kn))
+                    ok = False
+                    break
+            if ok:
+                n_knots.append(n_kn)
+
+        print(n_knots)
+        knots.extend(n_knots)
+        knots.sort()
+        knots = [knots[0]] * 3 + knots + [knots[-1]] * 3
+
+        b = curve_factory.BSplineBasis(4, knots)
+        # do interpolation and return result
+        t = np.array(b.greville())
+        crv = curve_factory.interpolate(xxf(t), b, t)
+        print(len(crv), crv)
+        (err2, max_err) = crv.error(xxf)
+        print(max_err)
+        return crv, max_err
+
+    def format_curve_to_code(self, c, apg_x=0, apg_y=2, apg_e=4, do_reset=True):
+        apg_x_s = self.apg_states[apg_x]
+        apg_y_s = self.apg_states[apg_y]
+        apg_e_s = self.apg_states[apg_e]
+        t_k = apg_x_s.t_k
+
+        knots = c.knots()[0]
+
+        x_vals = c(knots)
+        v_vals = c.derivative(knots, d=1)
+        a_vals = c.derivative(knots, d=2)
+        j_vals = c.derivative(knots, d=3)
+
+        tg_x, tg_y, tg_e = x_vals[0]
+
+        segs = []
+
+        if do_reset:
+            segs += [
+                ProfileSegment(apg=apg_x, x=int(tg_x / apg_x_s.x_k), v=0, a=0),
+                ProfileSegment(apg=apg_y, x=int(tg_y / apg_y_s.x_k), v=0, a=0),
+            ]
+        segs += [
+            ProfileSegment(apg=apg_e, x=int(tg_e / apg_e_s.x_k), v=0, a=0)
+        ]
+
+        segments = []
+        sub_profile = [[5, segs]]
+        emulate(
+                sub_profile,
+                apg_states=self.apg_states,
+                accel_step=self.accel_step,
+                step_bit=self.step_bit,
+                no_tracking=True,
+        )
+
+        segments.extend(sub_profile)
+        self.emu_t += 5
+
+        last_e_epoch = 0.0
+        last_x = apg_x_s.x_float()
+        last_vx = apg_x_s.v_float()
+        last_y = apg_y_s.x_float()
+        last_vy = apg_y_s.v_float()
+        last_e = apg_e_s.x_float() + last_e_epoch
+        last_ve = apg_e_s.v_float()
+        last_ax = apg_x_s.a_float()
+        last_ay = apg_y_s.a_float()
+        last_ae = apg_e_s.a_float()
+
+        last_int_t = None
+
+        for i, t in enumerate(knots):
+            int_t = int(round(t / t_k))
+
+            if i == 0:
+                print(t)
+                last_int_t = int_t
+                continue
+
+            int_dt = int_t - last_int_t
+            dt = int_dt * t_k
+
+            tg_x, tg_y, tg_e = x_vals[i]
+            tg_vx, tg_vy, tg_ve = v_vals[i]
+            exp_ax, exp_ay, exp_ae = a_vals[i - 1]
+            exp_jx, exp_jy, exp_je = j_vals[i - 1]
+
+            def calc_aj(dt, x, last_x, v, last_v, a_k, j_k):
+                dx = x - last_x
+
+                ax = (6 * dx - 2 * dt * v - 4 * dt * last_v) / dt / dt
+                int_ax = round(ax / a_k)
+
+                ax = int_ax * a_k
+                jx = (6 * dx - 6 * dt * last_v - 3 * ax * dt * dt) / dt / dt / dt
+
+                int_jx = round(jx / j_k)
+                jx = int_jx * j_k
+
+                return ax, int_ax, jx, int_jx
+
+            ax, int_ax, jx, int_jx = calc_aj(dt, tg_x, last_x, tg_vx, last_vx, apg_x_s.a_k, apg_x_s.j_k)
+            ay, int_ay, jy, int_jy = calc_aj(dt, tg_y, last_y, tg_vy, last_vy, apg_y_s.a_k, apg_y_s.j_k)
+            ae, int_ae, je, int_je = calc_aj(dt, tg_e, last_e, tg_ve, last_ve, apg_e_s.a_k, apg_e_s.j_k)
+
+            profile = [
+                [
+                    int_dt,
+                    [
+                        ProfileSegment(apg=apg_x, a=int(int_ax), j=int(int_jx)),
+                        ProfileSegment(apg=apg_y, a=int(int_ay), j=int(int_jy)),
+                        ProfileSegment(apg=apg_e, a=int(int_ae), j=int(int_je)),
+                    ],
+                ]
+            ]
+            emulate(profile, apg_states=self.apg_states, accel_step=self.accel_step, no_tracking=True)
+            segments.extend(profile)
+            self.emu_t += 5
+
+            last_x = apg_x_s.x_float()
+            last_vx = apg_x_s.v_float()
+            last_y = apg_y_s.x_float()
+            last_vy = apg_y_s.v_float()
+            last_e_new = apg_e_s.x_float() + last_e_epoch
+            last_e_delta = (last_e_new - last_e) * apg_e_s.spm
+            if abs(last_e_delta) > 30000:
+                if last_e_delta > 0:
+                    last_e_epoch -= 65536.0 / apg_e_s.spm
+                else:
+                    last_e_epoch += 65536.0 / apg_e_s.spm
+                print("new_e_epoch", last_e_epoch)
+            last_e = apg_e_s.x_float() + last_e_epoch
+            last_ve = apg_e_s.v_float()
+            last_int_t += int_dt
+
+            print(
+                "{:7.3f} {:4d} x: {:5.2f}/{:5.2f} y: {:5.2f}/{:5.2f} e: {:5.2f}/{:5.2f} a: {:9d} {:9d} {:9d} j: {:6d} {:6d} {:6d}".format(
+                    t, int_dt,
+                    (last_x - tg_x) * apg_x_s.spm, last_vx - tg_vx,
+                    (last_y - tg_y) * apg_y_s.spm, last_vy - tg_vy,
+                    (last_e - tg_e) * apg_e_s.spm, last_ve - tg_ve,
+                    int(int_ax),
+                    int(int_ay),
+                    int(int_ae),
+                    int(int_jx),
+                    int(int_jy),
+                    int(int_je),
+                ))
+
+            last_ax = apg_x_s.a_float()
+            last_ay = apg_y_s.a_float()
+            last_ae = apg_e_s.a_float()
+
+        segs = [
+            ProfileSegment(apg=apg_x, v=0, a=0),
+            ProfileSegment(apg=apg_y, v=0, a=0),
+            ProfileSegment(apg=apg_e, v=0, a=0)
+        ]
+
+        profile = [[5, segs]]
+        emulate(profile, apg_states=self.apg_states, accel_step=self.accel_step, no_tracking=True)
+        segments.extend(profile)
+        self.emu_t += 5
+
+        last_vx = apg_x_s.v_float()
+        last_vy = apg_y_s.v_float()
+        last_ve = apg_e_s.v_float()
+        last_ax = apg_x_s.a_float()
+        last_ay = apg_y_s.a_float()
+        last_ae = apg_e_s.a_float()
+
+        print(last_vx, last_vy, last_ve, last_ax, last_ay, last_ae)
+        print(len(segments))
+
+        self.last_x = apg_x_s.to_floats()["x"]
+        self.last_y = apg_y_s.to_floats()["x"]
+        self.last_e = apg_e_s.to_floats()["x"]
+        self.last_vx = apg_x_s.to_floats()["v_out"]
+        self.last_vy = apg_y_s.to_floats()["v_out"]
+        self.last_ve = apg_e_s.to_floats()["v_out"]
+        self.last_v = hypot(self.last_vx, self.last_vy)
+
+        return segments
+
     def emu_profile(self, int_dt, int_ax, int_ay, int_ae, int_jx, int_jy, int_je, int_tvx, int_tvy, int_tve):
         test_states = { k: v.copy() for k, v in self.apg_states.items() }
 
@@ -1613,7 +2290,7 @@ class PathPlanner:
 
         return apg, speed, max_a
 
-    def segment_to_code(self, seg, speed_k=1.0, restart=False, extruder="E1"):
+    def segment_to_code_old(self, seg, speed_k=1.0, restart=False, extruder="E1"):
         if restart:
             return []
 
@@ -1628,6 +2305,46 @@ class PathPlanner:
 
         do_reset = self.last_x is None
         segments, profile = self.gen_segments_float(path, slowdowns, do_reset=do_reset, extruder=int(extruder[1]))
+        t2 = time.time()
+        print("Planning time:", t1 - t0)
+        print("Format time:", t2 - t1)
+        return profile
+
+    def segment_to_code(self, seg, speed_k=1.0, restart=False, extruder="E1"):
+        if restart:
+            return []
+
+        if extruder == "E1":
+            apg_x = 0
+            apg_y = 2
+            apg_e = 4
+            apg_z = 3
+        else:
+            apg_x = 1
+            apg_y = 2
+            apg_e = 5
+            apg_z = 3
+
+        t0 = time.time()
+        path, slowdowns = self.make_path(seg, speed_k)
+        if path is None:
+            return []
+        slowdowns, updated, cc = self.process_corner_errors(path, slowdowns)
+        slowdowns, updated = self.reverse_pass(path, slowdowns)
+        slowdowns, updated = self.forward_pass(path, slowdowns)
+
+        t1 = time.time()
+
+        all_segments = self.gen_all_segments_pandas(path, slowdowns)
+        sampled = self.sample_all_segments(all_segments)
+        self.smooth_and_lin_advance(sampled)
+        crv, max_err = self.curve_fit(sampled, all_segments)
+
+        do_reset = self.last_x is None
+
+        profile = self.format_curve_to_code(
+            crv, apg_x=apg_x, apg_y=apg_y, apg_e=apg_e, do_reset=do_reset)
+
         t2 = time.time()
         print("Planning time:", t1 - t0)
         print("Format time:", t2 - t1)
