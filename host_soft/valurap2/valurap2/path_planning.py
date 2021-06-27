@@ -2012,7 +2012,7 @@ class PathPlanner:
             ]
             emulate(profile, apg_states=self.apg_states, accel_step=self.accel_step, no_tracking=True)
             segments.extend(profile)
-            self.emu_t += 5
+            self.emu_t += int_dt
 
             last_x = apg_x_s.x_float()
             last_vx = apg_x_s.v_float()
@@ -2200,6 +2200,7 @@ class PathPlanner:
         segs.append([int_acc_dt + int_plato_dt, segs_acc])
         segs.append([int_acc_dt, segs_dec])
         segs.append([5, segs_stop])
+        self.emu_t += int_acc_dt + int_plato_dt + int_acc_dt + 5
 
         print(segs)
 
@@ -2506,6 +2507,7 @@ class PathPlanner:
                 assert (False)
 
         self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart, self.last_extruder)
+        print("Total time:", self.emu_t,  self.emu_t * self.accel_step / 50000000 / 60)
 
 
     def save_layer(self, current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart, current_extruder):
