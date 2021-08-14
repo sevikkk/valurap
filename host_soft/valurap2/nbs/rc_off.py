@@ -26,7 +26,8 @@ while True:
     r = c.thermo_state()
     temp1 = r["temp1"]
     temp2 = r["temp2"]
-    print(temp1, temp2)
+    temp3 = r["temp3"]
+    print(temp1, temp2, temp3)
     if temp1 < 50 and temp2 < 50:
         break
 
