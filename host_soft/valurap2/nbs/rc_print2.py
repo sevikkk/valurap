@@ -39,13 +39,13 @@ class Prn():
     base_offsets = {
         "E1": {
             "X": 0,
-            "Y": 0 + 50,
-            "Z": 9.3
+            "Y": 0, # + 50,
+            "Z": 9.3 + 0.1 - 0.2
         },
         "E2": {
             "X": 7.29 - 0.8 - 1,
-            "Y": 122.6 - 0.2 + 50,
-            "Z": 12.46
+            "Y": 122.6 - 0.2, # + 50,
+            "Z": 12.46 - 0.2
         }
     }
 
@@ -67,6 +67,17 @@ class Prn():
         sub_chunks = []
         acc_len = 0
         exp_len = 500
+        segs = self.planner.ext_to_code(5.0, 3, axe="Z")
+
+        dy = -200 - self.current_Y
+        segs += self.planner.ext_to_code(dy, 50, axe="Y")
+
+        tupled_segment = []
+        for dt, segs in segs:
+            tupled_segment.append((dt, tuple([s.to_tuple() for s in segs])))
+
+        self.accumulated_segments.append(tupled_segment)
+
         for segment in self.accumulated_segments:
             sub_chunks.extend(segment)
 
@@ -82,7 +93,7 @@ class Prn():
 
         print("[PRN] DONE")
 
-    def process_home(self):
+    def process_home(self, no_y=False):
         assert not self.accumulated_segments
         print("[PRN] HOME")
         self.planner.max_za = 30
@@ -96,9 +107,11 @@ class Prn():
         c.wait_idle()
 
         c.moveto(X1=-190, X2=170, mode="print,e1,e2")
-        c.wait_idle()
 
-        c.moveto(Y=0, mode="print,e1,e2")
+        if not no_y:
+            c.wait_idle()
+            c.moveto(Y=0, mode="print,e1,e2")
+
         rr = c.wait_idle()
 
         prn.set_state(rr)
@@ -236,8 +249,13 @@ class Prn():
 
 prn = Prn(c)
 
-state = "init"
-i = -1
+if 1:
+    state = "init"
+    i = -1
+else:
+    state = "restart"
+    i = 56 # last done layer
+
 while True:
     i += 1
     fn = fn_tpl.format(base, i)
@@ -296,6 +314,27 @@ while True:
             state = "homed"
         else:
             assert False
+        continue
+    elif state == "restart":
+        assert not switch_extruder
+        assert not do_home
+        assert segment
+        assert start[3]
+
+        print(start[3])
+
+        prn.process_home(no_y=True)
+
+        expected_x = start[1]["X"]
+        expected_y = start[1]["Y"]
+        expected_z = start[1]["Z"]
+        expected_extruder = start[4]
+        prn.process_move(z=expected_z + 10)
+        prn.process_move(y=expected_y)
+        prn.process_move(x=expected_x)
+        prn.process_move(z=expected_z)
+        prn.process_segment(segment, None, end, expected_extruder)
+        state = "working"
         continue
     elif state == "homed":
         assert start[3][:3] == (None, None, None)
