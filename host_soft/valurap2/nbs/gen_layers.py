@@ -10,8 +10,10 @@ if 1:
     pp.delta_e_err = 10
     pp.delta_ve_err = 1000
     pp.max_ea = 10000
+    pp.lin_k = 5 # ABS
+    pp.lin_k = 10 # coPET
 else:
-    speed_k = 2.5
+    speed_k = 2.0
     pp.max_ea = 20000
     pp.max_xa = 3000
     pp.max_ya = 3000
