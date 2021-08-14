@@ -227,9 +227,10 @@ class PathPlanner:
             print("new path:", new_path)
             return new_path
 
+        print("segment len to small:", t_l, total_l, new_path)
         assert t_l < self.min_seg
         assert total_l < self.min_seg * 10
-        print("segment len to small:", t_l, total_l, new_path)
+
         return None
 
     def path_from_gcode(self, gcode_path, speed_k):
