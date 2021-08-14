@@ -1972,12 +1972,11 @@ class PathPlanner:
         segments.extend(sub_profile)
         self.emu_t += 5
 
-        last_e_epoch = 0.0
         last_x = apg_x_s.x_float()
         last_vx = apg_x_s.v_float()
         last_y = apg_y_s.x_float()
         last_vy = apg_y_s.v_float()
-        last_e = apg_e_s.x_float() + last_e_epoch
+        last_e = apg_e_s.x_float()
         last_ve = apg_e_s.v_float()
         last_ax = apg_x_s.a_float()
         last_ay = apg_y_s.a_float()
@@ -2037,15 +2036,7 @@ class PathPlanner:
             last_vx = apg_x_s.v_float()
             last_y = apg_y_s.x_float()
             last_vy = apg_y_s.v_float()
-            last_e_new = apg_e_s.x_float() + last_e_epoch
-            last_e_delta = (last_e_new - last_e) * apg_e_s.spm
-            if abs(last_e_delta) > 30000:
-                if last_e_delta > 0:
-                    last_e_epoch -= 65536.0 / apg_e_s.spm
-                else:
-                    last_e_epoch += 65536.0 / apg_e_s.spm
-                print("new_e_epoch", last_e_epoch)
-            last_e = apg_e_s.x_float() + last_e_epoch
+            last_e = apg_e_s.x_float()
             last_ve = apg_e_s.v_float()
             last_int_t += int_dt
 
@@ -2233,9 +2224,8 @@ class PathPlanner:
 
             delta = 1 / test_states[apg].spm
             test_x = test_states[apg].x_float()
-            exp_int_x = int(test_states[apg].x_int(dx)) % 2**64
-            if exp_int_x >= 2**63:
-                exp_int_x -= 2**64
+
+            exp_int_x = int(test_states[apg].x_int(dx))
             exp_x = test_states[apg].x_float(exp_int_x)
 
             log.error("delta_x: %s %s %s %s %s %s", apg, test_x - exp_x, delta, test_x, exp_x, dx)
