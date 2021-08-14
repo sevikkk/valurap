@@ -7,8 +7,12 @@ except ImportError:
 
 from libc.stdint cimport int64_t
 
+cdef extern from *:
+    ctypedef long long int128_t "__int128_t"
+
+
 cdef class ApgState(object):
-    cdef public int64_t x
+    cdef public int128_t x
     cdef public int64_t v_in
     cdef public int64_t v_out
     cdef public int64_t v_eff
@@ -150,7 +154,7 @@ cdef class ApgState(object):
         self.c_step()
 
     cdef void c_step(self):
-        cdef int64_t next_x = self.x + self.v_eff * self.accel_step
+        cdef int128_t next_x = self.x + self.v_eff * self.accel_step
         cdef int64_t next_v_in = self.v_out
         cdef int64_t next_v_out = self.v_out + self.a
         cdef int64_t next_a = self.a + self.j
