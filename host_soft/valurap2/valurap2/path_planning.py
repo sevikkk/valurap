@@ -1922,6 +1922,25 @@ class PathPlanner:
 
         knots = c.knots()[0]
 
+        new_knots = []
+
+        for i, t in enumerate(knots):
+            int_t = int(round(t / t_k))
+
+            if i == 0:
+                print(t)
+                last_int_t = int_t
+                new_knots.append(t)
+                continue
+
+            int_dt = int_t - last_int_t
+            if int_dt < 10:
+                continue
+
+            new_knots.append(t)
+            last_int_t = int_t
+
+        knots = new_knots
         x_vals = c(knots)
         v_vals = c.derivative(knots, d=1)
         a_vals = c.derivative(knots, d=2)
@@ -2382,6 +2401,7 @@ class PathPlanner:
                 if abs(dz) > 0 or extruder_changed:
                     if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart, self.last_extruder):
                         layer_num += 1
+                        print("current time:", self.emu_t, self.emu_t * self.accel_step / 50000000 / 60)
 
                     current_segment = []
                     ok = True
@@ -2394,6 +2414,9 @@ class PathPlanner:
                             ok = False
                         else:
                             dz = s.target["Z"] - self.last_z
+                            if abs(dz) > 1:
+                                print("dz:", dz)
+                                assert abs(dz) < 1
 
                     if (abs(dx) > 0) or (abs(dy) > 0):
                         if self.last_x is None or self.last_y is None:
@@ -2486,6 +2509,7 @@ class PathPlanner:
                 print(i, s)
                 if self.save_layer(current_segment, fn_tpl, layer_data, output_prefix, layer_num, restart, self.last_extruder):
                     layer_num += 1
+                    print("current time:", self.emu_t, self.emu_t * self.accel_step / 50000000 / 60)
                 restart = False
                 current_segment = []
                 if isinstance(s, gcode.do_extruder):
