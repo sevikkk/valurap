@@ -641,4 +641,4 @@ body_left_z_rod_support.Tip = obj_pocket002
 FreeCAD.ActiveDocument.recompute()
 Part.export([body_left_z_rod_support], 'left_z_rod_support.brep')
 
-App.ActiveDocument.saveAs("plate.FCStd")
+App.ActiveDocument.saveAs("left_z_rod_support.FCStd")

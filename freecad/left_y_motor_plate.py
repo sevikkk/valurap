@@ -1822,4 +1822,4 @@ body_leftymotorplate.Tip = obj_pocket008
 FreeCAD.ActiveDocument.recompute()
 Part.export([body_leftymotorplate], 'left_y_motor_plate.brep')
 
-App.ActiveDocument.saveAs("plate.FCStd")
+App.ActiveDocument.saveAs("left_y_motor_plate.FCStd")
