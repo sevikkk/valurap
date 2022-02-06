@@ -2164,4 +2164,4 @@ body_left_y_carriage_plate.Tip = obj_pocket007
 FreeCAD.ActiveDocument.recompute()
 Part.export([body_left_y_carriage_plate], 'left_y_carriage_plate.brep')
 
-App.ActiveDocument.saveAs("plate.FCStd")
+App.ActiveDocument.saveAs("left_y_carriage_plate.FCStd")
