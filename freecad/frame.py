@@ -3,6 +3,12 @@ import FreeCAD
 import os
 import Part
 
+if 1:
+    import FreeCADGui
+    from PySide2.QtWidgets import QApplication
+    qt_app = QApplication(["bubu"])
+    FreeCADGui.showMainWindow()
+
 App = FreeCAD
 
 in_gui = False
@@ -141,9 +147,9 @@ for part, make_mirror in [
 ]:
     remove(part)
 
-    if os.path.exists(f'{workdir}/{part}.brep'):
+    if os.path.exists(f'{workdir}/printed/{part}.brep'):
         print("file found")
-        Part.insert(f'{workdir}/{part}.brep', App.ActiveDocument.Name)
+        Part.insert(f'{workdir}/printed/{part}.brep', App.ActiveDocument.Name)
         p = App.ActiveDocument.getObject(part)
         if p.ViewObject:
             p.ViewObject.Visibility = False
