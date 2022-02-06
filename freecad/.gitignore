@@ -1,5 +1,6 @@
 breps/*
 debug/*
 stls/*
+printed/*
 __pycache__
 *.FCStd1
