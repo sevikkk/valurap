@@ -1,0 +1,3 @@
+https://github.com/armbian/build
+
+time ./compile.sh BOARD="orangepizeroplus" BRANCH="current" RELEASE="focal" KERNEL_ONLY="yes" KERNEL_CONFIGURE="no" BUILD_KSRC="no"

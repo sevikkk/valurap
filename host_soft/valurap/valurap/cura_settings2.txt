@@ -1,0 +1,380 @@
+('definition_changes', 'Custom FFF printer_settings.inst.cfg')
+   general
+     definition custom
+     name Custom FFF printer_settings
+     version 4
+   metadata
+     setting_version 11
+     type definition_changes
+   values
+     machine_center_is_zero True
+     machine_depth 300
+     machine_heated_bed True
+     machine_height 400
+     machine_width 320
+('definition_changes', 'custom_extruder_1 #2_settings.inst.cfg')
+   general
+     definition custom_extruder_1
+     name custom_extruder_1 #2_settings
+     version 4
+   metadata
+     setting_version 11
+     type definition_changes
+   values
+('definition_changes', 'custom_extruder_2 #2_settings.inst.cfg')
+   general
+     definition custom_extruder_2
+     name custom_extruder_2 #2_settings
+     version 4
+   metadata
+     setting_version 11
+     type definition_changes
+   values
+('definition_changes', 'custom_extruder_3 #2_settings.inst.cfg')
+   general
+     definition custom_extruder_3
+     name custom_extruder_3 #2_settings
+     version 4
+   metadata
+     setting_version 11
+     type definition_changes
+   values
+('definition_changes', 'custom_extruder_4 #2_settings.inst.cfg')
+   general
+     definition custom_extruder_4
+     name custom_extruder_4 #2_settings
+     version 4
+   metadata
+     setting_version 11
+     type definition_changes
+   values
+('definition_changes', 'custom_extruder_5 #2_settings.inst.cfg')
+   general
+     definition custom_extruder_5
+     name custom_extruder_5 #2_settings
+     version 4
+   metadata
+     setting_version 11
+     type definition_changes
+   values
+('definition_changes', 'custom_extruder_6 #2_settings.inst.cfg')
+   general
+     definition custom_extruder_6
+     name custom_extruder_6 #2_settings
+     version 4
+   metadata
+     setting_version 11
+     type definition_changes
+   values
+('definition_changes', 'custom_extruder_7 #2_settings.inst.cfg')
+   general
+     definition custom_extruder_7
+     name custom_extruder_7 #2_settings
+     version 4
+   metadata
+     setting_version 11
+     type definition_changes
+   values
+('definition_changes', 'custom_extruder_8 #2_settings.inst.cfg')
+   general
+     definition custom_extruder_8
+     name custom_extruder_8 #2_settings
+     version 4
+   metadata
+     setting_version 11
+     type definition_changes
+   values
+('extruders', 'custom_extruder_1 #2.extruder.cfg')
+   containers
+     0 custom_extruder_1 #2_user
+     1 empty_quality_changes
+     2 empty_intent
+     3 normal
+     4 generic_pla
+     5 empty_variant
+     6 custom_extruder_1 #2_settings
+     7 custom_extruder_1
+   general
+     id custom_extruder_1 #2
+     name Extruder 1
+     version 4
+   metadata
+     machine Custom FFF printer
+     position 0
+     setting_version 11
+     type extruder_train
+('extruders', 'custom_extruder_2 #2.extruder.cfg')
+   containers
+     0 custom_extruder_2 #2_user
+     1 empty_quality_changes
+     2 empty_intent
+     3 normal
+     4 generic_pla
+     5 empty_variant
+     6 custom_extruder_2 #2_settings
+     7 custom_extruder_2
+   general
+     id custom_extruder_2 #2
+     name Extruder 2
+     version 4
+   metadata
+     machine Custom FFF printer
+     position 1
+     setting_version 11
+     type extruder_train
+('extruders', 'custom_extruder_3 #2.extruder.cfg')
+   containers
+     0 custom_extruder_3 #2_user
+     1 empty_quality_changes
+     2 empty_intent
+     3 normal
+     4 generic_pla
+     5 empty_variant
+     6 custom_extruder_3 #2_settings
+     7 custom_extruder_3
+   general
+     id custom_extruder_3 #2
+     name Extruder 3
+     version 4
+   metadata
+     machine Custom FFF printer
+     position 2
+     setting_version 11
+     type extruder_train
+('extruders', 'custom_extruder_4 #2.extruder.cfg')
+   containers
+     0 custom_extruder_4 #2_user
+     1 empty_quality_changes
+     2 empty_intent
+     3 normal
+     4 generic_pla
+     5 empty_variant
+     6 custom_extruder_4 #2_settings
+     7 custom_extruder_4
+   general
+     id custom_extruder_4 #2
+     name Extruder 4
+     version 4
+   metadata
+     machine Custom FFF printer
+     position 3
+     setting_version 11
+     type extruder_train
+('extruders', 'custom_extruder_5 #2.extruder.cfg')
+   containers
+     0 custom_extruder_5 #2_user
+     1 empty_quality_changes
+     2 empty_intent
+     3 normal
+     4 generic_pla
+     5 empty_variant
+     6 custom_extruder_5 #2_settings
+     7 custom_extruder_5
+   general
+     id custom_extruder_5 #2
+     name Extruder 5
+     version 4
+   metadata
+     machine Custom FFF printer
+     position 4
+     setting_version 11
+     type extruder_train
+('extruders', 'custom_extruder_6 #2.extruder.cfg')
+   containers
+     0 custom_extruder_6 #2_user
+     1 empty_quality_changes
+     2 empty_intent
+     3 normal
+     4 generic_pla
+     5 empty_variant
+     6 custom_extruder_6 #2_settings
+     7 custom_extruder_6
+   general
+     id custom_extruder_6 #2
+     name Extruder 6
+     version 4
+   metadata
+     machine Custom FFF printer
+     position 5
+     setting_version 11
+     type extruder_train
+('extruders', 'custom_extruder_7 #2.extruder.cfg')
+   containers
+     0 custom_extruder_7 #2_user
+     1 empty_quality_changes
+     2 empty_intent
+     3 normal
+     4 generic_pla
+     5 empty_variant
+     6 custom_extruder_7 #2_settings
+     7 custom_extruder_7
+   general
+     id custom_extruder_7 #2
+     name Extruder 7
+     version 4
+   metadata
+     machine Custom FFF printer
+     position 6
+     setting_version 11
+     type extruder_train
+('extruders', 'custom_extruder_8 #2.extruder.cfg')
+   containers
+     0 custom_extruder_8 #2_user
+     1 empty_quality_changes
+     2 empty_intent
+     3 normal
+     4 generic_pla
+     5 empty_variant
+     6 custom_extruder_8 #2_settings
+     7 custom_extruder_8
+   general
+     id custom_extruder_8 #2
+     name Extruder 8
+     version 4
+   metadata
+     machine Custom FFF printer
+     position 7
+     setting_version 11
+     type extruder_train
+('machine_instances', 'Custom FFF printer.global.cfg')
+   containers
+     0 Custom FFF printer_user
+     1 empty_quality_changes
+     2 empty_intent
+     3 normal
+     4 empty_material
+     5 empty_variant
+     6 Custom FFF printer_settings
+     7 custom
+   general
+     id Custom FFF printer
+     name Custom FFF printer
+     version 4
+   metadata
+     group_id 592c8c26-be49-4fd8-a191-b5feecb5c119
+     setting_version 11
+     type machine
+('user', 'Custom FFF printer_user.inst.cfg')
+   general
+     definition custom
+     name Custom FFF printer_user
+     version 4
+   metadata
+     machine Custom FFF printer
+     setting_version 11
+     type user
+   values
+('user', 'custom_extruder_1 #2_user.inst.cfg')
+   general
+     definition custom
+     name custom_extruder_1 #2_user
+     version 4
+   metadata
+     extruder custom_extruder_1 #2
+     setting_version 11
+     type user
+   values
+('user', 'custom_extruder_2 #2_user.inst.cfg')
+   general
+     definition custom
+     name custom_extruder_2 #2_user
+     version 4
+   metadata
+     extruder custom_extruder_2 #2
+     setting_version 11
+     type user
+   values
+('user', 'custom_extruder_3 #2_user.inst.cfg')
+   general
+     definition custom
+     name custom_extruder_3 #2_user
+     version 4
+   metadata
+     extruder custom_extruder_3 #2
+     setting_version 11
+     type user
+   values
+('user', 'custom_extruder_4 #2_user.inst.cfg')
+   general
+     definition custom
+     name custom_extruder_4 #2_user
+     version 4
+   metadata
+     extruder custom_extruder_4 #2
+     setting_version 11
+     type user
+   values
+('user', 'custom_extruder_5 #2_user.inst.cfg')
+   general
+     definition custom
+     name custom_extruder_5 #2_user
+     version 4
+   metadata
+     extruder custom_extruder_5 #2
+     setting_version 11
+     type user
+   values
+('user', 'custom_extruder_6 #2_user.inst.cfg')
+   general
+     definition custom
+     name custom_extruder_6 #2_user
+     version 4
+   metadata
+     extruder custom_extruder_6 #2
+     setting_version 11
+     type user
+   values
+('user', 'custom_extruder_7 #2_user.inst.cfg')
+   general
+     definition custom
+     name custom_extruder_7 #2_user
+     version 4
+   metadata
+     extruder custom_extruder_7 #2
+     setting_version 11
+     type user
+   values
+('user', 'custom_extruder_8 #2_user.inst.cfg')
+   general
+     definition custom
+     name custom_extruder_8 #2_user
+     version 4
+   metadata
+     extruder custom_extruder_8 #2
+     setting_version 11
+     type user
+   values
+=========== Custom FFF printer ===========
+   general
+     id Custom FFF printer
+     name Custom FFF printer
+     version 4
+   metadata
+     group_id 592c8c26-be49-4fd8-a191-b5feecb5c119
+     setting_version 11
+     type machine
+   containers:
+     0 Custom FFF printer_user ('user', 'Custom FFF printer_user.inst.cfg')
+        -- empty --
+     6 Custom FFF printer_settings ('definition_changes', 'Custom FFF printer_settings.inst.cfg')
+        machine_center_is_zero: 'True'
+        machine_depth: '300'
+        machine_heated_bed: 'True'
+        machine_height: '400'
+        machine_width: '320'
+  extruders:
+    0: --------- Extruder 1 ('extruders', 'custom_extruder_1 #2.extruder.cfg') ------- 
+        general
+          id: custom_extruder_1 #2
+          name: Extruder 1
+          version: 4
+        metadata
+          machine: Custom FFF printer
+          position: 0
+          setting_version: 11
+          type: extruder_train
+        containers:
+          0 custom_extruder_1 #2_user ('user', 'custom_extruder_1 #2_user.inst.cfg')
+             -- empty --
+          6 custom_extruder_1 #2_settings ('definition_changes', 'custom_extruder_1 #2_settings.inst.cfg')
+             -- empty --

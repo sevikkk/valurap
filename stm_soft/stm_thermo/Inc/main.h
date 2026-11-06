@@ -92,6 +92,7 @@ void Error_Handler(void);
 #define TIM1_CH3N_F1_GPIO_Port GPIOB
 #define SPI1_NSS_Pin GPIO_PIN_15
 #define SPI1_NSS_GPIO_Port GPIOA
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
@@ -101,5 +102,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

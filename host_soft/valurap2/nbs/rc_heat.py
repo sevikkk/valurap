@@ -15,7 +15,7 @@ while True:
 
 tgt1 = 230
 tgt2 = 230
-tgt_hb = 90
+tgt_hb = 120
 
 c.spp(1, 60000, 0)
 c.spp(2, 60000, 0)

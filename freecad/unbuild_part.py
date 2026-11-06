@@ -1,3 +1,5 @@
+import os
+import sys
 from collections import Counter
 
 import FreeCAD
@@ -7,9 +9,12 @@ bodies = []
 obj_to_var = {}
 
 class Body:
-    def __init__(self, obj):
-        self.name = obj.Name
-        self.label = obj.Label
+    def __init__(self, obj, part_name=None):
+        self.source_name = obj.Name
+        self.source_label = obj.Label
+        self.part_name = part_name
+        self.name = part_name or obj.Name
+        self.label = part_name or obj.Label
         self.tip = obj.Tip
         self.obj = obj
         self.debug = False
@@ -17,7 +22,7 @@ class Body:
 
     def unparse(self):
         obj = self.obj
-        print(f"----------- {obj.Label} ------------")
+        print(f"----------- {self.label} ------------")
         for prop in obj.PropertiesList:
             print(prop, getattr(obj, prop))
 
@@ -50,7 +55,7 @@ class Body:
             ])
 
         text.append("FreeCAD.ActiveDocument.recompute()")
-        text.append(f"Part.export([{self.var_name}], '{self.obj.Label}.brep')")
+        text.append(f"Part.export([{self.var_name}], '{self.label}.brep')")
 
         return text
 
@@ -87,7 +92,7 @@ class Body:
                     f"    {self.var_name}.Tip = {var_name}",
                     f"    {self.var_name}.Group = [{grp}]",
                     f"    FreeCAD.ActiveDocument.recompute()",
-                    f"    App.ActiveDocument.saveAs('debug/plate-{self.obj.Label}-{cnt:03d}-{obj.Label}.FCStd')",
+                    f"    App.ActiveDocument.saveAs('debug/plate-{self.label}-{cnt:03d}-{obj.Label}.FCStd')",
                 ])
             text.append("FreeCAD.ActiveDocument.recompute()")
             text.append(f"print('{obj.Label}')")
@@ -118,7 +123,7 @@ class Body:
         return [
             f"{var_name} = {self.var_name}.newObject('PartDesign::ShapeBinder', '{obj.Name}')",
             f"{var_name}_orig = App.getDocument('frame').getObject('{orig_name}')",
-            f"{var_name}.TraceSupport = True",
+            f"{var_name}.TraceSupport = False",
             f"{var_name}.Support = [({var_name}_orig, '')]"
         ]
 
@@ -134,7 +139,7 @@ class Body:
         text.extend(base_text)
 
         text.extend([
-            f"{self.var_name} = App.ActiveDocument.getObject('{self.obj.Name}')",
+            f"{self.var_name} = App.ActiveDocument.getObject('{self.name}')",
             f"{base_var_name} = App.ActiveDocument.getObject('{obj.BaseFeature.Name}')",
         ])
         text.extend([
@@ -221,13 +226,16 @@ class Body:
                     ext_geom_names.append([ext_obj_var, ext_feature])
 
         text.append(f"{var_name} = {self.var_name}.newObject('Sketcher::SketchObject', '{obj.Name}')")
-        if obj.Support:
-            support_obj = obj.Support[0][0]
+        support = getattr(obj, "Support", None)
+        if not support:
+            support = getattr(obj, "AttachmentSupport", None)
+        if support:
+            support_obj = support[0][0]
             support_var = obj_to_var.get(support_obj, None)
             if not support_var:
                 support_var, support_text = self.unparse_obj(support_obj)
                 text.extend(support_text)
-            obj_feature = obj.Support[0][1][0]
+            obj_feature = support[0][1][0]
             text.append(f"{var_name}.Support = ({support_var}, ['{obj_feature}'])")
 
         if obj.MapMode:
@@ -240,7 +248,10 @@ class Body:
         vectors_text = []
         numbers = Counter()
         if obj.Geometry:
-            for geom in obj.Geometry:
+            for geom_index, geom in enumerate(obj.Geometry):
+                construction = getattr(geom, "Construction", None)
+                if construction is None and getattr(obj, "getConstruction", None):
+                    construction = obj.getConstruction(geom_index)
                 if isinstance(geom, Part.LineSegment):
                     numbers["line"] += 1
                     n = numbers["line"]
@@ -250,8 +261,8 @@ class Body:
                     end_point = self.get_vector(geom.EndPoint, numbers, var_name, vectors, vectors_text)
 
                     geoms_text.append(f"{geom_var_name} = Part.LineSegment({start_point}, {end_point})")
-                    if geom.Construction:
-                        geoms_text.append(f"{geom_var_name}.Construction = {geom.Construction}")
+                    if construction:
+                        geoms_text.append(f"{geom_var_name}.Construction = {construction}")
                     if geom.Continuity != "CN":
                         geoms_text.append(f"{geom_var_name}.Continuity = {geom.Continuity}")
                 elif isinstance(geom, Part.Circle):
@@ -260,8 +271,8 @@ class Body:
                     geom_var_name = f"{var_name}_circle_{n}"
                     center = self.get_vector(geom.Center, numbers, var_name, vectors, vectors_text)
                     geoms_text.append(f"{geom_var_name} = Part.Circle({center}, App.{geom.Axis}, {geom.Radius})")
-                    if geom.Construction:
-                        geoms_text.append(f"{geom_var_name}.Construction = {geom.Construction}")
+                    if construction:
+                        geoms_text.append(f"{geom_var_name}.Construction = {construction}")
                     if geom.Continuity != "CN":
                         geoms_text.append(f"{geom_var_name}.Continuity = {geom.Continuity}")
                 elif isinstance(geom, Part.ArcOfCircle):
@@ -270,8 +281,8 @@ class Body:
                     geom_var_name = f"{var_name}_circle_{n}"
                     center = self.get_vector(geom.Center, numbers, var_name, vectors, vectors_text)
                     geoms_text.append(f"{geom_var_name} = Part.ArcOfCircle(Part.Circle({center}, App.{geom.Axis}, {geom.Radius}), {geom.FirstParameter}, {geom.LastParameter})")
-                    if geom.Construction:
-                        geoms_text.append(f"{geom_var_name}.Construction = {geom.Construction}")
+                    if construction:
+                        geoms_text.append(f"{geom_var_name}.Construction = {construction}")
                     if geom.Continuity != "CN":
                         geoms_text.append(f"{geom_var_name}.Continuity = {geom.Continuity}")
                 elif isinstance(geom, Part.Point):
@@ -281,8 +292,8 @@ class Body:
                     center_point = FreeCAD.Vector(geom.X, geom.Y, geom.Z)
                     center = self.get_vector(center_point, numbers, var_name, vectors, vectors_text)
                     geoms_text.append(f"{geom_var_name} = Part.Point({center})")
-                    if geom.Construction:
-                        geoms_text.append(f"{geom_var_name}.Construction = {geom.Construction}")
+                    if construction:
+                        geoms_text.append(f"{geom_var_name}.Construction = {construction}")
                 else:
                     print(type(geom))
                     raise RuntimeError(f"Unknown part class {geom} at sketch unparse")
@@ -432,15 +443,18 @@ class Body:
         return start_point
 
 
-#d = FreeCAD.open('left_y_motor_plate.FCStd')
-#d = FreeCAD.open('left_y_idler_plate.FCStd')
-d = FreeCAD.open('x_carriage_plate.FCStd')
-#d = FreeCAD.open('plate.FCStd')
+input_path = sys.argv[1] if len(sys.argv) > 1 else 'x_carriage_plate.FCStd'
+output_path = sys.argv[2] if len(sys.argv) > 2 else os.path.splitext(os.path.basename(input_path))[0] + '.py'
+output_stem = os.path.splitext(os.path.basename(output_path))[0]
+
+d = FreeCAD.open(input_path)
+body_objects = [obj for obj in d.Objects if obj.TypeId == 'PartDesign::Body']
+part_name_override = output_stem if len(body_objects) == 1 else None
 for obj in d.Objects:
     #print(obj.TypeId, obj.Name, obj.Label)
     #print(obj.PropertiesList)
     if obj.TypeId == 'PartDesign::Body':
-        bodies.append(Body(obj))
+        bodies.append(Body(obj, part_name=part_name_override))
     elif obj.TypeId == 'App::Origin':
         pass
     elif obj.TypeId == 'App::Line':
@@ -469,7 +483,7 @@ for obj in d.Objects:
     else:
         raise RuntimeError(f"Unknown TypeId {obj.TypeId} on top-level")
 
-f = open("x_carriage_plate.py", "w")
+f = open(output_path, "w")
 f.write("""
 import sys
 import FreeCAD
@@ -494,11 +508,7 @@ for body in bodies:
     print("\n".join(text))
     f.write("\n".join(text) + "\n")
 
-f.write("""
-App.ActiveDocument.saveAs("plate.FCStd")
+f.write(f"""
+App.ActiveDocument.saveAs("{output_stem}.FCStd")
 """)
 f.close()
-
-
-
-

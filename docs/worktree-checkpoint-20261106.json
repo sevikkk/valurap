@@ -1,0 +1,1012 @@
+{
+  "purpose": "Preserve existing source and document local artifacts; no validation or hardware execution",
+  "branch": "sevikkk/codex/worktree-checkpoint-20261106",
+  "base_commit": "d785f44d2a3f789d8c018e1724d5cc858951ab66",
+  "archive_root": "/Volumes/Data3/px4-vio/archives/worktree-checkpoints-20261106/valurap",
+  "files": [
+    {
+      "path": "freecad/unbuild_part.py",
+      "bytes": 20425,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap2/nbs/CurveFit.ipynb",
+      "bytes": 2101288,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap2/nbs/CurveFit2.ipynb",
+      "bytes": 640721,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap2/nbs/gen_layers.py",
+      "bytes": 396,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap2/nbs/rc_heat.py",
+      "bytes": 2016,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap2/nbs/rc_print2.py",
+      "bytes": 11795,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap2/valurap2/emulate.pyx",
+      "bytes": 9755,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap2/valurap2/path_planning.py",
+      "bytes": 94827,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "stm_soft/stm_thermo/.mxproject",
+      "bytes": 12517,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "stm_soft/stm_thermo/Inc/FreeRTOSConfig.h",
+      "bytes": 5781,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "stm_soft/stm_thermo/Inc/main.h",
+      "bytes": 3265,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "stm_soft/stm_thermo/Inc/stm32f1xx_hal_conf.h",
+      "bytes": 15705,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "stm_soft/stm_thermo/Inc/stm32f1xx_it.h",
+      "bytes": 2030,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "stm_soft/stm_thermo/Makefile",
+      "bytes": 6181,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "stm_soft/stm_thermo/STM32F103C8Tx_FLASH.ld",
+      "bytes": 5902,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "stm_soft/stm_thermo/Src/freertos.c",
+      "bytes": 2755,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "stm_soft/stm_thermo/Src/main.c",
+      "bytes": 20060,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "stm_soft/stm_thermo/Src/stm32f1xx_hal_msp.c",
+      "bytes": 12873,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "stm_soft/stm_thermo/Src/stm32f1xx_hal_timebase_tim.c",
+      "bytes": 4602,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "stm_soft/stm_thermo/Src/stm32f1xx_it.c",
+      "bytes": 5637,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "stm_soft/stm_thermo/startup_stm32f103xb.s",
+      "bytes": 10261,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "stm_soft/stm_thermo/stm_thermo.ioc",
+      "bytes": 10570,
+      "kind": "tracked WIP source",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad.backup.tgz",
+      "bytes": 374970007,
+      "kind": "archived original/backup",
+      "symlink": false,
+      "archive": "/Volumes/Data3/px4-vio/archives/worktree-checkpoints-20261106/valurap/freecad.backup.tgz"
+    },
+    {
+      "path": "freecad/README.md",
+      "bytes": 4390,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/aqua_handle.FCStd",
+      "bytes": 99944,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/aqua_tuber.FCStd",
+      "bytes": 44594,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/bory_drag.FCStd",
+      "bytes": 290397,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/bowden_motor_mount-Body.amf",
+      "bytes": 1309062,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/bowden_motor_mount.FCStd",
+      "bytes": 102356,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/frame.FCStd",
+      "bytes": 56659153,
+      "kind": "archived original/backup",
+      "symlink": false,
+      "archive": "/Volumes/Data3/px4-vio/archives/worktree-checkpoints-20261106/valurap/freecad/frame.FCStd"
+    },
+    {
+      "path": "freecad/gun_time.FCStd",
+      "bytes": 958263,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/heat_exp.FCStd",
+      "bytes": 7077,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/heat_hold.stl",
+      "bytes": 104284,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/heat_hold2.stl",
+      "bytes": 103384,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/left_y_carriage_plate.brep",
+      "bytes": 76076,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/left_y_motor_plate.brep",
+      "bytes": 103185,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/left_z_rod_plate.py",
+      "bytes": 53064,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/left_z_rod_support.brep",
+      "bytes": 30292,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/m4v6_mount-BodyChamfer001.amf",
+      "bytes": 616381,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/m4v6_mount.FCStd",
+      "bytes": 80139,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/panel_mount.FCStd",
+      "bytes": 1580864,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/panel_mount.stl",
+      "bytes": 503684,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/pi_mount.FCStd",
+      "bytes": 107289511,
+      "kind": "archived original/backup",
+      "symlink": false,
+      "archive": "/Volumes/Data3/px4-vio/archives/worktree-checkpoints-20261106/valurap/freecad/pi_mount.FCStd"
+    },
+    {
+      "path": "freecad/railing_handle.FCStd",
+      "bytes": 1515526,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/start_bolts.FCMacro",
+      "bytes": 72,
+      "kind": "new source/CAD/reference",
+      "symlink": true,
+      "archive": null
+    },
+    {
+      "path": "freecad/table_box_fillet.FCStd",
+      "bytes": 16528,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/table_box_fillet.py",
+      "bytes": 1478,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/thing_top.stl",
+      "bytes": 2308784,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/venchik.stl",
+      "bytes": 514284,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/venchik_v.stl",
+      "bytes": 84484,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/vitamins/PanelDue 5I.STEP",
+      "bytes": 7634825,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/vitamins/vitamins.FCStd",
+      "bytes": 6939554,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "freecad/zero_case.FCStd",
+      "bytes": 4658721,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/optozero/circles_pattern_page1.ps",
+      "bytes": 749,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/optozero/circles_pattern_page2.ps",
+      "bytes": 847,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/optozero/nbs/capture.ipynb",
+      "bytes": 365660,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/optozero/nbs/start.sh",
+      "bytes": 139,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/Control.ipynb.invalid",
+      "bytes": 0,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/Untitled.ipynb",
+      "bytes": 2615,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/align.log",
+      "bytes": 385768,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/b2/zzz",
+      "bytes": 237520,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/backup/bed_leveling.pickle",
+      "bytes": 498607,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/backup/height_calibration.pickle",
+      "bytes": 815990,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/backup/height_calibration_T4_3.pickle",
+      "bytes": 140142,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/backup/height_calibration_T4_4.pickle",
+      "bytes": 147024,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/backup/height_calibration_T5_3.pickle",
+      "bytes": 147024,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/backup/height_calibration_T5_4.pickle",
+      "bytes": 147024,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/backup/height_calibration_x2.pickle",
+      "bytes": 420092,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/backup/x1_calib.pickle",
+      "bytes": 115031,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/backup/x2_calib.pickle",
+      "bytes": 110162,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/bed_leveling.pickle",
+      "bytes": 498607,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/bed_leveling_2.pickle",
+      "bytes": 163631,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/bed_leveling_3.pickle",
+      "bytes": 9397,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/bed_leveling_4.pickle",
+      "bytes": 5101,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/bed_leveling_final.pickle",
+      "bytes": 180008,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/box20_second.log",
+      "bytes": 49929484,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/cm.log",
+      "bytes": 1371262,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/cm2.log",
+      "bytes": 205442039,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/dual.log",
+      "bytes": 106753,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/height_calibration.pickle",
+      "bytes": 815990,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/height_calibration_T4_3.pickle",
+      "bytes": 140142,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/height_calibration_T4_4.pickle",
+      "bytes": 147024,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/height_calibration_T5_3.pickle",
+      "bytes": 147024,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/height_calibration_T5_4.pickle",
+      "bytes": 147024,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/height_calibration_x2.pickle",
+      "bytes": 420092,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/helmet.log",
+      "bytes": 405899962,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/motion.wxmx",
+      "bytes": 30427,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/plan.pkl",
+      "bytes": 549820,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/remote_control.ipynb",
+      "bytes": 754399,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/stepgen.ipynb",
+      "bytes": 70412,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/x1_calib.pickle",
+      "bytes": 115031,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/x2_calib.pickle",
+      "bytes": 110162,
+      "kind": "retained calibration/backup",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/zz",
+      "bytes": 546208601,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/zz3",
+      "bytes": 54999732,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/zz4",
+      "bytes": 54999774,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/zz5",
+      "bytes": 26158211,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/zz_test21",
+      "bytes": 459271470,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/zz_tgbody",
+      "bytes": 643154745,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/nbs/zz_tgbody_2.0",
+      "bytes": 172721499,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/tc.txt",
+      "bytes": 672646,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/tc1.txt",
+      "bytes": 603309,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/tc2.txt",
+      "bytes": 23363,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/tc3.txt",
+      "bytes": 29571,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/tft/abrmbian_build.txt",
+      "bytes": 166,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/tft/libdrm/",
+      "bytes": 1632,
+      "kind": "retained separate vendor checkout",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/tft/opi.dtbo",
+      "bytes": 2367,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/tft/opi.dts",
+      "bytes": 2778,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/tft/waveshare_32b_28a_opipc2.dts",
+      "bytes": 2854,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/valurap/build/temp.macosx-10.14-x86_64-3.7/Users/seva/src/sevasoft/valurap/host_soft/valurap/valurap/path_planning.o",
+      "bytes": 3546912,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/valurap/cura_settings2.txt",
+      "bytes": 9549,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/valurap/emulate.c",
+      "bytes": 798832,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/valurap/emulate.cpython-37m-darwin.so",
+      "bytes": 342268,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/valurap/emulate.html",
+      "bytes": 711974,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/valurap/optozero.py",
+      "bytes": 1033,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/valurap/scripts/tc.txt",
+      "bytes": 383225,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/valurap/scripts/tc1.txt",
+      "bytes": 217209,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/valurap/scripts/tc2.txt",
+      "bytes": 264673,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap/valurap/scripts/tc_test.txt",
+      "bytes": 655584,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap2/nbs/katya_stand_00051.layer.back",
+      "bytes": 128307,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap2/nbs/rc_home.py",
+      "bytes": 115,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap2/nbs/rc_temps.py",
+      "bytes": 512,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap2/nbs/test18_00016.layer.ll",
+      "bytes": 722343,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "host_soft/valurap2/valurap2/turbine.gcode",
+      "bytes": 16242792,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "pcbs/thermo/thermocontrol/thermocontrol.step",
+      "bytes": 1968712,
+      "kind": "new source/CAD/reference",
+      "symlink": false,
+      "archive": null
+    },
+    {
+      "path": "snap.jpg",
+      "bytes": 50303,
+      "kind": "retained generated output/log",
+      "symlink": false,
+      "archive": null
+    }
+  ],
+  "stage_paths": [
+    "freecad/unbuild_part.py",
+    "host_soft/valurap2/nbs/CurveFit.ipynb",
+    "host_soft/valurap2/nbs/CurveFit2.ipynb",
+    "host_soft/valurap2/nbs/gen_layers.py",
+    "host_soft/valurap2/nbs/rc_heat.py",
+    "host_soft/valurap2/nbs/rc_print2.py",
+    "host_soft/valurap2/valurap2/emulate.pyx",
+    "host_soft/valurap2/valurap2/path_planning.py",
+    "stm_soft/stm_thermo/.mxproject",
+    "stm_soft/stm_thermo/Inc/FreeRTOSConfig.h",
+    "stm_soft/stm_thermo/Inc/main.h",
+    "stm_soft/stm_thermo/Inc/stm32f1xx_hal_conf.h",
+    "stm_soft/stm_thermo/Inc/stm32f1xx_it.h",
+    "stm_soft/stm_thermo/Makefile",
+    "stm_soft/stm_thermo/STM32F103C8Tx_FLASH.ld",
+    "stm_soft/stm_thermo/Src/freertos.c",
+    "stm_soft/stm_thermo/Src/main.c",
+    "stm_soft/stm_thermo/Src/stm32f1xx_hal_msp.c",
+    "stm_soft/stm_thermo/Src/stm32f1xx_hal_timebase_tim.c",
+    "stm_soft/stm_thermo/Src/stm32f1xx_it.c",
+    "stm_soft/stm_thermo/startup_stm32f103xb.s",
+    "stm_soft/stm_thermo/stm_thermo.ioc",
+    "freecad/README.md",
+    "freecad/aqua_handle.FCStd",
+    "freecad/aqua_tuber.FCStd",
+    "freecad/bory_drag.FCStd",
+    "freecad/bowden_motor_mount-Body.amf",
+    "freecad/bowden_motor_mount.FCStd",
+    "freecad/gun_time.FCStd",
+    "freecad/heat_exp.FCStd",
+    "freecad/heat_hold.stl",
+    "freecad/heat_hold2.stl",
+    "freecad/left_y_carriage_plate.brep",
+    "freecad/left_y_motor_plate.brep",
+    "freecad/left_z_rod_plate.py",
+    "freecad/left_z_rod_support.brep",
+    "freecad/m4v6_mount-BodyChamfer001.amf",
+    "freecad/m4v6_mount.FCStd",
+    "freecad/panel_mount.FCStd",
+    "freecad/panel_mount.stl",
+    "freecad/railing_handle.FCStd",
+    "freecad/start_bolts.FCMacro",
+    "freecad/table_box_fillet.FCStd",
+    "freecad/table_box_fillet.py",
+    "freecad/thing_top.stl",
+    "freecad/venchik.stl",
+    "freecad/venchik_v.stl",
+    "freecad/vitamins/PanelDue 5I.STEP",
+    "freecad/vitamins/vitamins.FCStd",
+    "freecad/zero_case.FCStd",
+    "host_soft/optozero/circles_pattern_page1.ps",
+    "host_soft/optozero/circles_pattern_page2.ps",
+    "host_soft/optozero/nbs/capture.ipynb",
+    "host_soft/optozero/nbs/start.sh",
+    "host_soft/valurap/nbs/Untitled.ipynb",
+    "host_soft/valurap/nbs/motion.wxmx",
+    "host_soft/valurap/nbs/remote_control.ipynb",
+    "host_soft/valurap/nbs/stepgen.ipynb",
+    "host_soft/valurap/tft/abrmbian_build.txt",
+    "host_soft/valurap/tft/opi.dts",
+    "host_soft/valurap/tft/waveshare_32b_28a_opipc2.dts",
+    "host_soft/valurap/valurap/cura_settings2.txt",
+    "host_soft/valurap/valurap/optozero.py",
+    "host_soft/valurap2/nbs/rc_home.py",
+    "host_soft/valurap2/nbs/rc_temps.py",
+    "pcbs/thermo/thermocontrol/thermocontrol.step"
+  ],
+  "local_exclude_patterns": [
+    "/freecad.backup.tgz",
+    "/freecad/frame.FCStd",
+    "/freecad/pi_mount.FCStd",
+    "/host_soft/valurap/nbs/Control.ipynb.invalid",
+    "/host_soft/valurap/nbs/align.log",
+    "/host_soft/valurap/nbs/b2/zzz",
+    "/host_soft/valurap/nbs/box20_second.log",
+    "/host_soft/valurap/nbs/cm.log",
+    "/host_soft/valurap/nbs/cm2.log",
+    "/host_soft/valurap/nbs/dual.log",
+    "/host_soft/valurap/nbs/helmet.log",
+    "/host_soft/valurap/nbs/plan.pkl",
+    "/host_soft/valurap/nbs/zz",
+    "/host_soft/valurap/nbs/zz3",
+    "/host_soft/valurap/nbs/zz4",
+    "/host_soft/valurap/nbs/zz5",
+    "/host_soft/valurap/nbs/zz_test21",
+    "/host_soft/valurap/nbs/zz_tgbody",
+    "/host_soft/valurap/nbs/zz_tgbody_2.0",
+    "/host_soft/valurap/tc.txt",
+    "/host_soft/valurap/tc1.txt",
+    "/host_soft/valurap/tc2.txt",
+    "/host_soft/valurap/tc3.txt",
+    "/host_soft/valurap/tft/opi.dtbo",
+    "/host_soft/valurap/valurap/build/temp.macosx-10.14-x86_64-3.7/Users/seva/src/sevasoft/valurap/host_soft/valurap/valurap/path_planning.o",
+    "/host_soft/valurap/valurap/emulate.c",
+    "/host_soft/valurap/valurap/emulate.cpython-37m-darwin.so",
+    "/host_soft/valurap/valurap/emulate.html",
+    "/host_soft/valurap/valurap/scripts/tc.txt",
+    "/host_soft/valurap/valurap/scripts/tc1.txt",
+    "/host_soft/valurap/valurap/scripts/tc2.txt",
+    "/host_soft/valurap/valurap/scripts/tc_test.txt",
+    "/host_soft/valurap2/nbs/katya_stand_00051.layer.back",
+    "/host_soft/valurap2/nbs/test18_00016.layer.ll",
+    "/host_soft/valurap2/valurap2/turbine.gcode",
+    "/snap.jpg",
+    "/host_soft/valurap/nbs/backup/bed_leveling.pickle",
+    "/host_soft/valurap/nbs/backup/height_calibration.pickle",
+    "/host_soft/valurap/nbs/backup/height_calibration_T4_3.pickle",
+    "/host_soft/valurap/nbs/backup/height_calibration_T4_4.pickle",
+    "/host_soft/valurap/nbs/backup/height_calibration_T5_3.pickle",
+    "/host_soft/valurap/nbs/backup/height_calibration_T5_4.pickle",
+    "/host_soft/valurap/nbs/backup/height_calibration_x2.pickle",
+    "/host_soft/valurap/nbs/backup/x1_calib.pickle",
+    "/host_soft/valurap/nbs/backup/x2_calib.pickle",
+    "/host_soft/valurap/nbs/bed_leveling.pickle",
+    "/host_soft/valurap/nbs/bed_leveling_2.pickle",
+    "/host_soft/valurap/nbs/bed_leveling_3.pickle",
+    "/host_soft/valurap/nbs/bed_leveling_4.pickle",
+    "/host_soft/valurap/nbs/bed_leveling_final.pickle",
+    "/host_soft/valurap/nbs/height_calibration.pickle",
+    "/host_soft/valurap/nbs/height_calibration_T4_3.pickle",
+    "/host_soft/valurap/nbs/height_calibration_T4_4.pickle",
+    "/host_soft/valurap/nbs/height_calibration_T5_3.pickle",
+    "/host_soft/valurap/nbs/height_calibration_T5_4.pickle",
+    "/host_soft/valurap/nbs/height_calibration_x2.pickle",
+    "/host_soft/valurap/nbs/x1_calib.pickle",
+    "/host_soft/valurap/nbs/x2_calib.pickle",
+    "/host_soft/valurap/tft/libdrm/"
+  ]
+}

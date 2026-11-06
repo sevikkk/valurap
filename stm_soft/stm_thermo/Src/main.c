@@ -17,7 +17,6 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
-
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
@@ -118,7 +117,6 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
-  
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -187,23 +185,23 @@ int main(void)
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of DebugBlink */
-  osThreadStaticDef(DebugBlink, StartDebugBlink, osPriorityIdle, 0, 128, DebugBlinkBuffer, &DebugBlinkControlBlock);
+  osThreadStaticDef(DebugBlink, StartDebugBlink, osPriorityNormal, 0, 128, DebugBlinkBuffer, &DebugBlinkControlBlock);
   DebugBlinkHandle = osThreadCreate(osThread(DebugBlink), NULL);
 
   /* definition and creation of CmdLine */
-  osThreadStaticDef(CmdLine, StartCmdLine, osPriorityIdle, 0, 128, CmdLineBuffer, &CmdLineControlBlock);
+  osThreadStaticDef(CmdLine, StartCmdLine, osPriorityNormal, 0, 128, CmdLineBuffer, &CmdLineControlBlock);
   CmdLineHandle = osThreadCreate(osThread(CmdLine), NULL);
 
   /* definition and creation of ThermoRead */
-  osThreadStaticDef(ThermoRead, StartThermoRead, osPriorityIdle, 0, 128, ThermoReadBuffer, &ThermoReadControlBlock);
+  osThreadStaticDef(ThermoRead, StartThermoRead, osPriorityNormal, 0, 128, ThermoReadBuffer, &ThermoReadControlBlock);
   ThermoReadHandle = osThreadCreate(osThread(ThermoRead), NULL);
 
   /* definition and creation of S3G_IO */
-  osThreadStaticDef(S3G_IO, StartS3GIO, osPriorityIdle, 0, 128, S3G_IOBuffer, &S3G_IOControlBlock);
+  osThreadStaticDef(S3G_IO, StartS3GIO, osPriorityNormal, 0, 128, S3G_IOBuffer, &S3G_IOControlBlock);
   S3G_IOHandle = osThreadCreate(osThread(S3G_IO), NULL);
 
   /* definition and creation of HeatBedPWM */
-  osThreadStaticDef(HeatBedPWM, StartHeatBedPWM, osPriorityIdle, 0, 128, myTask06Buffer, &myTask06ControlBlock);
+  osThreadStaticDef(HeatBedPWM, StartHeatBedPWM, osPriorityNormal, 0, 128, myTask06Buffer, &myTask06ControlBlock);
   HeatBedPWMHandle = osThreadCreate(osThread(HeatBedPWM), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -212,9 +210,8 @@ int main(void)
 
   /* Start scheduler */
   osKernelStart();
-  
-  /* We should never get here as control is now taken by the scheduler */
 
+  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -236,7 +233,8 @@ void SystemClock_Config(void)
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
-  /** Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
@@ -249,7 +247,8 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /** Initializes the CPU, AHB and APB busses clocks 
+
+  /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
@@ -298,7 +297,8 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 1 */
 
   /* USER CODE END ADC1_Init 1 */
-  /** Common config 
+
+  /** Common config
   */
   hadc1.Instance = ADC1;
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
@@ -311,7 +311,8 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /** Configure Regular Channel 
+
+  /** Configure Regular Channel
   */
   sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = ADC_REGULAR_RANK_1;
@@ -623,22 +624,13 @@ static void MX_GPIO_Init(void)
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
-    
-    
-    
-    
-    
-    
-    
-    
-
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END 5 */ 
+  /* USER CODE END 5 */
 }
 
 /**
@@ -683,12 +675,10 @@ void Error_Handler(void)
   * @retval None
   */
 void assert_failed(uint8_t *file, uint32_t line)
-{ 
+{
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
